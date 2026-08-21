@@ -1,0 +1,45 @@
+name: Phase 1 validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Complete quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use pinned Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Install required browser engines
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Run complete quality gate
+        run: npm run check
+
+      - name: Upload browser proofs and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-1-browser-proofs
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14
