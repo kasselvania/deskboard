@@ -146,6 +146,7 @@ blockquote {
 
 .item-heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
@@ -158,6 +159,13 @@ blockquote {
   line-height: 1.12;
 }
 
+.item-title,
+.when-label,
+.reason,
+.board-section-sideways blockquote {
+  overflow-wrap: anywhere;
+}
+
 .when-label {
   margin-bottom: var(--space-1);
   color: var(--quiet-ink);
@@ -165,7 +173,6 @@ blockquote {
   font-variant-numeric: tabular-nums;
   font-weight: 560;
   line-height: 1.25;
-  white-space: nowrap;
 }
 
 .item-heading .when-label {

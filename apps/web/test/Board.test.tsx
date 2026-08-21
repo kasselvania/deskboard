@@ -17,6 +17,10 @@ const defaultBoard = parseBoardSnapshot(defaultFixture);
 const emptyBoard = parseBoardSnapshot(emptyFixture);
 const staleBoard = parseBoardSnapshot(staleFixture);
 const fixedNow = new Date("2026-08-21T17:05:00Z");
+const savedAtText = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+}).format(new Date(defaultBoard.generatedAt));
 
 function renderBoard(snapshot: BoardSnapshot) {
   return render(
@@ -125,7 +129,25 @@ describe("Board data lifecycle", () => {
 
     expect(screen.getByText("Return the library book")).toBeVisible();
     expect(
-      await screen.findByText(/Saved board · live update unavailable/),
+      await screen.findByText(
+        `Saved ${savedAtText} · live update unavailable · Reminders fixture · Calendar fixture`,
+      ),
+    ).toBeVisible();
+  });
+
+  it("timestamps a saved Board while checking for a live update", () => {
+    window.localStorage.setItem(BOARD_CACHE_KEY, JSON.stringify(defaultFixture));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+
+    render(<App />);
+
+    expect(
+      screen.getByText(
+        `Saved ${savedAtText} · checking for an update · Reminders fixture · Calendar fixture`,
+      ),
     ).toBeVisible();
   });
 

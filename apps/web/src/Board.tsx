@@ -51,12 +51,16 @@ function getFreshnessText(
   source: BoardProps["source"],
   updateFailed: boolean,
 ): string {
+  const savedAt = new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(snapshot.generatedAt));
   const delivery =
     source === "live"
       ? null
       : updateFailed
-        ? "Saved board · live update unavailable"
-        : "Saved board · checking for an update";
+        ? `Saved ${savedAt} · live update unavailable`
+        : `Saved ${savedAt} · checking for an update`;
   const sourceStates = [
     `Reminders ${describeFreshness(snapshot.freshness.reminders)}`,
     `Calendar ${describeFreshness(snapshot.freshness.calendar)}`,

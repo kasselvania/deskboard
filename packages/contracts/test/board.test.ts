@@ -3,7 +3,12 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { boardSnapshotSchema, isCalendarDate } from "../src/index";
+import {
+  BOARD_TEXT_LIMITS,
+  boardSnapshotSchema,
+  isCalendarDate,
+  type BoardSnapshot,
+} from "../src/index";
 
 const fixtureDirectory = fileURLToPath(
   new URL("../../../fixtures/board/", import.meta.url),
@@ -88,5 +93,79 @@ describe("BoardSnapshot contract", () => {
     candidate.generatedAt = "2026-02-30T17:05:00Z";
 
     expect(boardSnapshotSchema.safeParse(candidate).success).toBe(false);
+  });
+
+  it("rejects text beyond each field-specific display limit", async () => {
+    const validBoard = boardSnapshotSchema.parse(
+      await readFixture("default.json"),
+    );
+    const cases: Array<{
+      field: string;
+      limit: number;
+      change: (board: BoardSnapshot, value: string) => void;
+    }> = [
+      {
+        field: "id",
+        limit: BOARD_TEXT_LIMITS.id,
+        change: (board, value) => {
+          board.today.items[0]!.id = value;
+        },
+      },
+      {
+        field: "boardVersion",
+        limit: BOARD_TEXT_LIMITS.boardVersion,
+        change: (board, value) => {
+          board.boardVersion = value;
+        },
+      },
+      {
+        field: "title",
+        limit: BOARD_TEXT_LIMITS.title,
+        change: (board, value) => {
+          board.today.items[0]!.title = value;
+        },
+      },
+      {
+        field: "reason",
+        limit: BOARD_TEXT_LIMITS.reason,
+        change: (board, value) => {
+          board.today.items[0]!.reason = value;
+        },
+      },
+      {
+        field: "whenLabel",
+        limit: BOARD_TEXT_LIMITS.whenLabel,
+        change: (board, value) => {
+          board.next.items[0]!.whenLabel = value;
+        },
+      },
+      {
+        field: "Sideways Prompt",
+        limit: BOARD_TEXT_LIMITS.sidewaysPrompt,
+        change: (board, value) => {
+          board.sidewaysPrompt!.text = value;
+        },
+      },
+      {
+        field: "timeZone",
+        limit: BOARD_TEXT_LIMITS.timeZone,
+        change: (board, value) => {
+          const temporal = board.next.items[0]!.temporal;
+          if (temporal.kind === "dateTime") {
+            temporal.timeZone = value;
+          }
+        },
+      },
+    ];
+
+    for (const testCase of cases) {
+      const candidate = structuredClone(validBoard);
+      testCase.change(candidate, "x".repeat(testCase.limit + 1));
+
+      expect(
+        boardSnapshotSchema.safeParse(candidate).success,
+        testCase.field,
+      ).toBe(false);
+    }
   });
 });

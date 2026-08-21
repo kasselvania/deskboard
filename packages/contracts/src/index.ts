@@ -82,7 +82,32 @@ function isIsoInstant(value: string): boolean {
   );
 }
 
-const nonEmptyTextSchema = z.string().trim().min(1);
+// These limits keep the wire document display-ready. Titles and labels stay
+// compact enough for the reference Board, while reasons and the prompt retain
+// room for a concise human explanation rather than becoming generic notes.
+export const BOARD_TEXT_LIMITS = {
+  id: 96,
+  boardVersion: 64,
+  title: 72,
+  reason: 120,
+  whenLabel: 48,
+  sidewaysPrompt: 160,
+  timeZone: 128,
+} as const;
+
+function boundedTextSchema(maxLength: number) {
+  return z.string().trim().min(1).max(maxLength);
+}
+
+const idSchema = boundedTextSchema(BOARD_TEXT_LIMITS.id);
+const boardVersionSchema = boundedTextSchema(BOARD_TEXT_LIMITS.boardVersion);
+const titleSchema = boundedTextSchema(BOARD_TEXT_LIMITS.title);
+const reasonSchema = boundedTextSchema(BOARD_TEXT_LIMITS.reason);
+const whenLabelSchema = boundedTextSchema(BOARD_TEXT_LIMITS.whenLabel);
+const sidewaysPromptTextSchema = boundedTextSchema(
+  BOARD_TEXT_LIMITS.sidewaysPrompt,
+);
+const timeZoneSchema = boundedTextSchema(BOARD_TEXT_LIMITS.timeZone);
 const calendarDateSchema = z.string().refine(isCalendarDate, {
   message: "Expected a real calendar date in YYYY-MM-DD form.",
 });
@@ -104,7 +129,7 @@ export const timedValueSchema = z
   .object({
     kind: z.literal("dateTime"),
     localDateTime: localDateTimeSchema,
-    timeZone: nonEmptyTextSchema.nullable(),
+    timeZone: timeZoneSchema.nullable(),
   })
   .strict();
 
@@ -125,22 +150,22 @@ export const sourceFreshnessSchema = z
 
 export const taskItemSchema = z
   .object({
-    id: nonEmptyTextSchema,
+    id: idSchema,
     kind: z.literal("task"),
-    title: nonEmptyTextSchema,
-    reason: nonEmptyTextSchema,
-    whenLabel: nonEmptyTextSchema.optional(),
+    title: titleSchema,
+    reason: reasonSchema,
+    whenLabel: whenLabelSchema.optional(),
     temporal: z.union([dateOnlySchema, timedValueSchema]).optional(),
   })
   .strict();
 
 export const commitmentItemSchema = z
   .object({
-    id: nonEmptyTextSchema,
+    id: idSchema,
     kind: z.literal("commitment"),
-    title: nonEmptyTextSchema,
-    reason: nonEmptyTextSchema,
-    whenLabel: nonEmptyTextSchema,
+    title: titleSchema,
+    reason: reasonSchema,
+    whenLabel: whenLabelSchema,
     temporal: z.union([timedValueSchema, allDayValueSchema]),
   })
   .strict();
@@ -161,7 +186,7 @@ const schemaVersionSchema = z
 export const boardSnapshotSchema = z
   .object({
     schemaVersion: schemaVersionSchema,
-    boardVersion: nonEmptyTextSchema,
+    boardVersion: boardVersionSchema,
     generatedAt: isoInstantSchema,
     freshness: z
       .object({
@@ -184,7 +209,7 @@ export const boardSnapshotSchema = z
     sidewaysPrompt: z
       .object({
         label: z.literal("Sideways"),
-        text: nonEmptyTextSchema,
+        text: sidewaysPromptTextSchema,
       })
       .strict()
       .optional(),
