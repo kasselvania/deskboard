@@ -1,0 +1,85 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors and local tooling
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.mobileprovision
+
+# Node and package tooling
+node_modules/
+.pnpm-store/
+.yarn/
+.npm/
+*.tsbuildinfo
+
+# Build output
+build/
+dist/
+out/
+.cache/
+.vite/
+.turbo/
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.nyc_output/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local runtime data
+.data/
+data/
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# Local exports and private fixtures
+exports/
+private-fixtures/
+*.private.json
+*.snapshot.local.json
+
+# Swift and Xcode
+.build/
+DerivedData/
+.swiftpm/
+Package.resolved.local
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+
+# Local deployment and credentials
+secrets/
+*.local.yml
+*.local.yaml
+compose.override.yml
+docker-compose.override.yml
