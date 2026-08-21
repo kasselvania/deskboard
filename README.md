@@ -62,9 +62,13 @@ The repository will be developed in bounded vertical slices. The sequence and ex
 
 ## Current status
 
-**Phase 0: repository and product contract.**
+**Phase 0 — Product and Repository Contract: complete.**
 
-No production application exists yet. The first implementation slice will establish a fixture-backed board, a small typed API contract, responsive layouts for iPad and Steam Deck, automated tests, and continuous integration. It will not connect to Apple, store personal data, or provide write actions.
+The repository now contains the product philosophy, architecture, staged roadmap, privacy boundaries, contribution workflow, coding-agent guardrails, and Git hygiene needed to begin implementation.
+
+**Next: Phase 1 — Fixture-Backed Board.**
+
+The first implementation slice will establish a fixture-backed board, a small typed API contract, responsive layouts for iPad and Steam Deck, automated tests, and continuous integration. It will not connect to Apple, store personal data, or provide write actions.
 
 ## Scope discipline
 
