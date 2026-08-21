@@ -75,6 +75,7 @@ Deskboard should earn complexity through use. Before contributing or directing a
 - [ROADMAP.md](ROADMAP.md)
 - [AGENTS.md](AGENTS.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
+- [SECURITY.md](SECURITY.md)
 
 The guiding implementation rule is simple:
 
