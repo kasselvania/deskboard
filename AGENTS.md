@@ -8,7 +8,9 @@ Before changing code or configuration, read:
 2. `MANIFESTO.md`
 3. `ARCHITECTURE.md`
 4. `ROADMAP.md`
-5. `CONTRIBUTING.md`
+5. `docs/apple-source-mapping-v0.1.md`
+6. `CONTRIBUTING.md`
+7. `SECURITY.md`
 
 If a task conflicts with those documents, pause and explain the conflict instead of silently expanding or redesigning the project.
 
@@ -20,143 +22,158 @@ A complete slice includes working behavior, tests, error states, documentation, 
 
 ## Current Phase
 
-The current implementation target is **Phase 1 — Fixture-Backed Board** from `ROADMAP.md`.
+Phase 1 — Fixture-Backed Board — is accepted and merged.
 
-Until that phase is explicitly accepted, do not add:
+The current implementation target is **Phase 2 — Apple Bridge Discovery Spike** from `ROADMAP.md`.
 
-- Apple Calendar or Reminders integration;
-- Swift or EventKit code;
+The question for this phase is:
+
+> What supported EventKit data is actually available from selected Apple Calendar and Reminder sources, and what is the smallest lossless representation Deskboard will need for the later one-way mirror?
+
+This is an empirical, read-only discovery slice. It is not the production Bridge.
+
+### Allowed Phase 2 shape
+
+Phase 2 may add only what the discovery spike requires, approximately:
+
+```text
+tools/apple-eventkit-probe/   minimal native macOS Swift/SwiftUI probe
+fixtures/eventkit/            sanitized structural examples
+docs/apple-eventkit-discovery.md
+```
+
+A focused synthetic Board fixture and test may be added only to prove that the existing Phase 1 presentation contract can render an EventKit-derived shape. The production Board data path must remain fixture-backed.
+
+### Phase 2 permitted behavior
+
+- request read access to Calendar and Reminders;
+- enumerate and explicitly select source calendars and Reminder lists;
+- read bounded Calendar and Reminder data locally;
+- inspect EventKit field availability and temporal behavior;
+- create private local inspection exports under an ignored path;
+- generate aggressively sanitized synthetic examples;
+- document verified, unavailable, and unresolved fields;
+- test pure normalization and sanitization behavior;
+- update architecture documentation after observations exist.
+
+### Phase 2 forbidden behavior
+
+Do not add:
+
+- Calendar or Reminder writes of any kind;
+- Reminder completion from Deskboard;
+- a production Bridge-to-Core network path;
+- HTTP clients, Tailscale, homelab deployment, or Docker;
 - SQLite, Postgres, Redis, or another database;
+- a background daemon, login item, or always-on agent;
 - authentication or authorization;
-- Docker as a requirement for local development;
-- Tailscale configuration;
-- Home Assistant, weather, Sonos, media, ESP32, or camera integrations;
-- write actions of any kind;
-- WebSockets, Server-Sent Events, or push notifications;
-- AI ranking, summaries, or agent features;
-- a settings screen, app navigation, project browser, or generic dashboard framework;
-- placeholder packages or empty adapters for future phases.
+- Open Loop history, Project state, sessions, timers, or attention ranking;
+- AI classification, summaries, or agents;
+- Notes, Contacts, Mail, Health, Home Assistant, weather, Sonos, media, ESP32, or camera integrations;
+- new Board actions, settings, navigation, or source-management UI;
+- generic adapter frameworks or placeholder packages for later phases.
 
 Deferred means absent, not partially implemented.
 
-## Required First-Slice Shape
-
-The first implementation should contain only what the roadmap requires:
-
-```text
-apps/web/          React + TypeScript + Vite
-apps/api/          Fastify + TypeScript
-packages/contracts runtime schemas and shared types
-fixtures/board/    synthetic fixture data
-```
-
-Use npm workspaces unless a current requirement demonstrates that another monorepo tool is necessary.
-
-The initial API surface is limited to:
-
-```text
-GET /health
-GET /v1/board
-```
-
-The initial user-facing route is limited to:
-
-```text
-/board
-```
-
 ## Product Guardrails
 
-- The Board is a curated field of attention, not a backlog.
-- The first Board is read-only.
-- The server composes a display-ready Board; the client does not independently rank source items.
-- The Board should fit the target viewport without document-level vertical scrolling.
-- White space is a feature.
-- Every visible item needs a concise, human-readable reason for being present.
-- No essential meaning may depend only on color.
-- Do not add animation unless it communicates state that cannot be communicated more simply.
-- Do not use a generic admin/dashboard template, charting library, or large UI component framework.
-- Do not add outbound links or notification permissions.
-- Fixtures must be synthetic and safe to publish.
+- Apple Calendar and Reminders remain authoritative for source facts.
+- The probe observes source behavior; it does not administer source applications.
+- Ordinary Reminders are candidate Tasks by default.
+- Selected Calendar events are candidate Commitments by default.
+- Recurrence is evidence, not automatic Open Loop classification.
+- Date-only, local-time, timezone-qualified, and all-day values must remain distinct.
+- Dynamic Deskboard state must not be written into Reminder notes.
+- The existing Board remains a curated field of attention, not a backlog.
+- The existing Phase 1 Board must remain usable throughout the spike.
+- Every committed example must be synthetic and safe to publish.
 
 ## Engineering Guardrails
 
 ### Dependencies
 
-Add a dependency only when it directly supports a requirement in the current slice. Prefer platform capabilities and small libraries over frameworks layered on frameworks.
+Prefer Apple platform APIs and the standard library. Add no Swift package, project generator, or Node dependency unless a current discovery requirement cannot reasonably be met without it.
 
 When adding a dependency, record the reason in the pull request description.
 
-### Contracts
+### Native project scope
 
-- Define runtime-validated contracts in `packages/contracts`.
-- Derive or share TypeScript types from the same source when practical.
-- Validate API responses against the contract in tests.
-- Model date-only values separately from instants and timed values.
-- Reject unsupported schema versions safely.
+Prefer a minimal macOS SwiftUI application contained under `tools/apple-eventkit-probe/`.
+
+Do not introduce XcodeGen, Tuist, CocoaPods, a cross-platform framework, or a production application architecture for a disposable discovery spike.
+
+Wrap EventKit-dependent reads behind the smallest practical boundary so pure temporal normalization and sanitization logic can be tested with synthetic inputs.
 
 ### Testing
 
-The requested slice is not complete without:
+The Phase 2 slice is not complete without:
 
-- linting;
-- type checking;
-- unit tests;
-- API contract tests;
-- component/accessibility tests;
-- browser proof tests at the iPad and Steam Deck reference viewports;
-- a production build;
-- CI that runs the same commands.
+- a reproducible native macOS build;
+- Swift unit tests for pure normalization, selection persistence, and sanitization behavior;
+- documented manual permission and source-selection checks;
+- sanitized fixtures reviewed for private data;
+- the existing Node lint, typecheck, unit, browser, and production-build gate;
+- documentation that distinguishes verified facts from recommendations and unresolved questions.
 
-Tests should prove behavior and boundaries, not implementation trivia.
+Tests should prove behavior and boundaries, not implementation trivia. Tests must not require access to the user's real EventKit store.
 
 ### Privacy and Security
 
-Never commit:
+Never commit or report:
 
 - real Calendar or Reminder records;
-- names, addresses, contacts, meeting details, recovery information, or household information;
-- `.env` files or secrets;
+- source titles, list names, calendar names, notes, URLs, or locations;
+- local or external EventKit identifiers;
+- organizer, attendee, contact, account, or provider details;
+- recovery, health, household, or work information;
+- `.env` files, credentials, certificates, or provisioning profiles;
 - Tailscale hostnames, keys, or tailnet identifiers;
-- exported personal snapshots;
-- database files;
-- production logs.
+- private exports, database files, production logs, or screenshots containing personal data.
 
-Use obviously synthetic fixtures.
+Private inspection output must remain in an ignored local directory. Sanitization must replace private values, not rely on partial redaction.
 
 ### Git Safety
 
 - Work on a feature branch, not directly on `main`, unless the user explicitly directs otherwise.
 - Do not force-push shared branches.
 - Do not rewrite existing history.
-- Do not delete or replace project philosophy and architecture documents to make an implementation easier.
+- Do not delete or replace project philosophy and architecture documents to make implementation easier.
 - Keep commits coherent and use the commit conventions in `CONTRIBUTING.md`.
-- Do not mix broad formatting or dependency upgrades into a feature change.
+- Do not mix broad formatting, dependency upgrades, Phase 1 redesign, or later-phase work into the spike.
 
 ## Decision Policy
 
-Agents may make ordinary implementation decisions inside the current slice, including file organization, small library selection, and test structure.
+Agents may make ordinary implementation decisions inside Phase 2, including small native file organization, naming, test structure, and local UI details required for permission and source selection.
 
 Stop and ask before:
 
 - changing the architecture or data-ownership model;
-- adding a database, cloud service, authentication system, or runtime dependency not required by the slice;
-- changing the product vocabulary or Board capacity limits;
-- adding a new route, endpoint, application, package, integration, or persistent store;
+- requesting or performing Apple write access;
+- adding any network communication, database, cloud service, or authentication system;
+- freezing the final Bridge-to-Core schema before observations are documented;
+- declaring Project anchors, metadata grammar, importance, or ranking behavior final;
+- adding a new production route, endpoint, application, persistent service, or Board interaction;
 - weakening a proof test or exit criterion;
 - exposing personal data outside the local environment;
-- beginning work from a later roadmap phase.
+- beginning work from Phase 3 or later.
+
+An unobserved source case remains `not tested`. Do not fabricate support.
 
 ## Completion Report
 
 At the end of a coding task, report:
 
 1. what was built;
-2. the exact commands used to validate it;
-3. which tests passed;
-4. any deliberate deviations from the requested design;
-5. the files changed;
-6. what remains deferred;
-7. the branch and commit state.
+2. the macOS, Xcode, and Swift versions used;
+3. the exact commands used to validate it;
+4. which automated and manual checks passed;
+5. which EventKit behaviors were verified, unavailable, or not tested;
+6. any deliberate deviations from the requested design;
+7. the sanitized fixtures added;
+8. the files changed;
+9. what remains deferred;
+10. the branch, commits, push, pull-request, and working-tree state.
 
-Do not claim completion while tests are failing, the documented run commands are unverified, or deferred work has been started.
+Never include real Calendar, Reminder, source, account, participant, location, note, or identifier values in the report.
+
+Do not claim completion while tests are failing, the documented run commands are unverified, private data is present, or later-phase work has been started.
