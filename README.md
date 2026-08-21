@@ -93,6 +93,8 @@ npm run dev
 
 Open [http://localhost:5173/board](http://localhost:5173/board). Vite proxies `/health` and `/v1/board` to the API on `127.0.0.1:3001`; the API also accepts a `PORT` environment variable when it is run independently.
 
+The committed JSON fixtures remain deterministic contract specimens. For normal development, the API materializes the default specimen against the current clock so its generated time, source freshness, Today date, and following commitments stay coherent.
+
 The web development server listens on the local network. Another trusted device on the same network can open:
 
 ```text

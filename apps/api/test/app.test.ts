@@ -29,14 +29,23 @@ describe("Deskboard API", () => {
   });
 
   it("serves a runtime-validated default Board", async () => {
-    const response = await makeApp().inject({
+    const frozen = new Date(2026, 7, 21, 10, 5, 0);
+    const response = await makeApp({ clock: () => frozen }).inject({
       method: "GET",
       url: "/v1/board",
     });
 
     expect(response.statusCode).toBe(200);
     expect(response.headers["content-type"]).toMatch(/^application\/json/);
+    expect(response.headers["cache-control"]).toBe("no-store");
     const board = boardSnapshotSchema.parse(response.json());
+    expect(board.generatedAt).toBe(frozen.toISOString());
+    expect(board.today.items[0]?.temporal).toMatchObject({
+      localDate: "2026-08-21",
+    });
+    expect(board.next.items[0]?.temporal).toMatchObject({
+      localDateTime: "2026-08-22T09:30:00",
+    });
     expect(board.today.items.map((item) => item.title)).toEqual([
       "Return the library book",
       "Measure the workshop shelf",
@@ -63,6 +72,7 @@ describe("Deskboard API", () => {
     }).inject({ method: "GET", url: "/v1/board" });
 
     expect(response.statusCode).toBe(500);
+    expect(response.headers["cache-control"]).toBe("no-store");
     expect(response.json()).toEqual({
       error: {
         code: "BOARD_UNAVAILABLE",
