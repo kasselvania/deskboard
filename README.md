@@ -4,7 +4,7 @@
 
 Deskboard is a quiet, local-first attention surface for the things that matter but are easy to lose inside conventional calendars, task managers, notifications, and general-purpose computers.
 
-It is not intended to replace Apple Calendar, Apple Reminders, Notes, Home Assistant, or other durable systems. Those remain the sources of truth. Deskboard will begin as a read-only interpretation layer that gathers a deliberately small amount of information, adds context such as elapsed time and project relationships, and presents it as a calm, persistent board.
+It is not intended to replace Apple Calendar, Apple Reminders, Notes, Home Assistant, or other durable systems. Those remain the sources of truth. Deskboard begins as a read-only interpretation layer that gathers a deliberately small amount of information, adds context such as elapsed time and project relationships, and presents it as a calm, persistent board.
 
 ## What we are building
 
@@ -13,7 +13,7 @@ The first version is a single-view, touch-friendly web application designed for 
 - an iPad Pro used as the primary desk display;
 - a Steam Deck used as a secondary 16:10 test and interaction surface.
 
-The initial board will emphasize:
+The initial board emphasizes:
 
 - a small selection of reminders that matter today;
 - the next meaningful calendar commitments;
@@ -58,15 +58,21 @@ The current intended architecture is intentionally modest:
 - a small **Swift/SwiftUI macOS bridge using EventKit** for Apple Calendar and Reminders;
 - **Tailscale** for private access to the Ubuntu homelab without a public cloud dependency.
 
-The repository will be developed in bounded vertical slices. The sequence and exit criteria are documented in [ROADMAP.md](ROADMAP.md), while ownership and synchronization boundaries are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
+The repository is developed in bounded vertical slices. The sequence and exit criteria are documented in [ROADMAP.md](ROADMAP.md), while ownership and synchronization boundaries are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Current status
 
-**Phase 1 — Fixture-Backed Board: implemented for review.**
+**Phase 1 — Fixture-Backed Board: accepted and merged.**
 
 The repository contains the complete synthetic presentation spine: runtime-validated fixtures, a two-route Fastify API, a single-route React Board, validated display caching, responsive iPad and Steam Deck layouts, and automated contract, API, component, accessibility, and browser proof tests.
 
-Phase 1 is not yet accepted. Owner review, CI readback, and real-device use remain the acceptance boundary. Apple integration and every write path remain deferred.
+The Board has also been reached from the physical iPad over the local network. Phase 1 was accepted from the complete local Node 24 quality gate and device proof. The hosted GitHub Actions job did not execute repository steps because of the account billing/spending restriction; the workflow itself remains unchanged and should be rerun after that administrative issue is resolved.
+
+**Phase 2 — Apple Bridge Discovery Spike: active.**
+
+Phase 2 is a read-only discovery slice. It will determine what Apple Calendar and Reminders actually expose through EventKit before a production Bridge contract, database, homelab synchronization path, or Apple write action is designed.
+
+The discovery boundary and candidate semantic distinctions are defined in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md).
 
 ## Phase 1 development
 
@@ -134,6 +140,7 @@ Deskboard should earn complexity through use. Before contributing or directing a
 - [MANIFESTO.md](MANIFESTO.md)
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [ROADMAP.md](ROADMAP.md)
+- [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md)
 - [AGENTS.md](AGENTS.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
