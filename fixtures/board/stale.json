@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "boardVersion": "fixture-stale-001",
+  "generatedAt": "2026-08-21T17:05:00Z",
+  "freshness": {
+    "reminders": {
+      "status": "stale",
+      "updatedAt": "2026-08-20T16:00:00Z"
+    },
+    "calendar": {
+      "status": "stale",
+      "updatedAt": "2026-08-20T16:00:00Z"
+    }
+  },
+  "today": {
+    "label": "Today",
+    "items": [
+      {
+        "id": "task-stale-library",
+        "kind": "task",
+        "title": "Set the library book by the bag",
+        "reason": "saved from the last source update"
+      }
+    ]
+  },
+  "next": {
+    "label": "Next",
+    "items": [
+      {
+        "id": "commitment-stale-window",
+        "kind": "commitment",
+        "title": "Fictional repair window",
+        "reason": "saved from the last calendar update",
+        "whenLabel": "Tomorrow · 1:00 PM",
+        "temporal": {
+          "kind": "dateTime",
+          "localDateTime": "2026-08-22T13:00:00",
+          "timeZone": null
+        }
+      }
+    ]
+  },
+  "sidewaysPrompt": {
+    "label": "Sideways",
+    "text": "Leave one edge unfinished long enough to learn from it."
+  }
+}

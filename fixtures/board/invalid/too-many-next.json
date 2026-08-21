@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "boardVersion": "invalid-next-capacity",
+  "generatedAt": "2026-08-21T17:05:00Z",
+  "freshness": {
+    "reminders": { "status": "fixture", "updatedAt": null },
+    "calendar": { "status": "fixture", "updatedAt": null }
+  },
+  "today": { "label": "Today", "items": [] },
+  "next": {
+    "label": "Next",
+    "items": [
+      {
+        "id": "commitment-1",
+        "kind": "commitment",
+        "title": "Fixture commitment one",
+        "reason": "capacity proof",
+        "whenLabel": "Tomorrow · 9:00 AM",
+        "temporal": { "kind": "dateTime", "localDateTime": "2026-08-22T09:00:00", "timeZone": null }
+      },
+      {
+        "id": "commitment-2",
+        "kind": "commitment",
+        "title": "Fixture commitment two",
+        "reason": "capacity proof",
+        "whenLabel": "Tomorrow · 10:00 AM",
+        "temporal": { "kind": "dateTime", "localDateTime": "2026-08-22T10:00:00", "timeZone": null }
+      },
+      {
+        "id": "commitment-3",
+        "kind": "commitment",
+        "title": "Fixture commitment three",
+        "reason": "capacity proof",
+        "whenLabel": "Tomorrow · 11:00 AM",
+        "temporal": { "kind": "dateTime", "localDateTime": "2026-08-22T11:00:00", "timeZone": null }
+      }
+    ]
+  }
+}
