@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "boardVersion": "invalid-version",
+  "generatedAt": "2026-08-21T17:05:00Z",
+  "freshness": {
+    "reminders": { "status": "fixture", "updatedAt": null },
+    "calendar": { "status": "fixture", "updatedAt": null }
+  },
+  "today": { "label": "Today", "items": [] },
+  "next": { "label": "Next", "items": [] }
+}

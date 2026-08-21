@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "boardVersion": "invalid-date",
+  "generatedAt": "2026-08-21T17:05:00Z",
+  "freshness": {
+    "reminders": { "status": "fixture", "updatedAt": null },
+    "calendar": { "status": "fixture", "updatedAt": null }
+  },
+  "today": {
+    "label": "Today",
+    "items": [
+      {
+        "id": "task-impossible-date",
+        "kind": "task",
+        "title": "Inspect a fictional shelf",
+        "reason": "date validation proof",
+        "temporal": { "kind": "date", "localDate": "2026-02-30" }
+      }
+    ]
+  },
+  "next": { "label": "Next", "items": [] }
+}

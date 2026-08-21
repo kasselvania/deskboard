@@ -127,26 +127,41 @@ Illustrative shape:
       "updatedAt": "2026-08-21T16:58:00Z"
     }
   },
-  "sections": [
-    {
-      "id": "today",
-      "label": "Today",
-      "items": [
-        {
-          "id": "reminder-1",
-          "kind": "task",
-          "title": "Call dentist",
-          "reason": "due today",
-          "temporal": {
-            "kind": "date",
-            "localDate": "2026-08-21"
-          }
+  "today": {
+    "label": "Today",
+    "items": [
+      {
+        "id": "task-library-book",
+        "kind": "task",
+        "title": "Return the library book",
+        "reason": "due today",
+        "temporal": {
+          "kind": "date",
+          "localDate": "2026-08-21"
         }
-      ]
-    }
-  ],
+      }
+    ]
+  },
+  "next": {
+    "label": "Next",
+    "items": [
+      {
+        "id": "commitment-planning-call",
+        "kind": "commitment",
+        "title": "Fictional planning call",
+        "reason": "first commitment tomorrow",
+        "whenLabel": "Tomorrow · 9:30 AM",
+        "temporal": {
+          "kind": "dateTime",
+          "localDateTime": "2026-08-22T09:30:00",
+          "timeZone": "America/Los_Angeles"
+        }
+      }
+    ]
+  },
   "sidewaysPrompt": {
-    "text": "Use an old idea."
+    "label": "Sideways",
+    "text": "Ask what the room would notice if the plan became quieter."
   }
 }
 ```

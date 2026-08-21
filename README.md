@@ -62,13 +62,70 @@ The repository will be developed in bounded vertical slices. The sequence and ex
 
 ## Current status
 
-**Phase 0 — Product and Repository Contract: complete.**
+**Phase 1 — Fixture-Backed Board: implemented for review.**
 
-The repository now contains the product philosophy, architecture, staged roadmap, privacy boundaries, contribution workflow, coding-agent guardrails, and Git hygiene needed to begin implementation.
+The repository contains the complete synthetic presentation spine: runtime-validated fixtures, a two-route Fastify API, a single-route React Board, validated display caching, responsive iPad and Steam Deck layouts, and automated contract, API, component, accessibility, and browser proof tests.
 
-**Next: Phase 1 — Fixture-Backed Board.**
+Phase 1 is not yet accepted. Owner review, CI readback, and real-device use remain the acceptance boundary. Apple integration and every write path remain deferred.
 
-The first implementation slice will establish a fixture-backed board, a small typed API contract, responsive layouts for iPad and Steam Deck, automated tests, and continuous integration. It will not connect to Apple, store personal data, or provide write actions.
+## Phase 1 development
+
+### Prerequisites
+
+- Node.js 24 LTS (the repository pins the major in `.nvmrc` and `package.json`)
+- npm, included with Node.js
+
+Install exactly the committed dependency graph:
+
+```bash
+nvm use
+npm ci
+npx playwright install chromium webkit
+```
+
+### Run the fixture Board
+
+Start the API and web development server together:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:5173/board](http://localhost:5173/board). Vite proxies `/health` and `/v1/board` to the API on `127.0.0.1:3001`; the API also accepts a `PORT` environment variable when it is run independently.
+
+The committed JSON fixtures remain deterministic contract specimens. For normal development, the API materializes the default specimen against the current clock so its generated time, source freshness, Today date, and following commitments stay coherent.
+
+The web development server listens on the local network. Another trusted device on the same network can open:
+
+```text
+http://<development-machine-LAN-address>:5173/board
+```
+
+This is a fixture-only development server. It is not configured or intended for public exposure.
+
+### Validate the slice
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run test:browser
+npm run build
+npm run check
+```
+
+`npm run check` is the complete local and CI gate. Browser tests exercise WebKit at `1366 × 1024`, Chromium at `1280 × 800`, and a `768 × 1024` portrait sanity viewport. The iPad and Steam Deck runs write screenshot artifacts under `test-results/playwright/`; CI uploads that directory and the Playwright report even after a browser-test failure.
+
+### Repository structure
+
+```text
+apps/api/             Fastify API and injection tests
+apps/web/             React/Vite Board and component tests
+packages/contracts/   Zod runtime schema and shared TypeScript types
+fixtures/board/       Publish-safe valid and malformed fixtures
+tests/browser/        Playwright viewport proofs
+.github/workflows/    The complete CI quality gate
+```
 
 ## Scope discipline
 

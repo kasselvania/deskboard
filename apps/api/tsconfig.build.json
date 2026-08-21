@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
+    "paths": {
+      "@deskboard/contracts": ["../../packages/contracts/dist/index.d.ts"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["test"]
+}

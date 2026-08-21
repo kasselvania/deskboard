@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "boardVersion": "fixture-empty-001",
+  "generatedAt": "2026-08-21T17:05:00Z",
+  "freshness": {
+    "reminders": {
+      "status": "fixture",
+      "updatedAt": "2026-08-21T17:04:00Z"
+    },
+    "calendar": {
+      "status": "fixture",
+      "updatedAt": "2026-08-21T17:03:00Z"
+    }
+  },
+  "today": {
+    "label": "Today",
+    "items": []
+  },
+  "next": {
+    "label": "Next",
+    "items": []
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "boardVersion": "fixture-default-001",
+  "generatedAt": "2026-08-21T17:05:00Z",
+  "freshness": {
+    "reminders": {
+      "status": "fixture",
+      "updatedAt": "2026-08-21T17:04:00Z"
+    },
+    "calendar": {
+      "status": "fixture",
+      "updatedAt": "2026-08-21T17:03:00Z"
+    }
+  },
+  "today": {
+    "label": "Today",
+    "items": [
+      {
+        "id": "task-library-book",
+        "kind": "task",
+        "title": "Return the library book",
+        "reason": "due today",
+        "whenLabel": "Today",
+        "temporal": {
+          "kind": "date",
+          "localDate": "2026-08-21"
+        }
+      },
+      {
+        "id": "task-workshop-shelf",
+        "kind": "task",
+        "title": "Measure the workshop shelf",
+        "reason": "ready for a five-minute start"
+      },
+      {
+        "id": "task-recycling-door",
+        "kind": "task",
+        "title": "Place recycling by the door",
+        "reason": "easiest before the evening gets busy",
+        "whenLabel": "Before 5:30 PM",
+        "temporal": {
+          "kind": "dateTime",
+          "localDateTime": "2026-08-21T17:30:00",
+          "timeZone": "America/Los_Angeles"
+        }
+      }
+    ]
+  },
+  "next": {
+    "label": "Next",
+    "items": [
+      {
+        "id": "commitment-planning-call",
+        "kind": "commitment",
+        "title": "Fictional planning call",
+        "reason": "first commitment tomorrow",
+        "whenLabel": "Tomorrow · 9:30 AM",
+        "temporal": {
+          "kind": "dateTime",
+          "localDateTime": "2026-08-22T09:30:00",
+          "timeZone": "America/Los_Angeles"
+        }
+      },
+      {
+        "id": "commitment-maintenance-window",
+        "kind": "commitment",
+        "title": "Workshop maintenance window",
+        "reason": "reserved time for the loose cabinet hinge",
+        "whenLabel": "Sunday · all day",
+        "temporal": {
+          "kind": "allDay",
+          "startDate": "2026-08-23",
+          "endDate": "2026-08-24"
+        }
+      }
+    ]
+  },
+  "sidewaysPrompt": {
+    "label": "Sideways",
+    "text": "Ask what the room would notice if the plan became quieter."
+  }
+}

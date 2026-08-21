@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "boardVersion": "invalid-today-capacity",
+  "generatedAt": "2026-08-21T17:05:00Z",
+  "freshness": {
+    "reminders": { "status": "fixture", "updatedAt": null },
+    "calendar": { "status": "fixture", "updatedAt": null }
+  },
+  "today": {
+    "label": "Today",
+    "items": [
+      { "id": "task-1", "kind": "task", "title": "Fixture task one", "reason": "capacity proof" },
+      { "id": "task-2", "kind": "task", "title": "Fixture task two", "reason": "capacity proof" },
+      { "id": "task-3", "kind": "task", "title": "Fixture task three", "reason": "capacity proof" },
+      { "id": "task-4", "kind": "task", "title": "Fixture task four", "reason": "capacity proof" }
+    ]
+  },
+  "next": { "label": "Next", "items": [] }
+}

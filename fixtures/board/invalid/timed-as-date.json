@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "boardVersion": "invalid-timed-as-date",
+  "generatedAt": "2026-08-21T17:05:00Z",
+  "freshness": {
+    "reminders": { "status": "fixture", "updatedAt": null },
+    "calendar": { "status": "fixture", "updatedAt": null }
+  },
+  "today": { "label": "Today", "items": [] },
+  "next": {
+    "label": "Next",
+    "items": [
+      {
+        "id": "commitment-wrong-temporal-kind",
+        "kind": "commitment",
+        "title": "Fictional timed call",
+        "reason": "temporal distinction proof",
+        "whenLabel": "Tomorrow · 9:30 AM",
+        "temporal": { "kind": "date", "localDate": "2026-08-22" }
+      }
+    ]
+  }
+}
