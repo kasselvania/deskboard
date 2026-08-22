@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "boardVersion": "fixture-eventkit-derived-001",
+  "generatedAt": "2026-08-21T17:05:00Z",
+  "freshness": {
+    "reminders": {
+      "status": "fixture",
+      "updatedAt": "2026-08-21T17:04:00Z"
+    },
+    "calendar": {
+      "status": "fixture",
+      "updatedAt": "2026-08-21T17:03:00Z"
+    }
+  },
+  "today": {
+    "label": "Today",
+    "items": [
+      {
+        "id": "eventkit-task-undated",
+        "kind": "task",
+        "title": "Synthetic Reminder A",
+        "reason": "observed as an incomplete undated Reminder"
+      },
+      {
+        "id": "eventkit-task-date-only",
+        "kind": "task",
+        "title": "Synthetic Reminder B",
+        "reason": "observed with a date-only due value",
+        "whenLabel": "September 28",
+        "temporal": {
+          "kind": "date",
+          "localDate": "2026-09-28"
+        }
+      }
+    ]
+  },
+  "next": {
+    "label": "Next",
+    "items": [
+      {
+        "id": "eventkit-commitment-timed",
+        "kind": "commitment",
+        "title": "Synthetic Event A",
+        "reason": "observed as a timezone-qualified timed event",
+        "whenLabel": "September 21 · 9:30 AM",
+        "temporal": {
+          "kind": "dateTime",
+          "localDateTime": "2026-09-21T09:30:00",
+          "timeZone": "America/Los_Angeles"
+        }
+      },
+      {
+        "id": "eventkit-commitment-all-day",
+        "kind": "commitment",
+        "title": "Synthetic Event B",
+        "reason": "observed as an exclusive all-day range",
+        "whenLabel": "September 13 · all day",
+        "temporal": {
+          "kind": "allDay",
+          "startDate": "2026-09-13",
+          "endDate": "2026-09-14"
+        }
+      }
+    ]
+  }
+}

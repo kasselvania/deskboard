@@ -1,0 +1,490 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B20000000000000000000001 /* AppleEventKitProbeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* AppleEventKitProbeApp.swift */; };
+		B20000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
+		B20000000000000000000003 /* ProbeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* ProbeModels.swift */; };
+		B20000000000000000000004 /* TemporalNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* TemporalNormalizer.swift */; };
+		B20000000000000000000005 /* MetadataBlockDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* MetadataBlockDetector.swift */; };
+		B20000000000000000000006 /* SourceSelectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* SourceSelectionStore.swift */; };
+		B20000000000000000000007 /* ProbeSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* ProbeSanitizer.swift */; };
+		B20000000000000000000008 /* ProbeExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* ProbeExporter.swift */; };
+		B20000000000000000000009 /* EventKitReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* EventKitReader.swift */; };
+		B2000000000000000000000A /* ProbeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* ProbeViewModel.swift */; };
+		B2000000000000000000000B /* AppleEventKitProbeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* AppleEventKitProbeTests.swift */; };
+		B2000000000000000000000C /* ProbeCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* ProbeCommand.swift */; };
+		B2000000000000000000000D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* main.swift */; };
+		B30000000000000000000001 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000000000000000000003 /* EventKit.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D20000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000006;
+			remoteInfo = AppleEventKitProbe;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* AppleEventKitProbeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleEventKitProbeApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* ProbeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeModels.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* TemporalNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporalNormalizer.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* MetadataBlockDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataBlockDetector.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* SourceSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceSelectionStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* ProbeSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeSanitizer.swift; sourceTree = "<group>"; };
+		A20000000000000000000008 /* ProbeExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeExporter.swift; sourceTree = "<group>"; };
+		A20000000000000000000009 /* EventKitReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitReader.swift; sourceTree = "<group>"; };
+		A2000000000000000000000A /* ProbeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeViewModel.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* AppleEventKitProbeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleEventKitProbeTests.swift; sourceTree = "<group>"; };
+		A2000000000000000000000C /* ProbeCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeCommand.swift; sourceTree = "<group>"; };
+		A2000000000000000000000D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		A30000000000000000000001 /* AppleEventKitProbe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppleEventKitProbe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000002 /* AppleEventKitProbeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppleEventKitProbeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000003 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C20000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B30000000000000000000001 /* EventKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C20000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000004 /* AppleEventKitProbe */,
+				A10000000000000000000005 /* AppleEventKitProbeTests */,
+				A1000000000000000000000B /* Frameworks */,
+				A10000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A30000000000000000000001 /* AppleEventKitProbe.app */,
+				A30000000000000000000002 /* AppleEventKitProbeTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000004 /* AppleEventKitProbe */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000D /* main.swift */,
+				A20000000000000000000001 /* AppleEventKitProbeApp.swift */,
+				A20000000000000000000002 /* ContentView.swift */,
+				A2000000000000000000000A /* ProbeViewModel.swift */,
+				A20000000000000000000009 /* EventKitReader.swift */,
+				A20000000000000000000003 /* ProbeModels.swift */,
+				A20000000000000000000004 /* TemporalNormalizer.swift */,
+				A20000000000000000000005 /* MetadataBlockDetector.swift */,
+				A20000000000000000000006 /* SourceSelectionStore.swift */,
+				A20000000000000000000007 /* ProbeSanitizer.swift */,
+				A20000000000000000000008 /* ProbeExporter.swift */,
+				A2000000000000000000000C /* ProbeCommand.swift */,
+			);
+			path = AppleEventKitProbe;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000005 /* AppleEventKitProbeTests */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000B /* AppleEventKitProbeTests.swift */,
+			);
+			path = AppleEventKitProbeTests;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000000B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A30000000000000000000003 /* EventKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000006 /* AppleEventKitProbe */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F20000000000000000000002 /* Build configuration list for PBXNativeTarget "AppleEventKitProbe" */;
+			buildPhases = (
+				C20000000000000000000001 /* Sources */,
+				C20000000000000000000002 /* Frameworks */,
+				C20000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AppleEventKitProbe;
+			productName = AppleEventKitProbe;
+			productReference = A30000000000000000000001 /* AppleEventKitProbe.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000007 /* AppleEventKitProbeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F20000000000000000000003 /* Build configuration list for PBXNativeTarget "AppleEventKitProbeTests" */;
+			buildPhases = (
+				C20000000000000000000004 /* Sources */,
+				C20000000000000000000005 /* Frameworks */,
+				C20000000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D30000000000000000000001 /* PBXTargetDependency */,
+			);
+			name = AppleEventKitProbeTests;
+			productName = AppleEventKitProbeTests;
+			productReference = A30000000000000000000002 /* AppleEventKitProbeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2640;
+				LastUpgradeCheck = 2640;
+				TargetAttributes = {
+					A10000000000000000000006 = {
+						CreatedOnToolsVersion = 26.4;
+					};
+					A10000000000000000000007 = {
+						CreatedOnToolsVersion = 26.4;
+						TestTargetID = A10000000000000000000006;
+					};
+				};
+			};
+			buildConfigurationList = F20000000000000000000001 /* Build configuration list for PBXProject "AppleEventKitProbe" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A10000000000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A10000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000006 /* AppleEventKitProbe */,
+				A10000000000000000000007 /* AppleEventKitProbeTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C20000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C20000000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C20000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B20000000000000000000001 /* AppleEventKitProbeApp.swift in Sources */,
+				B20000000000000000000002 /* ContentView.swift in Sources */,
+				B20000000000000000000003 /* ProbeModels.swift in Sources */,
+				B20000000000000000000004 /* TemporalNormalizer.swift in Sources */,
+				B20000000000000000000005 /* MetadataBlockDetector.swift in Sources */,
+				B20000000000000000000006 /* SourceSelectionStore.swift in Sources */,
+				B20000000000000000000007 /* ProbeSanitizer.swift in Sources */,
+				B20000000000000000000008 /* ProbeExporter.swift in Sources */,
+				B20000000000000000000009 /* EventKitReader.swift in Sources */,
+				B2000000000000000000000A /* ProbeViewModel.swift in Sources */,
+				B2000000000000000000000C /* ProbeCommand.swift in Sources */,
+				B2000000000000000000000D /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C20000000000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B2000000000000000000000B /* AppleEventKitProbeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D30000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000006 /* AppleEventKitProbe */;
+			targetProxy = D20000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		E20000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		E20000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		E20000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Apple EventKit Probe";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Deskboard uses read access to inspect only the Calendar calendars you explicitly select.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Deskboard uses read access to inspect only the Reminder lists you explicitly select.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kasselvania.deskboard.AppleEventKitProbe;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+		};
+			name = Debug;
+		};
+		E20000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Apple EventKit Probe";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Deskboard uses read access to inspect only the Calendar calendars you explicitly select.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Deskboard uses read access to inspect only the Reminder lists you explicitly select.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kasselvania.deskboard.AppleEventKitProbe;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E20000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kasselvania.deskboard.AppleEventKitProbeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AppleEventKitProbe.app/Contents/MacOS/AppleEventKitProbe";
+		};
+			name = Debug;
+		};
+		E20000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kasselvania.deskboard.AppleEventKitProbeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AppleEventKitProbe.app/Contents/MacOS/AppleEventKitProbe";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F20000000000000000000001 /* Build configuration list for PBXProject "AppleEventKitProbe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E20000000000000000000001 /* Debug */,
+				E20000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F20000000000000000000002 /* Build configuration list for PBXNativeTarget "AppleEventKitProbe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E20000000000000000000003 /* Debug */,
+				E20000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F20000000000000000000003 /* Build configuration list for PBXNativeTarget "AppleEventKitProbeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E20000000000000000000005 /* Debug */,
+				E20000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A10000000000000000000001 /* Project object */;
+}

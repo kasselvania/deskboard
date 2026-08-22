@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import defaultFixture from "../../../fixtures/board/default.json";
 import emptyFixture from "../../../fixtures/board/empty.json";
+import eventKitFixture from "../../../fixtures/board/eventkit-derived.json";
 import staleFixture from "../../../fixtures/board/stale.json";
 import { App } from "../src/App";
 import { Board } from "../src/Board";
@@ -15,6 +16,7 @@ import { BOARD_POLL_INTERVAL_MS } from "../src/use-board-snapshot";
 
 const defaultBoard = parseBoardSnapshot(defaultFixture);
 const emptyBoard = parseBoardSnapshot(emptyFixture);
+const eventKitBoard = parseBoardSnapshot(eventKitFixture);
 const staleBoard = parseBoardSnapshot(staleFixture);
 const fixedNow = new Date("2026-08-21T17:05:00Z");
 const savedAtText = new Intl.DateTimeFormat(undefined, {
@@ -77,6 +79,17 @@ describe("Board rendering", () => {
       "Reminders delayed · Calendar delayed",
     );
     expect(screen.getByText("saved from the last source update")).toBeVisible();
+  });
+
+  it("renders the synthetic EventKit-derived fixture through the unchanged Board contract", () => {
+    renderBoard(eventKitBoard);
+
+    expect(screen.getByText("Synthetic Reminder A")).toBeVisible();
+    expect(screen.getByText("Synthetic Reminder B")).toBeVisible();
+    expect(screen.getByText("Synthetic Event A")).toBeVisible();
+    expect(screen.getByText("Synthetic Event B")).toBeVisible();
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByRole("link")).toBeNull();
   });
 
   it("has no automated accessibility violations in the default Board", async () => {

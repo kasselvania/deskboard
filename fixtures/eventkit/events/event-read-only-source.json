@@ -1,0 +1,35 @@
+{
+  "alarmCount": 1,
+  "attendeeCount": 0,
+  "availability": "free",
+  "container": {
+    "allowsContentModifications": false,
+    "calendarType": "calDAV",
+    "identifier": "synthetic-calendar-001",
+    "isSubscribed": false,
+    "sourceIdentifier": "synthetic-source-002",
+    "sourceTitle": "Synthetic Account B",
+    "sourceType": "calDAV",
+    "title": "Synthetic Calendar A"
+  },
+  "creationDate": "2026-08-01T17:00:00.000Z",
+  "entityType": "event",
+  "eventIdentifier": "synthetic-event-occurrence-001",
+  "externalIdentifier": "synthetic-event-external-001",
+  "isAllDay": true,
+  "isDetached": false,
+  "lastModifiedDate": "2026-08-11T17:00:00.000Z",
+  "localIdentifier": "synthetic-event-001",
+  "normalizationWarnings": [],
+  "notes": "Synthetic event notes.",
+  "occurrenceDate": "2026-08-21T17:00:00.000Z",
+  "organizerPresent": false,
+  "status": "confirmed",
+  "structuredLocationPresent": false,
+  "temporal": {
+    "endDate": "2026-09-12",
+    "kind": "allDayRange",
+    "startDate": "2026-09-11"
+  },
+  "title": "Synthetic Event A"
+}

@@ -124,56 +124,101 @@ Use the Board for several days with fixture content. Adjust typography, density,
 
 ---
 
-## Phase 2 — Apple Bridge Discovery Spike
+## Phase 2A — EventKit Discovery Evidence
 
-**Question:** What supported EventKit data is actually available from the user’s Calendar and Reminder sources, and how should it be normalized without losing meaning?
+**Question:** What supported EventKit data is actually available from selected Calendar and Reminder sources, and what is the smallest lossless representation that later contract work should evaluate?
 
-This is a discovery slice, not the complete synchronization system.
+This is an empirical, read-only discovery slice, not the production Bridge or a frozen source contract.
+
+**Status:** implemented in draft PR [#7](https://github.com/kasselvania/deskboard/pull/7), with owner-approved sanitized fixtures; acceptance remains gated on implementation review and merge.
+
+**Discovery evidence:** [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md).
 
 ### Scope
 
 - create a minimal macOS Swift/SwiftUI utility;
 - request read access to Calendar and Reminders;
-- show a source whitelist for selected calendars and reminder lists;
+- show a source whitelist for selected calendars and Reminder lists;
+- read a bounded local source scope and invalidate stale in-memory inspections;
 - export sanitized, normalized examples to local development fixtures;
-- document the verified field inventory and edge cases.
+- document the verified field inventory, unavailable fields, and honestly untested cases;
+- recommend a minimum source representation for Phase 2B to evaluate.
 
-### Required examples
+### Required evidence
 
-- date-only Reminder;
-- timed Reminder;
-- Reminder with notes;
-- recurring Reminder if available through the selected source;
-- completed Reminder;
-- all-day Calendar event;
-- timed Calendar event;
-- recurring event occurrence;
-- cancelled event where available;
-- timezone-qualified event;
-- read-only source/container.
+- observed date-only, timed, undated, notes-bearing, priority, and completed Reminder shapes;
+- observed timed, single-day all-day, timezone-qualified, recurring-occurrence, read-only-source, and location-bearing Calendar shapes;
+- explicit `not tested` status for required cases not available through selected sources;
+- an exact owner-approved committed specimen allowlist.
 
 ### Boundaries
 
-- no write access in product behavior;
-- no homelab synchronization;
-- no background daemon requirement;
+- no EventKit save or remove calls and no Apple write behavior;
+- no frozen production source contract;
+- no homelab synchronization, network transport, database, or synchronization generations;
+- no background daemon or login item;
 - no attempt to expose unsupported Apple UI concepts;
 - no real personal data committed to Git.
 
 ### Proof tests
 
-- the utility handles denied and later-granted permissions;
-- source selection persists locally;
-- exported fixtures contain no private identifying information;
+- the utility handles the observed permission states without coupling Calendar and Reminders;
+- source selection persists locally and successful enumeration reconciles disappeared identifiers;
+- authorization or effective selection changes invalidate captured in-memory inspection data;
+- Calendar events are deterministically ordered before the retained-record cap;
+- the exact committed specimen allowlist is enumerated and decoded with the Swift models;
+- exported candidates contain no private identifying information;
 - normalized temporal structures preserve date-only, local-time, all-day, and timezone-qualified distinctions;
 - malformed or unavailable fields fail safely.
 
 ### Exit criteria
 
-- `ARCHITECTURE.md` contains a verified field map instead of assumptions;
-- the fixture Board can render sanitized EventKit-derived fixtures;
-- unsupported features are explicitly documented;
-- the next sync slice has a stable Bridge-to-Core contract.
+- `ARCHITECTURE.md` contains an observed field map instead of assumptions;
+- the fixture Board renders a sanitized EventKit-derived shape;
+- every committed specimen is synthetic, approved, and executable as test evidence;
+- unsupported and untested cases are explicit;
+- the report makes a bounded recommendation without claiming a frozen contract;
+- Phase 2B and Phase 3 implementation remain absent.
+
+## Phase 2B — Apple Source Contract and Reconciliation Semantics
+
+**Question:** What is the smallest versioned Apple-source contract that a later one-way mirror can transport and reconcile without losing the distinctions established in Phase 2A?
+
+**Status:** defined by issue [#8](https://github.com/kasselvania/deskboard/issues/8), but not active until Phase 2A is accepted and merged.
+
+### Scope
+
+- define separate versioned Reminder and Calendar source-record variants;
+- classify observed fields as required, optional with a present use, deferred, or excluded;
+- document bridge-scoped identity and conservative remove-plus-add reconciliation;
+- define deterministic Calendar and Reminder ordering before caps and explicit truncation semantics;
+- validate the same synthetic contract fixtures in Swift and TypeScript;
+- document complete atomic source-scope snapshot semantics for later Phase 3 implementation.
+
+### Boundaries
+
+- no HTTP, WebSockets, or another Bridge-to-Core transport;
+- no SQLite or another database;
+- no synchronization-generation or persistence implementation;
+- no Tailscale, Docker, CasaOS, homelab deployment, daemon, login item, or background scheduling;
+- no Calendar or Reminder writes, Reminder completion, or metadata parsing/write-back;
+- no Open Loop, Project, session, timer, ranking, AI, or Board interaction behavior;
+- no generic adapter framework or speculative future-source abstraction.
+
+### Proof tests
+
+- Swift and TypeScript independently validate the same versioned synthetic shapes;
+- unsupported versions and malformed temporal values fail closed;
+- ordering, cap, and truncation semantics are deterministic;
+- identity limitations and source-scope reconciliation rules are explicit;
+- all approved Phase 2A specimens remain validated without private data access.
+
+### Exit criteria
+
+- source contract v1 is minimal, versioned, and runtime validated in both languages;
+- every included or excluded field has a current rationale;
+- the later Phase 3 mirror can begin without inventing another source-contract decision;
+- no Phase 3 implementation has begun.
 
 ---
 
