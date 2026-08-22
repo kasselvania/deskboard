@@ -2,9 +2,9 @@
 
 ## Status
 
-The empirical Phase 2A evidence pass is complete for the source cases listed as verified below. On 2026-08-21, the owner approved the twelve sanitized fixtures at the fixture/evidence review gate. Draft PR [#7](https://github.com/kasselvania/deskboard/pull/7) remains at the implementation-review gate; this report does not accept the implementation, freeze a production Bridge contract, or begin Phase 3.
+The empirical Phase 2A evidence pass is complete for the source cases listed as verified below. On 2026-08-21, the owner approved the twelve sanitized fixtures at the fixture/evidence review gate. Phase 2A was accepted and merged in PR [#7](https://github.com/kasselvania/deskboard/pull/7) on 2026-08-22. This report records the accepted empirical evidence; it does not freeze a production Bridge contract or begin Phase 3.
 
-The source-shape recommendation in this report is evidence for Phase 2B issue [#8](https://github.com/kasselvania/deskboard/issues/8). Phase 2B is not active until Phase 2A is accepted and merged.
+The source-shape recommendation in this report is evidence for active Phase 2B issue [#8](https://github.com/kasselvania/deskboard/issues/8). Phase 2B must minimize and validate the source contract rather than treating the Phase 2A probe models as production types.
 
 This report uses four evidence labels:
 
