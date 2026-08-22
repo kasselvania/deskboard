@@ -228,23 +228,20 @@ The system should remain usable on the local network even if a public cloud serv
 
 Apple objects should be stored first as normalized source records, not immediately collapsed into Deskboard tasks or projects.
 
-A source record needs enough identity and provenance to be reconciled and debugged:
+Phase 2B defines the first source boundary in [`docs/apple-source-contract-v1.md`](docs/apple-source-contract-v1.md). It has two concrete, strict documents:
 
 ```text
-adapter                 apple-eventkit
-entity type             event | reminder
-bridge identity         which Mac/bridge supplied it
-local source ID         EventKit local identifier
-external source ID      cross-device reconciliation hint
-container ID            calendar or reminder list
-source created time
-source modified time
-content hash
-normalized payload
-last-seen sync generation
+AppleReminderSourceSnapshotV1
+AppleCalendarSourceSnapshotV1
 ```
 
-A second mapping layer can associate a source record with a Deskboard concept.
+Each snapshot covers one opaque Bridge identity, one selected source container, one entity type, one capture time, and one deterministically ordered retained record set. Calendar additionally declares an offset-bearing `[start, end)` overlap window and the civil time zone used to interpret local and all-day values.
+
+The v1 document carries exact matched count and truncation state. A valid non-truncated snapshot may assert absence only inside its declared scope. A truncated, partial, failed, malformed, or semantically invalid result cannot authorize deletion of unseen records. `records.length` supplies the retained count, and absence authority is derived rather than duplicated on the wire.
+
+The contract deliberately excludes source/account titles, notes, URLs, locations, participants, alarms, creation/modification times, complete recurrence grammar, normalization diagnostics, content hashes, synchronization generations, database identifiers, and transport/deployment metadata. Phase 3 operational data must remain outside the source-fact document.
+
+A second mapping layer can later associate a validated source record with a Deskboard concept.
 
 This separation matters because:
 
@@ -256,7 +253,7 @@ This separation matters because:
 
 ## Initial Apple Field Map
 
-Phase 2A observations are recorded in [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md). The inventory below distinguishes observed availability from unresolved behavior; it is evidence for Phase 2B and does not freeze the final transport schema.
+Phase 2A observations are recorded in [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md). The inventory below remains empirical evidence and retains its original classifications. The Phase 2B inclusion/exclusion decision is separate in [`docs/apple-source-contract-v1.md`](docs/apple-source-contract-v1.md).
 
 ### Verified through selected sources
 
@@ -295,35 +292,14 @@ Smart-list behavior and grocery categorization are also not source-contract fiel
 
 ## Temporal Semantics
 
-Dates must not be flattened carelessly.
-
-Deskboard should distinguish at least:
+The Apple source contract preserves these explicit variants:
 
 ```text
-date-only              Friday, with no clock time
-local date-time        Friday at 9:00 in the user’s local context
-timezone-qualified     Friday at 9:00 America/Los_Angeles
-all-day event          an event spanning a local calendar day
+Reminder: absent | dateOnly | localDateTime | timeZoneDateTime
+Calendar: localTimedRange | timeZoneTimedRange | allDayRange
 ```
 
-Illustrative normalized values:
-
-```json
-{
-  "kind": "date",
-  "localDate": "2026-08-22"
-}
-```
-
-```json
-{
-  "kind": "dateTime",
-  "localDateTime": "2026-08-22T09:00:00",
-  "timeZone": "America/Los_Angeles"
-}
-```
-
-A date-only Reminder must not move to the previous day because a client converted it to UTC.
+All values use real Gregorian dates and real clocks. A local date-time cannot carry an offset. Timed and exclusive all-day ends must be later than their starts. Date-only Reminders and all-day Calendar ranges remain civil values; they are not flattened to UTC. Calendar window boundaries, capture time, completion date, and occurrence date are offset-bearing instants because those fields have instant semantics.
 
 ## Synchronization
 
@@ -352,7 +328,7 @@ EventKit change signal or scheduled refresh
       ↓
 Bridge performs a bounded rescan
       ↓
-Bridge posts a complete sync generation
+Bridge submits one validated source snapshot
       ↓
 Core validates and atomically replaces that source scope
       ↓
@@ -361,9 +337,9 @@ Core composes a new Board version
 Clients fetch the updated Board
 ```
 
-The first Bridge implementation should prefer understandable bounded snapshots over clever incremental synchronization.
+The first Bridge implementation should prefer understandable bounded snapshots over clever incremental synchronization. Phase 3 may wrap snapshots in synchronization-generation or idempotency machinery, but that machinery is not part of source contract v1.
 
-A sync generation should be atomic for its declared scope. Items missing from a completed generation can be marked absent only after the generation succeeds; a partially failed upload must not delete previously known source data.
+Atomic replacement is allowed only after the complete document passes strict and semantic validation. Items missing from a non-truncated snapshot may be marked absent only inside that exact Bridge, entity, container, and Calendar-window scope. A truncated or failed replacement must retain the previous good scope and must not delete unseen source data.
 
 ### Phase C: One write path, later
 
@@ -501,6 +477,18 @@ Prove that:
 - invalid temporal values are rejected;
 - API responses match the shared contract;
 - the web client handles unsupported schema versions safely.
+
+### Apple source contract tests
+
+Phase 2B independently proves in TypeScript and Swift that:
+
+- the exact same versioned synthetic fixture allowlist is used;
+- every valid Reminder and Calendar snapshot passes;
+- every invalid snapshot fails;
+- unknown keys fail at every strict object boundary;
+- dates, clocks, ranges, completion, counts, truncation, order, and Calendar scope are semantic invariants;
+- truncated snapshots never authorize absence;
+- the accepted Phase 2A specimen allowlist continues to decode without accessing private fixtures.
 
 ### Unit tests
 

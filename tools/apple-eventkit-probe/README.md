@@ -2,6 +2,8 @@
 
 This directory contains Deskboard's Phase 2A native discovery utility. It is a local, read-only inspector for Apple Calendar and Apple Reminders. It is not the production Bridge and has no Deskboard Core or network path. Its observed structures and recommendation are evidence for Phase 2B issue [#8](https://github.com/kasselvania/deskboard/issues/8), not a frozen production contract.
 
+Phase 2B adds a separate pure contract boundary in `AppleEventKitProbe/AppleSourceContract.swift` plus `AppleSourceContractTests.swift`. It does not rename the probe evidence models, read EventKit during contract tests, or alter the probe UI. The contract decision is documented in `docs/apple-source-contract-v1.md`.
+
 ## Environment
 
 The project was created and compiled with:
@@ -62,7 +64,7 @@ xcodebuild \
   build test
 ```
 
-The tests use synthetic values and do not request or read the user's EventKit store. They also enumerate only the two committed EventKit specimen directories, require the exact approved twelve-file JSON allowlist, and decode every specimen with its concrete Swift model. They do not access `private-fixtures/`.
+The tests use synthetic values and do not request or read the user's EventKit store. They enumerate only the two committed EventKit specimen directories, require the exact approved twelve-file JSON allowlist, and decode every specimen with its concrete Swift evidence model. Separately, the Phase 2B tests enumerate the exact versioned contract-fixture allowlists, strictly decode and semantically validate every valid fixture, reject every invalid fixture, and round-trip all valid models. No test accesses `private-fixtures/`.
 
 ## Run the probe
 

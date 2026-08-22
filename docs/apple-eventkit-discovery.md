@@ -4,7 +4,7 @@
 
 The empirical Phase 2A evidence pass is complete for the source cases listed as verified below. On 2026-08-21, the owner approved the twelve sanitized fixtures at the fixture/evidence review gate. Phase 2A was accepted and merged in PR [#7](https://github.com/kasselvania/deskboard/pull/7) on 2026-08-22. This report records the accepted empirical evidence; it does not freeze a production Bridge contract or begin Phase 3.
 
-The source-shape recommendation in this report is evidence for active Phase 2B issue [#8](https://github.com/kasselvania/deskboard/issues/8). Phase 2B must minimize and validate the source contract rather than treating the Phase 2A probe models as production types.
+The source-shape recommendation in this report is evidence for active Phase 2B issue [#8](https://github.com/kasselvania/deskboard/issues/8). The draft Phase 2B decision is documented separately in [`apple-source-contract-v1.md`](apple-source-contract-v1.md); it deliberately minimizes the probe models rather than renaming them as production types. This empirical report and all `verified`, `available with caveats`, `unavailable`, and `not tested` classifications remain unchanged.
 
 This report uses four evidence labels:
 
@@ -302,6 +302,24 @@ A Calendar source record needs:
 - status, availability, optional recurrence structure, alarm count, and location presence.
 
 Content digests, synchronization generations, Core persistence, and transport belong to Phase 3. They are absent from this probe and from the bounded Phase 2B contract slice.
+
+### Phase 2B draft resolution
+
+The draft v1 contract adopts only the fields with a first-mirror use:
+
+- one opaque Bridge ID and one selected container ID per snapshot;
+- container mutability and Calendar subscription state, without source/account titles or provider identifiers;
+- bridge-and-container-scoped local identity plus optional external identity;
+- optional Calendar event identity and occurrence date as separate provenance facts;
+- optional record title;
+- explicit Reminder start/due temporal variants, completion state, and optional completion date;
+- required Calendar temporal range, detached state, and normalized status;
+- exact matched count, deterministic retained order, and explicit truncation;
+- an exact start-inclusive/end-exclusive Calendar overlap window.
+
+Notes, priority, recurrence grammar, alarms, URLs, locations, availability, participant fields, creation/modification timestamps, metadata-block observations, and normalization warnings do not enter v1. A valid non-truncated source snapshot may assert absence only inside its declared Bridge, entity, container, and Calendar-window scope. Truncated or failed replacement cannot authorize deletion. See [`apple-source-contract-v1.md`](apple-source-contract-v1.md) for the exhaustive matrix and Phase 3 atomic replacement rules.
+
+Contract support for local timed values, multi-day all-day ranges, detached events, and tentative/canceled status is not new empirical evidence. Those Phase 2A cases remain `not tested` where recorded above.
 
 ### Unresolved
 

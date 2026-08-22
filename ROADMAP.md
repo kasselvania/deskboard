@@ -184,7 +184,7 @@ This is an empirical, read-only discovery slice, not the production Bridge or a 
 
 **Question:** What is the smallest versioned Apple-source contract that a later one-way mirror can transport and reconcile without losing the distinctions established in Phase 2A?
 
-**Status:** active under issue [#8](https://github.com/kasselvania/deskboard/issues/8). Phase 3 remains blocked until this contract slice is accepted.
+**Status:** active under issue [#8](https://github.com/kasselvania/deskboard/issues/8). The feature branch implements the draft v1 contract documented in [`docs/apple-source-contract-v1.md`](docs/apple-source-contract-v1.md), but Phase 2B remains unaccepted until implementation review and merge. Phase 3 remains blocked.
 
 ### Scope
 
@@ -193,6 +193,7 @@ This is an empirical, read-only discovery slice, not the production Bridge or a 
 - document bridge-scoped identity and conservative remove-plus-add reconciliation;
 - define deterministic Calendar and Reminder ordering before caps and explicit truncation semantics;
 - validate the same synthetic contract fixtures in Swift and TypeScript;
+- derive absence authority only for successful, non-truncated snapshots inside their exact declared scope;
 - document complete atomic source-scope snapshot semantics for later Phase 3 implementation.
 
 ### Boundaries
@@ -209,6 +210,7 @@ This is an empirical, read-only discovery slice, not the production Bridge or a 
 
 - Swift and TypeScript independently validate the same versioned synthetic shapes;
 - unsupported versions and malformed temporal values fail closed;
+- strict Swift and TypeScript validation reject unknown keys at the same promised boundaries;
 - ordering, cap, and truncation semantics are deterministic;
 - identity limitations and source-scope reconciliation rules are explicit;
 - all approved Phase 2A specimens remain validated without private data access.
@@ -242,8 +244,9 @@ This is an empirical, read-only discovery slice, not the production Bridge or a 
 ### Initial source limits
 
 - only whitelisted calendars and reminder lists;
-- only incomplete reminders plus the minimum completed history needed for reconciliation;
+- each v1 Reminder snapshot covers all accessible records from one selected list; Phase 3 must not add an undeclared completion or temporal filter and still claim authoritative absence;
 - a bounded Calendar range, initially approximately seven days behind and forty-five days ahead;
+- any production cap is applied after deterministic ordering and makes the snapshot explicitly truncated and non-authoritative for unseen records;
 - no Notes ingestion;
 - no Home Assistant data.
 

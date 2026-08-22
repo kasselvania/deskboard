@@ -23,3 +23,11 @@ The following target cases were not observed and are deliberately absent:
 - a cancelled event.
 
 See `docs/apple-eventkit-discovery.md` for the evidence status and caveats. On 2026-08-21, the owner approved the exact twelve-file fixture set for commit after reviewing every literal value through the ignored local review packet. The unobserved multi-day all-day case remains `not tested` and has no fixture.
+
+Phase 2B does not change or repurpose these evidence files. Its separately versioned synthetic wire fixtures live under `fixtures/apple-source-contract/v1/` and are documented in `fixtures/apple-source-contract/README.md`.
+
+The accepted Phase 2A hold remains:
+
+- 12 JSON files;
+- 11,969 combined bytes;
+- SHA-256 `d7f138203445751910fe7e995814ac9d8bf1f92d74bc632b8a43fee31598b776` over the raw bytes concatenated in the documented allowlist order.
