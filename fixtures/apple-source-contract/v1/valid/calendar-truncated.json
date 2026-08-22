@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "entityType": "calendar",
+  "bridgeId": "bridge-example-1",
+  "source": {
+    "sourceContainerId": "calendar-container-1",
+    "allowsContentModifications": true,
+    "isSubscribed": false
+  },
+  "capturedAt": "2026-08-15T18:00:00Z",
+  "window": {
+    "start": "2026-08-01T07:00:00Z",
+    "end": "2026-09-01T07:00:00Z",
+    "timeZone": "America/Los_Angeles",
+    "boundarySemantics": "overlapStartInclusiveEndExclusive"
+  },
+  "matchedCount": 3,
+  "truncated": true,
+  "records": [
+    {
+      "localIdentifier": "calendar-contract-101",
+      "eventIdentifier": "calendar-event-101",
+      "temporal": {
+        "kind": "localTimedRange",
+        "startLocalDateTime": "2026-08-20T09:00:00",
+        "endLocalDateTime": "2026-08-20T10:00:00"
+      },
+      "isDetached": false,
+      "status": "tentative"
+    },
+    {
+      "localIdentifier": "calendar-contract-102",
+      "eventIdentifier": "calendar-event-102",
+      "temporal": {
+        "kind": "localTimedRange",
+        "startLocalDateTime": "2026-08-21T09:00:00",
+        "endLocalDateTime": "2026-08-21T10:00:00"
+      },
+      "isDetached": true,
+      "status": "canceled"
+    }
+  ]
+}

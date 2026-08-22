@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "entityType": "calendar",
+  "bridgeId": "bridge-example-1",
+  "source": {
+    "sourceContainerId": "calendar-container-1",
+    "allowsContentModifications": true,
+    "isSubscribed": false
+  },
+  "capturedAt": "2026-08-15T18:00:00Z",
+  "window": {
+    "start": "2026-08-01T07:00:00Z",
+    "end": "2026-09-01T07:00:00Z",
+    "timeZone": "America/Los_Angeles",
+    "boundarySemantics": "overlapStartInclusiveEndExclusive"
+  },
+  "matchedCount": 1,
+  "truncated": false,
+  "records": [
+    {
+      "localIdentifier": "calendar-invalid-001",
+      "temporal": {
+        "kind": "localTimedRange",
+        "startLocalDateTime": "2026-08-16T10:00:00",
+        "endLocalDateTime": "2026-08-16T09:00:00"
+      },
+      "isDetached": false,
+      "status": "confirmed"
+    }
+  ]
+}

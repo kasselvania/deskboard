@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "entityType": "reminder",
+  "bridgeId": "bridge-example-1",
+  "source": {
+    "sourceContainerId": "reminder-container-1",
+    "allowsContentModifications": true,
+    "accountTitle": "excluded"
+  },
+  "capturedAt": "2026-08-15T18:00:00Z",
+  "matchedCount": 0,
+  "truncated": false,
+  "records": []
+}
