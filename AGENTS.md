@@ -9,8 +9,10 @@ Before changing code or configuration, read:
 3. `ARCHITECTURE.md`
 4. `ROADMAP.md`
 5. `docs/apple-source-mapping-v0.1.md`
-6. `CONTRIBUTING.md`
-7. `SECURITY.md`
+6. `docs/apple-eventkit-discovery.md`
+7. `CONTRIBUTING.md`
+8. `SECURITY.md`
+9. the active GitHub issue and its review context
 
 If a task conflicts with those documents, pause and explain the conflict instead of silently expanding or redesigning the project.
 
@@ -24,100 +26,144 @@ A complete slice includes working behavior, tests, error states, documentation, 
 
 Phase 1 — Fixture-Backed Board — is accepted and merged.
 
-The current branch remains **Phase 2A — EventKit Discovery Evidence** acceptance cleanup for draft PR #7. The empirical probe and approved evidence set are implemented, but Phase 2A remains unaccepted until the pull request passes implementation review and is merged.
+Phase 2A — EventKit Discovery Evidence — is accepted and merged in PR #7. Its probe, empirical findings, caveats, and owner-approved sanitized specimens are evidence inputs. They are not the final production source contract.
 
-The question for Phase 2A is:
+The current implementation target is **Phase 2B — Apple Source Contract and Reconciliation Semantics** from issue #8.
 
-> What supported EventKit data is actually available from selected Apple Calendar and Reminder sources, and what is the smallest lossless representation Deskboard will need for the later one-way mirror?
+The question for Phase 2B is:
 
-This is an empirical, read-only discovery slice. It is not the production Bridge.
+> What is the smallest versioned Apple-source contract that a later one-way mirror can transport and reconcile without losing the distinctions established in Phase 2A?
 
-Issue #8 defines **Phase 2B — Apple Source Contract and Reconciliation Semantics** as the next bounded slice after Phase 2A merge. Agents must not begin Phase 2B or Phase 3 while PR #7 remains unaccepted.
+This is a contract and reconciliation-design slice. It is not the production Bridge, transport, source mirror, deployment, or Board integration.
 
-### Allowed Phase 2A shape
+### Allowed Phase 2B shape
 
-Phase 2A may add only what the discovery spike and its acceptance corrections require, approximately:
+Phase 2B may add only what the contract slice requires, approximately:
 
 ```text
-tools/apple-eventkit-probe/   minimal native macOS Swift/SwiftUI probe
-fixtures/eventkit/            sanitized structural examples
-docs/apple-eventkit-discovery.md
+packages/contracts/                  runtime-validated Apple source schemas and derived TypeScript types
+tools/apple-eventkit-probe/          minimal Swift contract models/conversion and pure validation tests
+fixtures/apple-source-contract/      synthetic cross-language contract examples
+docs/                                field-minimization, identity, and reconciliation decisions
 ```
 
-A focused synthetic Board fixture and test may be added only to prove that the existing Phase 1 presentation contract can render an EventKit-derived shape. The production Board data path must remain fixture-backed.
+Use the existing EventKit specimens as evidence. Do not rewrite them into the production contract by default. Contract fixtures should be separately named, versioned, synthetic, and minimal.
 
-### Phase 2A permitted behavior
+### Phase 2B permitted behavior
 
-- request read access to Calendar and Reminders;
-- enumerate and explicitly select source calendars and Reminder lists;
-- read bounded Calendar and Reminder data locally;
-- inspect EventKit field availability and temporal behavior;
-- create private local inspection exports under an ignored path;
-- generate aggressively sanitized synthetic examples;
-- document verified, unavailable, and unresolved fields;
-- test pure normalization and sanitization behavior;
-- update architecture documentation after observations exist.
+- define separate versioned Reminder and Calendar source-record variants;
+- define explicit temporal unions that preserve absence, date-only, local date-time, timezone-qualified date-time, timed start/end, and exclusive all-day ranges;
+- classify every observed field as required, optional with a present use, deferred, or excluded;
+- define bridge-scoped provenance and conservative identity/reconciliation rules;
+- define deterministic ordering, bounds, retained-set meaning, and explicit truncation semantics;
+- add matching Swift Codable/validation models and TypeScript runtime schemas;
+- validate the same synthetic JSON shapes in both languages;
+- add negative fixtures for unsupported versions, malformed unions, impossible dates, and invalid ranges;
+- document complete atomic source-scope snapshot semantics for Phase 3 without implementing them;
+- perform a narrowly targeted manual observation with synthetic Apple objects only when it materially changes the contract decision.
 
-### Phase 2A forbidden behavior
+### Phase 2B forbidden behavior
 
 Do not add:
 
-- Calendar or Reminder writes of any kind;
-- Reminder completion from Deskboard;
-- a production Bridge-to-Core network path;
-- HTTP clients, Tailscale, homelab deployment, or Docker;
+- HTTP, WebSockets, another Bridge-to-Core transport, or any network client;
 - SQLite, Postgres, Redis, or another database;
-- a background daemon, login item, or always-on agent;
-- authentication or authorization;
-- Open Loop history, Project state, sessions, timers, or attention ranking;
+- synchronization-generation persistence or source-mirror implementation;
+- Tailscale, Docker, CasaOS, homelab deployment, a daemon, login item, or background scheduler;
+- Calendar or Reminder writes of any kind;
+- Reminder completion or metadata write-back;
+- production metadata parsing, Open Loop history, Project state, sessions, timers, or attention ranking;
 - AI classification, summaries, or agents;
-- Notes, Contacts, Mail, Health, Home Assistant, weather, Sonos, media, ESP32, or camera integrations;
-- new Board actions, settings, navigation, or source-management UI;
-- generic adapter frameworks or placeholder packages for later phases.
+- new Board actions, settings, navigation, source management, or a production EventKit data path;
+- generic adapter frameworks, code-generation systems, or abstractions for future sources;
+- private EventKit values in fixtures, tests, logs, issues, PRs, or completion reports.
 
 Deferred means absent, not partially implemented.
 
 ## Product Guardrails
 
 - Apple Calendar and Reminders remain authoritative for source facts.
-- The probe observes source behavior; it does not administer source applications.
-- Ordinary Reminders are candidate Tasks by default.
-- Selected Calendar events are candidate Commitments by default.
-- Recurrence is evidence, not automatic Open Loop classification.
+- Deskboard replicates facts, not authority.
+- Ordinary Reminders remain candidate Tasks by default.
+- Selected Calendar events remain candidate Commitments by default.
+- Recurrence is a source schedule fact, not automatic Open Loop classification.
 - Date-only, local-time, timezone-qualified, and all-day values must remain distinct.
-- Dynamic Deskboard state must not be written into Reminder notes.
-- The existing Board remains a curated field of attention, not a backlog.
-- The existing Phase 1 Board must remain usable throughout the spike.
+- The Board remains a curated field of attention, not a backlog.
+- The source contract must not become a raw EventKit dump.
+- A field enters version 1 only when preservation or a present Phase 3 use justifies its privacy and maintenance cost.
+- Organizer and attendee identities remain excluded.
 - Every committed example must be synthetic and safe to publish.
+
+## Contract Guardrails
+
+### Separate records, shared primitives
+
+Define explicit Apple Reminder and Apple Calendar record variants. Shared primitives such as provenance, container identity, temporal values, recurrence structure, or truncation metadata may be reused when their semantics are truly identical.
+
+Do not hide entity differences behind a generic payload or an unvalidated dictionary.
+
+### Minimality and privacy
+
+For each candidate field, document one of:
+
+- required in source contract version 1;
+- optional in version 1 with a current use;
+- deferred extension;
+- excluded for privacy or lack of need.
+
+Notes, alarms, URLs, locations, availability, participant information, creation timestamps, and other exposed EventKit fields do not enter version 1 merely because they were observed.
+
+### Identity and reconciliation
+
+- Scope local identifiers to a specific Bridge and source container.
+- Treat external identifiers as optional hints, not universal keys.
+- Keep Calendar event identifier and occurrence date as separate provenance facts.
+- Do not claim identifier durability that Phase 2A did not observe.
+- Prefer a conservative remove-plus-add result over a false merge when identity changes cannot be resolved safely.
+- Specify complete atomic source-scope snapshots for Phase 3 rather than assuming fragile incremental semantics.
+
+### Determinism and bounds
+
+- Apply deterministic ordering before any cap.
+- Define what the retained subset means for Calendar and Reminders.
+- Represent matched count and truncation honestly.
+- Preserve the accepted Calendar discovery window unless evidence justifies a documented change.
+- Do not silently discard records while claiming a complete scope.
 
 ## Engineering Guardrails
 
 ### Dependencies
 
-Prefer Apple platform APIs and the standard library. Add no Swift package, project generator, or Node dependency unless a current discovery requirement cannot reasonably be met without it.
+Prefer the existing Zod contract package, Apple platform APIs, and the Swift/Foundation standard libraries. Add no dependency, project generator, code generator, or monorepo tool unless a current Phase 2B proof cannot reasonably be completed without it.
 
-When adding a dependency, record the reason in the pull request description.
+When adding a dependency, stop for approval and record the exact current requirement it satisfies.
 
-### Native project scope
+### Cross-language agreement
 
-Prefer a minimal macOS SwiftUI application contained under `tools/apple-eventkit-probe/`.
+Swift and TypeScript must independently validate the same committed contract fixtures. Agreement means compatible wire semantics, not duplicated source code or generated models.
 
-Do not introduce XcodeGen, Tuist, CocoaPods, a cross-platform framework, or a production application architecture for a disposable discovery spike.
+The contract boundary must reject:
 
-Wrap EventKit-dependent reads behind the smallest practical boundary so pure temporal normalization and sanitization logic can be tested with synthetic inputs.
+- unsupported schema versions;
+- unknown or contradictory temporal shapes where strictness is intended;
+- impossible dates and date-times;
+- all-day ranges whose exclusive end is not after the start;
+- inconsistent completion, occurrence, or truncation facts defined by the contract.
 
 ### Testing
 
-The Phase 2A slice is not complete without:
+The Phase 2B slice is not complete without:
 
-- a reproducible native macOS build;
-- Swift unit tests for pure normalization, selection persistence, and sanitization behavior;
-- documented manual permission and source-selection checks;
-- sanitized fixtures reviewed for private data;
-- the existing Node lint, typecheck, unit, browser, and production-build gate;
-- documentation that distinguishes verified facts from recommendations and unresolved questions.
+- TypeScript runtime-schema tests for valid and invalid contract fixtures;
+- Swift encode/decode and semantic-validation tests against the same fixtures;
+- exact committed contract-fixture inventory checks;
+- continued validation of the twelve approved Phase 2A EventKit specimens without reading private data;
+- deterministic ordering, cap, and truncation tests;
+- documentation proving field inclusion/exclusion and identity/reconciliation decisions;
+- the existing native probe build and Swift test gate;
+- the existing Node lint, typecheck, unit, browser, and production-build gate.
 
-Tests should prove behavior and boundaries, not implementation trivia. Tests must not require access to the user's real EventKit store.
+Tests must not require access to the user's real EventKit store.
 
 ### Privacy and Security
 
@@ -132,50 +178,53 @@ Never commit or report:
 - Tailscale hostnames, keys, or tailnet identifiers;
 - private exports, database files, production logs, or screenshots containing personal data.
 
-Private inspection output must remain in an ignored local directory. Sanitization must replace private values, not rely on partial redaction.
+`private-fixtures/` remains local and ignored. The Phase 2A probe's disabled app sandbox is not a production precedent; production Bridge sandbox and entitlement decisions remain deferred.
 
 ### Git Safety
 
 - Work on a feature branch, not directly on `main`, unless the user explicitly directs otherwise.
-- Do not force-push shared branches.
-- Do not rewrite existing history.
-- Do not delete or replace project philosophy and architecture documents to make implementation easier.
-- Keep commits coherent and use the commit conventions in `CONTRIBUTING.md`.
-- Do not mix broad formatting, dependency upgrades, Phase 1 redesign, or later-phase work into the spike.
+- Begin from the accepted Phase 2A `main` branch.
+- Do not force-push shared branches or rewrite existing history.
+- Do not modify the twelve owner-approved Phase 2A specimen bytes without stopping for renewed owner review.
+- Do not delete or replace product philosophy or architecture documents to make implementation easier.
+- Keep commits coherent and use the conventions in `CONTRIBUTING.md`.
+- Do not mix broad formatting, dependency upgrades, Phase 1 redesign, or Phase 3 scaffolding into the contract slice.
 
 ## Decision Policy
 
-Agents may make ordinary implementation decisions inside Phase 2A, including small native file organization, naming, test structure, and local UI details required for permission and source selection.
+Agents may make ordinary implementation decisions inside Phase 2B, including schema file organization, names for current contract primitives, focused test structure, and synthetic negative examples.
 
 Stop and ask before:
 
 - changing the architecture or data-ownership model;
+- adding a field without a present use or preservation rationale;
+- claiming an EventKit identifier is durable beyond observed evidence;
 - requesting or performing Apple write access;
-- adding any network communication, database, cloud service, or authentication system;
-- freezing the final Bridge-to-Core schema before observations are documented;
-- declaring Project anchors, metadata grammar, importance, or ranking behavior final;
-- adding a new production route, endpoint, application, persistent service, or Board interaction;
+- adding any network communication, database, cloud service, deployment, or authentication system;
+- adding a generic adapter or code-generation framework;
+- changing the Board contract or interaction model;
 - weakening a proof test or exit criterion;
+- modifying approved Phase 2A fixture bytes;
 - exposing personal data outside the local environment;
-- beginning work from Phase 2B, Phase 3, or later while PR #7 remains unaccepted.
+- beginning Phase 3 or later work.
 
 An unobserved source case remains `not tested`. Do not fabricate support.
 
 ## Completion Report
 
-At the end of a coding task, report:
+At the end of a Phase 2B task, report:
 
-1. what was built;
-2. the macOS, Xcode, and Swift versions used;
-3. the exact commands used to validate it;
-4. which automated and manual checks passed;
-5. which EventKit behaviors were verified, unavailable, or not tested;
-6. any deliberate deviations from the requested design;
-7. the sanitized fixtures added;
-8. the files changed;
-9. what remains deferred;
-10. the branch, commits, push, pull-request, and working-tree state.
+1. the exact versioned contract shape and files;
+2. the field inclusion/exclusion matrix and rationale;
+3. the identity and reconciliation policy;
+4. deterministic ordering, bounds, and truncation semantics;
+5. the same-fixture Swift and TypeScript proof results;
+6. the exact native and Node validation commands and results;
+7. any deliberate deviations;
+8. files changed and dependencies added, if any;
+9. what remains deferred to Phase 3;
+10. branch, commits, push, pull-request, and working-tree state.
 
 Never include real Calendar, Reminder, source, account, participant, location, note, or identifier values in the report.
 
-Do not claim completion while tests are failing, the documented run commands are unverified, private data is present, or later-phase work has been started.
+Do not claim completion while tests are failing, the documented commands are unverified, private data is present, approved evidence has changed without review, or Phase 3 work has begun.
