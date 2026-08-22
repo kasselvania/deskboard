@@ -130,7 +130,7 @@ Use the Board for several days with fixture content. Adjust typography, density,
 
 This is an empirical, read-only discovery slice, not the production Bridge or a frozen source contract.
 
-**Status:** implemented in draft PR [#7](https://github.com/kasselvania/deskboard/pull/7), with owner-approved sanitized fixtures; acceptance remains gated on implementation review and merge.
+**Status:** accepted and merged in PR [#7](https://github.com/kasselvania/deskboard/pull/7), with owner-approved sanitized fixtures and the complete local native and Node acceptance gates.
 
 **Discovery evidence:** [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md).
 
@@ -178,13 +178,13 @@ This is an empirical, read-only discovery slice, not the production Bridge or a 
 - every committed specimen is synthetic, approved, and executable as test evidence;
 - unsupported and untested cases are explicit;
 - the report makes a bounded recommendation without claiming a frozen contract;
-- Phase 2B and Phase 3 implementation remain absent.
+- Phase 2B and Phase 3 implementation remain absent at acceptance.
 
 ## Phase 2B — Apple Source Contract and Reconciliation Semantics
 
 **Question:** What is the smallest versioned Apple-source contract that a later one-way mirror can transport and reconcile without losing the distinctions established in Phase 2A?
 
-**Status:** defined by issue [#8](https://github.com/kasselvania/deskboard/issues/8), but not active until Phase 2A is accepted and merged.
+**Status:** active under issue [#8](https://github.com/kasselvania/deskboard/issues/8). Phase 3 remains blocked until this contract slice is accepted.
 
 ### Scope
 
@@ -225,6 +225,8 @@ This is an empirical, read-only discovery slice, not the production Bridge or a 
 ## Phase 3 — One-Way Apple Mirror
 
 **Question:** Can real Calendar and Reminder changes travel reliably from Apple to the two Deskboard clients without Deskboard modifying the source systems?
+
+**Status:** not begun; blocked on accepted Phase 2B contract and reconciliation semantics.
 
 ### Scope
 
