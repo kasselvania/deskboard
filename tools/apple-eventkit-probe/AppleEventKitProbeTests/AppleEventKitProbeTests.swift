@@ -109,6 +109,128 @@ final class TemporalNormalizerTests: XCTestCase {
     }
 }
 
+final class ProbeEventOrderingTests: XCTestCase {
+    func testInputOrderDoesNotChangeRetainedOrder() {
+        let events = [
+            candidate("third", start: 30, end: 40),
+            candidate("first", start: 10, end: 20),
+            candidate("second", start: 20, end: 30),
+        ]
+
+        XCTAssertEqual(orderedNames(events, maximumCount: 2), ["first", "second"])
+        XCTAssertEqual(
+            orderedNames(Array(events.reversed()), maximumCount: 2),
+            ["first", "second"]
+        )
+    }
+
+    func testStartDateSortsFirst() {
+        let events = [
+            candidate("later-start", start: 20, end: 21),
+            candidate("earlier-start", start: 10, end: 100),
+        ]
+
+        XCTAssertEqual(orderedNames(events), ["earlier-start", "later-start"])
+    }
+
+    func testEndDateResolvesEqualStarts() {
+        let events = [
+            candidate("later-end", start: 10, end: 30),
+            candidate("earlier-end", start: 10, end: 20),
+        ]
+
+        XCTAssertEqual(orderedNames(events), ["earlier-end", "later-end"])
+    }
+
+    func testIdentifiersProvideStableFinalTieBreaking() {
+        let events = [
+            candidate(
+                "container-b",
+                start: 10,
+                end: 20,
+                container: "calendar-b",
+                calendarItem: "item-a",
+                event: "event-a"
+            ),
+            candidate(
+                "item-b",
+                start: 10,
+                end: 20,
+                container: "calendar-a",
+                calendarItem: "item-b",
+                event: "event-a"
+            ),
+            candidate(
+                "event-b",
+                start: 10,
+                end: 20,
+                container: "calendar-a",
+                calendarItem: "item-a",
+                event: "event-b"
+            ),
+            candidate(
+                "event-a",
+                start: 10,
+                end: 20,
+                container: "calendar-a",
+                calendarItem: "item-a",
+                event: "event-a"
+            ),
+        ]
+
+        XCTAssertEqual(
+            orderedNames(events),
+            ["event-a", "event-b", "item-b", "container-b"]
+        )
+    }
+
+    func testCapIsAppliedAfterOrdering() {
+        let events = [
+            candidate("late", start: 30, end: 40),
+            candidate("middle", start: 20, end: 30),
+            candidate("early", start: 10, end: 20),
+        ]
+
+        XCTAssertEqual(orderedNames(events, maximumCount: 1), ["early"])
+    }
+
+    private struct Candidate {
+        let name: String
+        let orderKey: ProbeEventOrderKey
+    }
+
+    private func candidate(
+        _ name: String,
+        start: TimeInterval,
+        end: TimeInterval,
+        container: String = "calendar-a",
+        calendarItem: String = "item-a",
+        event: String = "event-a"
+    ) -> Candidate {
+        Candidate(
+            name: name,
+            orderKey: ProbeEventOrderKey(
+                startDate: Date(timeIntervalSinceReferenceDate: start),
+                endDate: Date(timeIntervalSinceReferenceDate: end),
+                containerIdentifier: container,
+                calendarItemIdentifier: calendarItem,
+                eventIdentifier: event
+            )
+        )
+    }
+
+    private func orderedNames(
+        _ candidates: [Candidate],
+        maximumCount: Int = Int.max
+    ) -> [String] {
+        ProbeEventOrdering.orderedPrefix(
+            candidates,
+            maximumCount: maximumCount,
+            key: \.orderKey
+        ).map(\.name)
+    }
+}
+
 final class SourceSelectionStoreTests: XCTestCase {
     func testSelectionsAreSeparateAndPersisted() {
         let preferences = InMemoryPreferenceStore()
@@ -143,6 +265,115 @@ final class SourceSelectionStoreTests: XCTestCase {
         XCTAssertEqual(reconciled, ["calendar-present"])
         XCTAssertEqual(store.selectedIdentifiers(for: .event), ["calendar-present"])
         XCTAssertEqual(store.selectedIdentifiers(for: .reminder), ["list-present"])
+    }
+}
+
+final class ProbeInspectionScopeTrackerTests: XCTestCase {
+    func testAuthorizationAndEffectiveSelectionsInvalidateCapturedInspection() {
+        let capturedScope = scope()
+        let changedScopes = [
+            scope(calendarPermission: .denied),
+            scope(reminderPermission: .unavailable),
+            scope(calendarIdentifiers: ["calendar-a", "calendar-b"]),
+            scope(reminderIdentifiers: []),
+        ]
+
+        for changedScope in changedScopes {
+            var tracker = ProbeInspectionScopeTracker()
+            tracker.recordInspection(for: capturedScope)
+
+            XCTAssertTrue(tracker.invalidateIfChanged(to: changedScope))
+            XCTAssertNil(tracker.capturedScope)
+        }
+    }
+
+    func testUnchangedScopeKeepsCapturedInspectionValid() {
+        let capturedScope = scope()
+        var tracker = ProbeInspectionScopeTracker()
+        tracker.recordInspection(for: capturedScope)
+
+        XCTAssertFalse(tracker.invalidateIfChanged(to: capturedScope))
+        XCTAssertEqual(tracker.capturedScope, capturedScope)
+    }
+
+    private func scope(
+        calendarPermission: ProbePermissionState = .granted,
+        reminderPermission: ProbePermissionState = .granted,
+        calendarIdentifiers: Set<String> = ["calendar-a"],
+        reminderIdentifiers: Set<String> = ["reminder-a"]
+    ) -> ProbeInspectionScope {
+        ProbeInspectionScope(
+            calendarPermission: calendarPermission,
+            reminderPermission: reminderPermission,
+            selectedCalendarIdentifiers: calendarIdentifiers,
+            selectedReminderIdentifiers: reminderIdentifiers
+        )
+    }
+}
+
+final class CommittedEventKitFixtureTests: XCTestCase {
+    private let reminderFixturePaths = [
+        "fixtures/eventkit/reminders/reminder-undated.json",
+        "fixtures/eventkit/reminders/reminder-date-only.json",
+        "fixtures/eventkit/reminders/reminder-timed.json",
+        "fixtures/eventkit/reminders/reminder-with-notes.json",
+        "fixtures/eventkit/reminders/reminder-priority.json",
+        "fixtures/eventkit/reminders/reminder-completed.json",
+    ]
+    private let eventFixturePaths = [
+        "fixtures/eventkit/events/event-timed.json",
+        "fixtures/eventkit/events/event-all-day.json",
+        "fixtures/eventkit/events/event-timezone.json",
+        "fixtures/eventkit/events/event-recurring-occurrence.json",
+        "fixtures/eventkit/events/event-read-only-source.json",
+        "fixtures/eventkit/events/event-with-location.json",
+    ]
+
+    func testApprovedFixtureSetIsExactAndEverySpecimenDecodes() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+
+        try assertExactJSONFiles(
+            in: "fixtures/eventkit/reminders",
+            allowlist: reminderFixturePaths,
+            repositoryRoot: repositoryRoot
+        )
+        try assertExactJSONFiles(
+            in: "fixtures/eventkit/events",
+            allowlist: eventFixturePaths,
+            repositoryRoot: repositoryRoot
+        )
+
+        let decoder = JSONDecoder()
+        for relativePath in reminderFixturePaths {
+            let data = try Data(contentsOf: repositoryRoot.appendingPathComponent(relativePath))
+            _ = try decoder.decode(ReminderProbeRecord.self, from: data)
+        }
+        for relativePath in eventFixturePaths {
+            let data = try Data(contentsOf: repositoryRoot.appendingPathComponent(relativePath))
+            _ = try decoder.decode(EventProbeRecord.self, from: data)
+        }
+    }
+
+    private func assertExactJSONFiles(
+        in relativeDirectory: String,
+        allowlist: [String],
+        repositoryRoot: URL
+    ) throws {
+        let directory = repositoryRoot.appendingPathComponent(relativeDirectory)
+        let actualPaths = try FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: nil,
+            options: []
+        )
+        .filter { $0.pathExtension == "json" }
+        .map { "\(relativeDirectory)/\($0.lastPathComponent)" }
+        .sorted()
+
+        XCTAssertEqual(actualPaths, allowlist.sorted())
     }
 }
 

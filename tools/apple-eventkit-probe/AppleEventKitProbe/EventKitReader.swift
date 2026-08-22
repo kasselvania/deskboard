@@ -14,6 +14,40 @@ struct ProbeReadBatch<Record> {
     var wasTruncated: Bool { matchedCount > records.count }
 }
 
+struct ProbeEventOrderKey: Comparable {
+    let startDate: Date
+    let endDate: Date
+    let containerIdentifier: String
+    let calendarItemIdentifier: String
+    let eventIdentifier: String
+
+    static func < (lhs: Self, rhs: Self) -> Bool {
+        if lhs.startDate != rhs.startDate {
+            return lhs.startDate < rhs.startDate
+        }
+        if lhs.endDate != rhs.endDate {
+            return lhs.endDate < rhs.endDate
+        }
+        if lhs.containerIdentifier != rhs.containerIdentifier {
+            return lhs.containerIdentifier < rhs.containerIdentifier
+        }
+        if lhs.calendarItemIdentifier != rhs.calendarItemIdentifier {
+            return lhs.calendarItemIdentifier < rhs.calendarItemIdentifier
+        }
+        return lhs.eventIdentifier < rhs.eventIdentifier
+    }
+}
+
+enum ProbeEventOrdering {
+    static func orderedPrefix<Record>(
+        _ records: [Record],
+        maximumCount: Int,
+        key: (Record) -> ProbeEventOrderKey
+    ) -> [Record] {
+        Array(records.sorted { key($0) < key($1) }.prefix(maximumCount))
+    }
+}
+
 final class EventKitReader {
     private let eventStore: EKEventStore
 
@@ -121,7 +155,18 @@ final class EventKitReader {
             calendars: calendars
         )
         let events = eventStore.events(matching: predicate)
-        let bounded = events.prefix(ProbeReadBounds.maximumRecordsPerEntity)
+        let bounded = ProbeEventOrdering.orderedPrefix(
+            events,
+            maximumCount: ProbeReadBounds.maximumRecordsPerEntity
+        ) { event in
+            ProbeEventOrderKey(
+                startDate: event.startDate,
+                endDate: event.endDate,
+                containerIdentifier: event.calendar.calendarIdentifier,
+                calendarItemIdentifier: event.calendarItemIdentifier,
+                eventIdentifier: event.eventIdentifier ?? ""
+            )
+        }
         return (
             ProbeReadBatch(
                 records: bounded.map(Self.eventRecord),

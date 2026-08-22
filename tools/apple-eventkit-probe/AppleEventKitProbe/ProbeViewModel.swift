@@ -1,6 +1,34 @@
 import AppKit
 import Foundation
 
+struct ProbeInspectionScope: Equatable {
+    let calendarPermission: ProbePermissionState
+    let reminderPermission: ProbePermissionState
+    let selectedCalendarIdentifiers: Set<String>
+    let selectedReminderIdentifiers: Set<String>
+}
+
+struct ProbeInspectionScopeTracker {
+    private(set) var capturedScope: ProbeInspectionScope?
+
+    mutating func recordInspection(for scope: ProbeInspectionScope) {
+        capturedScope = scope
+    }
+
+    mutating func clear() {
+        capturedScope = nil
+    }
+
+    @discardableResult
+    mutating func invalidateIfChanged(to currentScope: ProbeInspectionScope) -> Bool {
+        guard let capturedScope, capturedScope != currentScope else {
+            return false
+        }
+        self.capturedScope = nil
+        return true
+    }
+}
+
 @MainActor
 final class ProbeViewModel: ObservableObject {
     @Published private(set) var calendarPermission: ProbePermissionState
@@ -16,6 +44,7 @@ final class ProbeViewModel: ObservableObject {
 
     private let reader: EventKitReader
     private let selectionStore: SourceSelectionStore
+    private var inspectionScopeTracker = ProbeInspectionScopeTracker()
 
     init(
         reader: EventKitReader = EventKitReader(),
@@ -31,8 +60,8 @@ final class ProbeViewModel: ObservableObject {
     }
 
     func refreshAfterActivation() {
-        calendarPermission = reader.permissionState(for: .event)
-        reminderPermission = reader.permissionState(for: .reminder)
+        setPermission(reader.permissionState(for: .event), for: .event)
+        setPermission(reader.permissionState(for: .reminder), for: .reminder)
         refreshAvailableSources()
     }
 
@@ -89,6 +118,7 @@ final class ProbeViewModel: ObservableObject {
         guard !isInspecting else { return }
         isInspecting = true
         defer { isInspecting = false }
+        let inspectedScope = currentInspectionScope
 
         let reminderBatch: ProbeReadBatch<ReminderProbeRecord>
         if reminderPermission == .granted {
@@ -109,7 +139,13 @@ final class ProbeViewModel: ObservableObject {
             )
         }
 
-        inspection = ProbeInspection(
+        guard inspectedScope == currentInspectionScope else {
+            clearInspection()
+            statusMessage = "Authorization or source selection changed during inspection. Run a new inspection."
+            return
+        }
+
+        let refreshedInspection = ProbeInspection(
             generatedAt: InstantFormatter.string(from: Date())!,
             calendarReadWindow: eventResult.window,
             reminderResultCount: reminderBatch.matchedCount,
@@ -119,6 +155,8 @@ final class ProbeViewModel: ObservableObject {
             reminders: reminderBatch.records,
             events: eventResult.batch.records
         )
+        inspection = refreshedInspection
+        inspectionScopeTracker.recordInspection(for: inspectedScope)
         statusMessage = "Inspection refreshed. Raw values remain private and are not shown on this screen."
     }
 
@@ -161,6 +199,7 @@ final class ProbeViewModel: ObservableObject {
         case .event: calendarPermission = state
         case .reminder: reminderPermission = state
         }
+        invalidateInspectionIfScopeChanged()
     }
 
     private func permissionMessage(for entityType: ProbeEntityType) -> String {
@@ -211,6 +250,7 @@ final class ProbeViewModel: ObservableObject {
                 for: .reminder
             )
         }
+        invalidateInspectionIfScopeChanged()
     }
 
     private func updateSelection(
@@ -225,7 +265,29 @@ final class ProbeViewModel: ObservableObject {
             identifiers.remove(identifier)
         }
         selectionStore.save(identifiers, for: entityType)
-        inspection = nil
+        clearInspection()
         statusMessage = "Source selection changed. Run a new inspection when ready."
+    }
+
+    private var currentInspectionScope: ProbeInspectionScope {
+        ProbeInspectionScope(
+            calendarPermission: calendarPermission,
+            reminderPermission: reminderPermission,
+            selectedCalendarIdentifiers: selectedCalendarIdentifiers,
+            selectedReminderIdentifiers: selectedReminderIdentifiers
+        )
+    }
+
+    private func invalidateInspectionIfScopeChanged() {
+        guard inspectionScopeTracker.invalidateIfChanged(to: currentInspectionScope) else {
+            return
+        }
+        inspection = nil
+        statusMessage = "Authorization or effective source selection changed. Run a new inspection."
+    }
+
+    private func clearInspection() {
+        inspection = nil
+        inspectionScopeTracker.clear()
     }
 }
