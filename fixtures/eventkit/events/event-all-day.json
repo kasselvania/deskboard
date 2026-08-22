@@ -1,0 +1,34 @@
+{
+  "alarmCount": 1,
+  "attendeeCount": 0,
+  "availability": "notSupported",
+  "container": {
+    "allowsContentModifications": false,
+    "calendarType": "subscription",
+    "identifier": "synthetic-calendar-002",
+    "isSubscribed": true,
+    "sourceIdentifier": "synthetic-source-003",
+    "sourceTitle": "Synthetic Account C",
+    "sourceType": "subscribed",
+    "title": "Synthetic Calendar B"
+  },
+  "entityType": "event",
+  "eventIdentifier": "synthetic-event-occurrence-003",
+  "externalIdentifier": "synthetic-event-external-003",
+  "isAllDay": true,
+  "isDetached": false,
+  "lastModifiedDate": "2026-08-13T17:00:00.000Z",
+  "localIdentifier": "synthetic-event-003",
+  "normalizationWarnings": [],
+  "notes": "Synthetic event notes.",
+  "occurrenceDate": "2026-08-23T17:00:00.000Z",
+  "organizerPresent": false,
+  "status": "none",
+  "structuredLocationPresent": false,
+  "temporal": {
+    "endDate": "2026-09-14",
+    "kind": "allDayRange",
+    "startDate": "2026-09-13"
+  },
+  "title": "Synthetic Event C"
+}

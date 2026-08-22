@@ -33,29 +33,30 @@ struct ProbeSourceDescriptor: Identifiable, Equatable {
     let isSubscribed: Bool
 }
 
-enum ProbeTemporalKind: String, Codable {
+enum ProbeReminderTemporalKind: String, Codable {
     case dateOnly
+    case localDateTime
+    case timeZoneDateTime
+}
+
+enum ProbeEventTemporalKind: String, Codable {
     case localDateTime
     case timeZoneDateTime
     case allDayRange
 }
 
-struct ProbeTemporal: Codable, Equatable {
-    var kind: ProbeTemporalKind
+struct ProbeReminderTemporal: Codable, Equatable {
+    var kind: ProbeReminderTemporalKind
     var localDate: String?
     var localDateTime: String?
     var timeZone: String?
-    var startDate: String?
-    var endDate: String?
 
     static func dateOnly(_ localDate: String) -> Self {
         Self(
             kind: .dateOnly,
             localDate: localDate,
             localDateTime: nil,
-            timeZone: nil,
-            startDate: nil,
-            endDate: nil
+            timeZone: nil
         )
     }
 
@@ -64,9 +65,7 @@ struct ProbeTemporal: Codable, Equatable {
             kind: .localDateTime,
             localDate: nil,
             localDateTime: value,
-            timeZone: nil,
-            startDate: nil,
-            endDate: nil
+            timeZone: nil
         )
     }
 
@@ -75,6 +74,35 @@ struct ProbeTemporal: Codable, Equatable {
             kind: .timeZoneDateTime,
             localDate: nil,
             localDateTime: value,
+            timeZone: timeZone
+        )
+    }
+}
+
+struct ProbeEventTemporal: Codable, Equatable {
+    var kind: ProbeEventTemporalKind
+    var startLocalDateTime: String?
+    var endLocalDateTime: String?
+    var timeZone: String?
+    var startDate: String?
+    var endDate: String?
+
+    static func localDateTime(start: String, end: String) -> Self {
+        Self(
+            kind: .localDateTime,
+            startLocalDateTime: start,
+            endLocalDateTime: end,
+            timeZone: nil,
+            startDate: nil,
+            endDate: nil
+        )
+    }
+
+    static func timeZoneDateTime(start: String, end: String, timeZone: String) -> Self {
+        Self(
+            kind: .timeZoneDateTime,
+            startLocalDateTime: start,
+            endLocalDateTime: end,
             timeZone: timeZone,
             startDate: nil,
             endDate: nil
@@ -84,8 +112,8 @@ struct ProbeTemporal: Codable, Equatable {
     static func allDayRange(startDate: String, endDate: String) -> Self {
         Self(
             kind: .allDayRange,
-            localDate: nil,
-            localDateTime: nil,
+            startLocalDateTime: nil,
+            endLocalDateTime: nil,
             timeZone: nil,
             startDate: startDate,
             endDate: endDate
@@ -152,8 +180,8 @@ struct ReminderProbeRecord: Codable, Equatable, Identifiable {
     var notes: String?
     var creationDate: String?
     var lastModifiedDate: String?
-    var start: ProbeTemporal?
-    var due: ProbeTemporal?
+    var start: ProbeReminderTemporal?
+    var due: ProbeReminderTemporal?
     var isCompleted: Bool
     var completionDate: String?
     var priority: Int
@@ -177,7 +205,7 @@ struct EventProbeRecord: Codable, Equatable, Identifiable {
     var notes: String?
     var creationDate: String?
     var lastModifiedDate: String?
-    var temporal: ProbeTemporal
+    var temporal: ProbeEventTemporal
     var isAllDay: Bool
     var occurrenceDate: String?
     var isDetached: Bool

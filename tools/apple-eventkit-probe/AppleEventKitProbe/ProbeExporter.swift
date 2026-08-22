@@ -69,6 +69,7 @@ struct ProbeExporter {
         let directory = locations.privateRoot
             .appendingPathComponent("sanitized-candidates", isDirectory: true)
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        try removePriorCandidateFiles(in: directory)
         let sanitized = ProbeSanitizer.sanitize(inspection)
 
         for (index, reminder) in sanitized.reminders.enumerated() {
@@ -84,6 +85,21 @@ struct ProbeExporter {
             try encoded(event).write(to: destination, options: .atomic)
         }
         return directory
+    }
+
+    private func removePriorCandidateFiles(in directory: URL) throws {
+        let files = try fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: nil
+        )
+        for file in files where isCandidateFile(file.lastPathComponent) {
+            try fileManager.removeItem(at: file)
+        }
+    }
+
+    private func isCandidateFile(_ name: String) -> Bool {
+        guard name.hasSuffix(".json") else { return false }
+        return name.hasPrefix("reminder-candidate-") || name.hasPrefix("event-candidate-")
     }
 
     private func encoded<T: Encodable>(_ value: T) throws -> Data {

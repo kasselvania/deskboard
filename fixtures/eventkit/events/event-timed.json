@@ -1,0 +1,35 @@
+{
+  "alarmCount": 0,
+  "attendeeCount": 0,
+  "availability": "busy",
+  "container": {
+    "allowsContentModifications": true,
+    "calendarType": "calDAV",
+    "identifier": "synthetic-calendar-001",
+    "isSubscribed": false,
+    "sourceIdentifier": "synthetic-source-001",
+    "sourceTitle": "Synthetic Account A",
+    "sourceType": "calDAV",
+    "title": "Synthetic Calendar A"
+  },
+  "creationDate": "2026-08-11T17:00:00.000Z",
+  "entityType": "event",
+  "eventIdentifier": "synthetic-event-occurrence-011",
+  "externalIdentifier": "synthetic-event-external-011",
+  "isAllDay": false,
+  "isDetached": false,
+  "lastModifiedDate": "2026-08-21T17:00:00.000Z",
+  "localIdentifier": "synthetic-event-011",
+  "normalizationWarnings": [],
+  "occurrenceDate": "2026-08-28T17:00:00.000Z",
+  "organizerPresent": false,
+  "status": "none",
+  "structuredLocationPresent": false,
+  "temporal": {
+    "endLocalDateTime": "2026-09-21T10:30:00",
+    "kind": "timeZoneDateTime",
+    "startLocalDateTime": "2026-09-21T09:30:00",
+    "timeZone": "America/Los_Angeles"
+  },
+  "title": "Synthetic Event K"
+}

@@ -1,0 +1,33 @@
+{
+  "alarmCount": 1,
+  "completionDate": "2026-08-28T17:00:00.000Z",
+  "container": {
+    "allowsContentModifications": true,
+    "calendarType": "calDAV",
+    "identifier": "synthetic-reminder-list-001",
+    "isSubscribed": false,
+    "sourceIdentifier": "synthetic-source-001",
+    "sourceTitle": "Synthetic Account A",
+    "sourceType": "calDAV",
+    "title": "Synthetic Reminder List A"
+  },
+  "creationDate": "2026-08-28T17:00:00.000Z",
+  "due": {
+    "kind": "timeZoneDateTime",
+    "localDateTime": "2026-09-28T09:30:00",
+    "timeZone": "America/Los_Angeles"
+  },
+  "entityType": "reminder",
+  "externalIdentifier": "synthetic-reminder-external-091",
+  "isCompleted": true,
+  "lastModifiedDate": "2026-08-28T17:00:00.000Z",
+  "localIdentifier": "synthetic-reminder-091",
+  "normalizationWarnings": [],
+  "priority": 1,
+  "start": {
+    "kind": "timeZoneDateTime",
+    "localDateTime": "2026-09-28T09:30:00",
+    "timeZone": "America/Los_Angeles"
+  },
+  "title": "Synthetic Reminder 091"
+}

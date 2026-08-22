@@ -1,6 +1,5 @@
 import SwiftUI
 
-@main
 struct AppleEventKitProbeApp: App {
     @StateObject private var model = ProbeViewModel()
 

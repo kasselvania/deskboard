@@ -1,0 +1,22 @@
+{
+  "alarmCount": 0,
+  "container": {
+    "allowsContentModifications": true,
+    "calendarType": "calDAV",
+    "identifier": "synthetic-reminder-list-001",
+    "isSubscribed": false,
+    "sourceIdentifier": "synthetic-source-001",
+    "sourceTitle": "Synthetic Account A",
+    "sourceType": "calDAV",
+    "title": "Synthetic Reminder List A"
+  },
+  "creationDate": "2026-08-28T17:00:00.000Z",
+  "entityType": "reminder",
+  "externalIdentifier": "synthetic-reminder-external-048",
+  "isCompleted": false,
+  "lastModifiedDate": "2026-08-28T17:00:00.000Z",
+  "localIdentifier": "synthetic-reminder-048",
+  "normalizationWarnings": [],
+  "priority": 0,
+  "title": "Synthetic Reminder 048"
+}

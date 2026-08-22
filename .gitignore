@@ -76,6 +76,7 @@ Package.resolved.local
 xcuserdata/
 *.xccheckout
 *.xcscmblueprint
+*.profraw
 
 # Local deployment and credentials
 secrets/

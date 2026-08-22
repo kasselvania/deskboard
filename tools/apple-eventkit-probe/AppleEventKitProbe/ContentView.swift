@@ -250,6 +250,11 @@ private struct InspectionSummary: View {
     }
 
     private func eventSummary(_ item: EventProbeRecord, index: Int) -> String {
-        "Event \(index + 1): temporal=\(item.temporal.kind.rawValue), status=\(item.status), recurrence=\(item.recurrences != nil), detached=\(item.isDetached), location=\(item.location != nil)"
+        let boundaries = if item.temporal.kind == .allDayRange {
+            "startDate=\(item.temporal.startDate != nil), endDate=\(item.temporal.endDate != nil)"
+        } else {
+            "start=\(item.temporal.startLocalDateTime != nil), end=\(item.temporal.endLocalDateTime != nil), timezone=\(item.temporal.timeZone != nil)"
+        }
+        return "Event \(index + 1): temporal=\(item.temporal.kind.rawValue), \(boundaries), status=\(item.status), recurrence=\(item.recurrences != nil), detached=\(item.isDetached), location=\(item.location != nil)"
     }
 }

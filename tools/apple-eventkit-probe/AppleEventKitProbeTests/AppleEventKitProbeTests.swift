@@ -81,6 +81,32 @@ final class TemporalNormalizerTests: XCTestCase {
             .allDayRange(startDate: "2026-11-06", endDate: "2026-11-09")
         )
     }
+
+    func testTimedEventPreservesStartEndAndTimeZone() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        let timeZone = try XCTUnwrap(TimeZone(identifier: "America/Los_Angeles"))
+        calendar.timeZone = timeZone
+        let start = try XCTUnwrap(
+            calendar.date(from: DateComponents(year: 2026, month: 11, day: 6, hour: 9, minute: 30))
+        )
+        let end = try XCTUnwrap(
+            calendar.date(from: DateComponents(year: 2026, month: 11, day: 6, hour: 11))
+        )
+
+        XCTAssertEqual(
+            TemporalNormalizer.event(
+                start: start,
+                end: end,
+                timeZone: timeZone,
+                isAllDay: false
+            ),
+            .timeZoneDateTime(
+                start: "2026-11-06T09:30:00",
+                end: "2026-11-06T11:00:00",
+                timeZone: "America/Los_Angeles"
+            )
+        )
+    }
 }
 
 final class SourceSelectionStoreTests: XCTestCase {
@@ -117,6 +143,101 @@ final class SourceSelectionStoreTests: XCTestCase {
         XCTAssertEqual(reconciled, ["calendar-present"])
         XCTAssertEqual(store.selectedIdentifiers(for: .event), ["calendar-present"])
         XCTAssertEqual(store.selectedIdentifiers(for: .reminder), ["list-present"])
+    }
+}
+
+final class SafeProbeCommandTests: XCTestCase {
+    func testCommandParsingIsExplicitAndDeterministic() throws {
+        XCTAssertEqual(try ProbeCommandLine.parse([]), nil)
+        XCTAssertEqual(
+            try ProbeCommandLine.parse(["-ApplePersistenceIgnoreState", "YES"]),
+            nil
+        )
+        XCTAssertEqual(try ProbeCommandLine.parse(["--safe-status"]), .status)
+        XCTAssertEqual(
+            try ProbeCommandLine.parse(["--safe-request-calendar"]),
+            .requestCalendar
+        )
+        XCTAssertEqual(
+            try ProbeCommandLine.parse(["--safe-request-reminders"]),
+            .requestReminders
+        )
+        XCTAssertEqual(try ProbeCommandLine.parse(["--safe-sources"]), .sources)
+        XCTAssertEqual(try ProbeCommandLine.parse(["--safe-inspect"]), .inspect)
+        XCTAssertEqual(
+            try ProbeCommandLine.parse(["--private-export-confirmed"]),
+            .privateExportConfirmed
+        )
+        XCTAssertEqual(
+            try ProbeCommandLine.parse(["--safe-select-calendar=3,1"]),
+            .selectCalendar([1, 3])
+        )
+        XCTAssertEqual(
+            try ProbeCommandLine.parse(["--safe-select-reminders="]),
+            .selectReminders([])
+        )
+        XCTAssertThrowsError(
+            try ProbeCommandLine.parse(["--safe-select-calendar=1,1"])
+        )
+        XCTAssertThrowsError(try ProbeCommandLine.parse(["--safe-unknown"]))
+        XCTAssertThrowsError(try ProbeCommandLine.parse(["--private-unknown"]))
+    }
+
+    func testSafeSourceReportOmitsPrivateTitlesAndIdentifiers() throws {
+        let source = ProbeSourceDescriptor(
+            id: "private-calendar-identifier",
+            entityType: .event,
+            title: "private-calendar-title",
+            calendarType: "calDAV",
+            sourceType: "calDAV",
+            allowsContentModifications: true,
+            isSubscribed: false
+        )
+
+        let summaries = SafeProbeEvidence.sourceSummaries(
+            [source],
+            selectedIdentifiers: [source.id]
+        )
+        let encoded = String(decoding: try JSONEncoder().encode(summaries), as: UTF8.self)
+
+        XCTAssertEqual(summaries.first?.ordinal, 1)
+        XCTAssertEqual(summaries.first?.isSelected, true)
+        XCTAssertFalse(encoded.contains(source.id))
+        XCTAssertFalse(encoded.contains(source.title))
+    }
+
+    func testOrdinalSelectionRejectsMissingAndDuplicateSources() throws {
+        let sources = [
+            ProbeSourceDescriptor(
+                id: "private-calendar-a",
+                entityType: .event,
+                title: "Private A",
+                calendarType: "local",
+                sourceType: "local",
+                allowsContentModifications: true,
+                isSubscribed: false
+            ),
+            ProbeSourceDescriptor(
+                id: "private-calendar-b",
+                entityType: .event,
+                title: "Private B",
+                calendarType: "subscription",
+                sourceType: "subscribed",
+                allowsContentModifications: false,
+                isSubscribed: true
+            ),
+        ]
+
+        XCTAssertEqual(
+            try SafeProbeEvidence.identifiers(for: [2], in: sources),
+            ["private-calendar-b"]
+        )
+        XCTAssertThrowsError(
+            try SafeProbeEvidence.identifiers(for: [0], in: sources)
+        )
+        XCTAssertThrowsError(
+            try SafeProbeEvidence.identifiers(for: [1, 1], in: sources)
+        )
     }
 }
 
@@ -187,6 +308,45 @@ final class ProbeExportLocationTests: XCTestCase {
             root.appendingPathComponent("private-fixtures/eventkit-probe").path
         )
     }
+
+    func testSanitizedGenerationRemovesOnlyPriorCandidateJSON() throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory
+            .appendingPathComponent("eventkit-candidate-cleanup-\(UUID().uuidString)")
+        let candidateDirectory = root.appendingPathComponent("sanitized-candidates")
+        try fileManager.createDirectory(at: candidateDirectory, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: root) }
+
+        let staleCandidate = candidateDirectory.appendingPathComponent("event-candidate-999.json")
+        let reviewNotes = candidateDirectory.appendingPathComponent("review-notes.txt")
+        try Data("stale".utf8).write(to: staleCandidate)
+        try Data("keep".utf8).write(to: reviewNotes)
+
+        let inspection = ProbeInspection(
+            generatedAt: "2026-08-21T17:00:00.000Z",
+            calendarReadWindow: ProbeReadWindow(
+                daysBefore: 7,
+                daysAfter: 45,
+                start: "2026-08-14T17:00:00.000Z",
+                end: "2026-10-05T17:00:00.000Z"
+            ),
+            reminderResultCount: 0,
+            reminderResultsTruncated: false,
+            eventResultCount: 0,
+            eventResultsTruncated: false,
+            reminders: [],
+            events: []
+        )
+        let exporter = try ProbeExporter(
+            fileManager: fileManager,
+            locations: ProbeExportLocations(privateRoot: root)
+        )
+
+        _ = try exporter.writeSanitizedCandidates(inspection)
+
+        XCTAssertFalse(fileManager.fileExists(atPath: staleCandidate.path))
+        XCTAssertTrue(fileManager.fileExists(atPath: reviewNotes.path))
+    }
 }
 
 final class ProbeSanitizerTests: XCTestCase {
@@ -234,6 +394,26 @@ final class ProbeSanitizerTests: XCTestCase {
         XCTAssertEqual(sanitized.reminders[0].container.title, "Synthetic Reminder List A")
         XCTAssertEqual(sanitized.events[0].container.title, "Synthetic Calendar A")
         XCTAssertTrue(sanitized.reminders[0].notes?.contains("[deskboard:v1]") == true)
+
+        let safeReport = SafeProbeEvidence.inspectionReport(
+            inspection: privateInspection,
+            permissions: SafePermissionReport(calendar: .granted, reminders: .granted)
+        )
+        let reportText = String(
+            decoding: try JSONEncoder().encode(safeReport),
+            as: UTF8.self
+        )
+        for value in privateValues {
+            XCTAssertFalse(reportText.contains(value), "Safe report retained a private field")
+        }
+        XCTAssertEqual(
+            safeReport.candidateDirectory,
+            "private-fixtures/eventkit-probe/sanitized-candidates"
+        )
+        XCTAssertTrue(safeReport.events[0].startDatePresent)
+        XCTAssertTrue(safeReport.events[0].endDatePresent)
+        XCTAssertFalse(safeReport.events[0].startLocalDateTimePresent)
+        XCTAssertFalse(safeReport.events[0].endLocalDateTimePresent)
     }
 
     func testSanitizerIsDeterministic() {
@@ -241,6 +421,33 @@ final class ProbeSanitizerTests: XCTestCase {
         let second = ProbeSanitizer.sanitize(makePrivateInspection())
 
         XCTAssertEqual(first, second)
+    }
+
+    func testEventSanitizerPreservesTimedDurationWithoutPrivateValues() throws {
+        var privateInspection = makePrivateInspection()
+        privateInspection.events[0].temporal = .timeZoneDateTime(
+            start: "2031-04-03T09:30:00",
+            end: "2031-04-03T11:00:00",
+            timeZone: "Europe/Private"
+        )
+
+        let temporal = ProbeSanitizer.sanitize(privateInspection).events[0].temporal
+
+        XCTAssertEqual(temporal.kind, .timeZoneDateTime)
+        XCTAssertEqual(temporal.startLocalDateTime, "2026-09-11T09:30:00")
+        XCTAssertEqual(temporal.endLocalDateTime, "2026-09-11T11:00:00")
+        XCTAssertEqual(temporal.timeZone, "America/Los_Angeles")
+        let encoded = String(decoding: try JSONEncoder().encode(temporal), as: UTF8.self)
+        XCTAssertFalse(encoded.contains("2031-04-03"))
+        XCTAssertFalse(encoded.contains("Europe/Private"))
+
+        let report = SafeProbeEvidence.inspectionReport(
+            inspection: privateInspection,
+            permissions: SafePermissionReport(calendar: .granted, reminders: .granted)
+        )
+        XCTAssertTrue(report.events[0].startLocalDateTimePresent)
+        XCTAssertTrue(report.events[0].endLocalDateTimePresent)
+        XCTAssertTrue(report.events[0].timeZonePresent)
     }
 
     private func makePrivateInspection() -> ProbeInspection {

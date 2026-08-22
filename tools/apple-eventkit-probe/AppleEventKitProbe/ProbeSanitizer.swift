@@ -98,7 +98,7 @@ enum ProbeSanitizer {
         output.notes = input.notes.map { _ in "Synthetic event notes." }
         output.creationDate = replacementInstant(input.creationDate, offset: ordinal)
         output.lastModifiedDate = replacementInstant(input.lastModifiedDate, offset: ordinal + 10)
-        output.temporal = sanitizeTemporal(input.temporal, ordinal: ordinal, secondary: false)
+        output.temporal = sanitizeEventTemporal(input.temporal, ordinal: ordinal)
         output.occurrenceDate = replacementInstant(input.occurrenceDate, offset: ordinal + 20)
         output.recurrences = sanitizeRecurrences(input.recurrences, prefix: "synthetic-event-calendar")
         output.url = input.url.map { _ in "https://example.invalid/events/\(padded(ordinal))" }
@@ -151,10 +151,10 @@ enum ProbeSanitizer {
     }
 
     private static func sanitizeTemporal(
-        _ input: ProbeTemporal,
+        _ input: ProbeReminderTemporal,
         ordinal: Int,
         secondary: Bool
-    ) -> ProbeTemporal {
+    ) -> ProbeReminderTemporal {
         let day = min(28, 10 + ordinal + (secondary ? 1 : 0))
         let date = String(format: "2026-09-%02d", day)
         switch input.kind {
@@ -167,8 +167,36 @@ enum ProbeSanitizer {
                 "\(date)T09:30:00",
                 timeZone: "America/Los_Angeles"
             )
+        }
+    }
+
+    private static func sanitizeEventTemporal(
+        _ input: ProbeEventTemporal,
+        ordinal: Int
+    ) -> ProbeEventTemporal {
+        let day = min(28, 10 + ordinal)
+        let date = String(format: "2026-09-%02d", day)
+        switch input.kind {
+        case .localDateTime, .timeZoneDateTime:
+            let startValue = "\(date)T09:30:00"
+            let duration = localDateTimeDuration(
+                start: input.startLocalDateTime,
+                end: input.endLocalDateTime
+            ) ?? 3_600
+            let endValue = adding(seconds: duration, to: startValue) ?? "\(date)T10:30:00"
+            if input.kind == .timeZoneDateTime {
+                return .timeZoneDateTime(
+                    start: startValue,
+                    end: endValue,
+                    timeZone: "America/Los_Angeles"
+                )
+            }
+            return .localDateTime(start: startValue, end: endValue)
         case .allDayRange:
-            let duration = allDayDuration(input) ?? 1
+            let duration = allDayDuration(
+                startDate: input.startDate,
+                endDate: input.endDate
+            ) ?? 1
             let calendar = Calendar(identifier: .gregorian)
             let start = calendar.date(from: DateComponents(year: 2026, month: 9, day: day))!
             let end = calendar.date(byAdding: .day, value: duration, to: start)!
@@ -179,10 +207,10 @@ enum ProbeSanitizer {
         }
     }
 
-    private static func allDayDuration(_ temporal: ProbeTemporal) -> Int? {
+    private static func allDayDuration(startDate: String?, endDate: String?) -> Int? {
         guard
-            let start = temporal.startDate,
-            let end = temporal.endDate
+            let start = startDate,
+            let end = endDate
         else { return nil }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -193,6 +221,32 @@ enum ProbeSanitizer {
             return nil
         }
         return max(1, Calendar(identifier: .gregorian).dateComponents([.day], from: startDate, to: endDate).day ?? 1)
+    }
+
+    private static func localDateTimeDuration(start: String?, end: String?) -> TimeInterval? {
+        guard
+            let start,
+            let end,
+            let startDate = localDateTimeFormatter().date(from: start),
+            let endDate = localDateTimeFormatter().date(from: end),
+            endDate >= startDate
+        else { return nil }
+        return endDate.timeIntervalSince(startDate)
+    }
+
+    private static func adding(seconds: TimeInterval, to value: String) -> String? {
+        let formatter = localDateTimeFormatter()
+        guard let date = formatter.date(from: value) else { return nil }
+        return formatter.string(from: date.addingTimeInterval(seconds))
+    }
+
+    private static func localDateTimeFormatter() -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        return formatter
     }
 
     private static func sanitizeRecurrences(

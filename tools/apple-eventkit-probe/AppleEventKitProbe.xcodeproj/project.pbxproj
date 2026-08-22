@@ -18,6 +18,8 @@
 		B20000000000000000000009 /* EventKitReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* EventKitReader.swift */; };
 		B2000000000000000000000A /* ProbeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* ProbeViewModel.swift */; };
 		B2000000000000000000000B /* AppleEventKitProbeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* AppleEventKitProbeTests.swift */; };
+		B2000000000000000000000C /* ProbeCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* ProbeCommand.swift */; };
+		B2000000000000000000000D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* main.swift */; };
 		B30000000000000000000001 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000000000000000000003 /* EventKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -43,6 +45,8 @@
 		A20000000000000000000009 /* EventKitReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitReader.swift; sourceTree = "<group>"; };
 		A2000000000000000000000A /* ProbeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeViewModel.swift; sourceTree = "<group>"; };
 		A2000000000000000000000B /* AppleEventKitProbeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleEventKitProbeTests.swift; sourceTree = "<group>"; };
+		A2000000000000000000000C /* ProbeCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeCommand.swift; sourceTree = "<group>"; };
+		A2000000000000000000000D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A30000000000000000000001 /* AppleEventKitProbe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AppleEventKitProbe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A30000000000000000000002 /* AppleEventKitProbeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppleEventKitProbeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A30000000000000000000003 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
@@ -89,6 +93,7 @@
 		A10000000000000000000004 /* AppleEventKitProbe */ = {
 			isa = PBXGroup;
 			children = (
+				A2000000000000000000000D /* main.swift */,
 				A20000000000000000000001 /* AppleEventKitProbeApp.swift */,
 				A20000000000000000000002 /* ContentView.swift */,
 				A2000000000000000000000A /* ProbeViewModel.swift */,
@@ -99,6 +104,7 @@
 				A20000000000000000000006 /* SourceSelectionStore.swift */,
 				A20000000000000000000007 /* ProbeSanitizer.swift */,
 				A20000000000000000000008 /* ProbeExporter.swift */,
+				A2000000000000000000000C /* ProbeCommand.swift */,
 			);
 			path = AppleEventKitProbe;
 			sourceTree = "<group>";
@@ -228,6 +234,8 @@
 				B20000000000000000000008 /* ProbeExporter.swift in Sources */,
 				B20000000000000000000009 /* EventKitReader.swift in Sources */,
 				B2000000000000000000000A /* ProbeViewModel.swift in Sources */,
+				B2000000000000000000000C /* ProbeCommand.swift in Sources */,
+				B2000000000000000000000D /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

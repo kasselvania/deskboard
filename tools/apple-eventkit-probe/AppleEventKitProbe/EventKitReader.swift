@@ -39,7 +39,7 @@ final class EventKitReader {
 
     func requestAccess(for entityType: ProbeEntityType) async throws -> Bool {
         try await withCheckedThrowingContinuation { continuation in
-            let completion: EKEventStoreRequestAccessCompletionHandler = { granted, error in
+            let completion: @Sendable (Bool, Error?) -> Void = { granted, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else {
@@ -244,7 +244,7 @@ final class EventKitReader {
         _ components: DateComponents?,
         field: String,
         warnings: inout [String]
-    ) -> ProbeTemporal? {
+    ) -> ProbeReminderTemporal? {
         do {
             return try TemporalNormalizer.reminderComponents(components)
         } catch let error as TemporalNormalizationError {

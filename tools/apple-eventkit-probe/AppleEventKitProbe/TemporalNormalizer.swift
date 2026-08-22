@@ -15,7 +15,7 @@ enum TemporalNormalizationError: Error, Equatable, LocalizedError {
 }
 
 enum TemporalNormalizer {
-    static func reminderComponents(_ components: DateComponents?) throws -> ProbeTemporal? {
+    static func reminderComponents(_ components: DateComponents?) throws -> ProbeReminderTemporal? {
         guard let components else { return nil }
         guard
             let year = components.year,
@@ -54,7 +54,7 @@ enum TemporalNormalizer {
         timeZone: TimeZone?,
         isAllDay: Bool,
         localTimeZone: TimeZone = .current
-    ) -> ProbeTemporal {
+    ) -> ProbeEventTemporal {
         let displayTimeZone = timeZone ?? localTimeZone
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = displayTimeZone
@@ -66,13 +66,20 @@ enum TemporalNormalizer {
             )
         }
 
-        let value = formatDateTime(
+        let startValue = formatDateTime(
             calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: start)
         )
+        let endValue = formatDateTime(
+            calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: end)
+        )
         if let timeZone {
-            return .timeZoneDateTime(value, timeZone: timeZone.identifier)
+            return .timeZoneDateTime(
+                start: startValue,
+                end: endValue,
+                timeZone: timeZone.identifier
+            )
         }
-        return .localDateTime(value)
+        return .localDateTime(start: startValue, end: endValue)
     }
 
     private static func validateDate(year: Int, month: Int, day: Int) throws {
