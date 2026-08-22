@@ -256,41 +256,42 @@ This separation matters because:
 
 ## Initial Apple Field Map
 
-The exact inventory will be verified through an EventKit spike. The first connected implementation should expect at least the following public concepts.
+Phase 2 observations are recorded in [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md). The inventory below distinguishes observed availability from unresolved behavior; it does not freeze the final transport schema.
 
-### Common fields
+### Verified through selected sources
 
-- local item identifier
-- external item identifier when available
-- source container/list
-- title
-- notes
-- location
-- URL/reference
-- created and last-modified dates
-- timezone information
-- recurrence rules
-- alarms
+| Entity | Observed fields |
+|---|---|
+| both | local identifier presence, external identifier presence, selected container identity/category/mutability, title presence, creation/modification presence, alarm count |
+| Reminder | absent/date-only/timezone-qualified start or due values, incomplete/completed state, completion date presence, notes presence, raw priority values `0` and `1` |
+| Calendar | timed start **and** end, timezone-qualified time, exclusive all-day range, occurrence date, event identifier, recurrence structure, `none`/`confirmed` status, `busy`/`free`/`notSupported` availability, read-only/subscribed source state, location and structured-location presence |
 
-### Reminder-specific fields
+### Available with caveats
 
-- available/start date components
-- due date components
-- priority
-- completion state
-- completion date
+- local and external identifiers are provenance fields; stability, duplication, and cross-device behavior remain unresolved;
+- Calendar recurrence was observed, but detached exceptions were not;
+- Reminder completion date is current-record evidence, not repeated completion history;
+- Calendar status and availability were observed only for the categories listed above;
+- participant properties remain privacy-reduced to organizer presence and attendee count, and no nonzero case was observed;
+- Reminder notes were observed, but no candidate metadata block was present;
+- creation and modification timestamps were present, but mutation behavior was not tested because the probe is read-only.
 
-### Calendar-event-specific fields
+### Unavailable through the installed supported Reminder API
 
-- start and end
-- all-day state
-- recurring occurrence identity
-- status/cancellation state
-- availability
-- structured location
-- organizer and attendees where available
+- tags;
+- sections;
+- subtasks;
+- attachments.
 
-Not every feature visible in the Apple Reminders UI is guaranteed to be exposed through the supported EventKit API. Tags, sections, subtasks, smart-list behavior, grocery categorization, and attachments must not become architectural dependencies until the Bridge spike proves their availability and behavior.
+Smart-list behavior and grocery categorization are also not source-contract fields.
+
+### Not tested through selected sources
+
+- Reminder recurrence, URL, and location;
+- floating/local timed values without timezone identity;
+- Calendar cancellation/decline, detached exceptions, and multi-day all-day ranges;
+- participant presence and Calendar URL;
+- identifier changes after Apple edits or synchronization.
 
 ## Temporal Semantics
 

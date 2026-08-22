@@ -130,6 +130,8 @@ Use the Board for several days with fixture content. Adjust typography, density,
 
 This is a discovery slice, not the complete synchronization system.
 
+**Discovery evidence:** [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md). The empirical pass and owner-approved sanitized fixtures are recorded there; Phase 2 remains pull-request-review gated and is not a production Bridge.
+
 ### Scope
 
 - create a minimal macOS Swift/SwiftUI utility;

@@ -28,7 +28,7 @@ The probe:
 - imports no networking framework and contains no HTTP client;
 - shows field structure instead of record content, with source titles masked by default.
 
-macOS 14 and later name the required APIs `requestFullAccessToEvents` and `requestFullAccessToReminders`. The resulting system permission is broad, but this app contains no Apple write behavior. The generated app `Info.plist` includes:
+On macOS 14 and later, EventKit requires Full Access authorization to read Calendar events and Reminders through `requestFullAccessToEvents` and `requestFullAccessToReminders`. The resulting system permission is broad, but this app contains no Apple write behavior. The generated app `Info.plist` includes:
 
 - `NSCalendarsFullAccessUsageDescription`
 - `NSRemindersFullAccessUsageDescription`
@@ -97,3 +97,39 @@ private-fixtures/eventkit-probe/sanitized-candidates/
 The sanitizer replaces identifiers, titles, notes, source and container names, URLs, locations, recurrence calendar identifiers, timestamps, and temporal values with deterministic synthetic values. It preserves only structural distinctions such as field presence, temporal kind, recurrence structure, completion, source mutability, status, availability, and participant counts. Candidate generation does not automatically modify committed fixtures.
 
 When launching the built executable outside Xcode, set `DESKBOARD_REPOSITORY_ROOT` to the repository root so the same ignored destination is used.
+
+## Privacy-safe command mode
+
+The same signed executable provides a narrow command mode for reproducible local discovery when UI accessibility automation is unavailable. It does not add a service, socket, network path, or generic adapter. Command output omits titles, notes, identifiers, names, URLs, locations, account details, and participant details.
+
+Build to a known local path:
+
+```bash
+xcodebuild \
+  -project tools/apple-eventkit-probe/AppleEventKitProbe.xcodeproj \
+  -scheme AppleEventKitProbe \
+  -destination 'platform=macOS' \
+  -derivedDataPath /private/tmp/deskboard-eventkit-probe-derived \
+  build test
+```
+
+Then run from the repository root:
+
+```bash
+DESKBOARD_REPOSITORY_ROOT="$PWD" \
+  /private/tmp/deskboard-eventkit-probe-derived/Build/Products/Debug/AppleEventKitProbe.app/Contents/MacOS/AppleEventKitProbe \
+  --safe-status
+```
+
+Supported commands are:
+
+- `--safe-status` — permission states only;
+- `--safe-request-calendar` and `--safe-request-reminders` — one intentional permission request when the state is not determined;
+- `--safe-sources` — masked source ordinals, provider category, mutability, subscription, and selection state;
+- `--safe-select-calendar=1,2` and `--safe-select-reminders=1,2` — explicitly replace the corresponding selection by masked ordinal; an empty value clears it;
+- `--safe-inspect` — bounded read, sanitized candidate generation, and structural summary only;
+- `--private-export-confirmed` — explicit private export to the ignored path.
+
+`--private-export-confirmed` is intentionally named as a confirmation boundary. It may write real private source values to `private-fixtures/eventkit-probe/private-inspection-latest.json`. Never open it in logs, print it, screenshot it, commit it, or share it. The command reports only record counts, truncation flags, a fixed relative path, and the warning.
+
+Sanitized candidate generation removes only prior `reminder-candidate-*.json` and `event-candidate-*.json` files. It preserves unrelated review notes in the ignored candidate directory, preventing stale candidates from being mistaken for the current bounded run.

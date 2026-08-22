@@ -4,6 +4,8 @@
 
 This is a **Phase 2 discovery design**. It defines the questions, ownership boundaries, and candidate interpretations that the EventKit discovery spike must test.
 
+The observed Phase 2 inventory, caveats, omitted cases, and recommended minimum source contract are recorded in [`apple-eventkit-discovery.md`](apple-eventkit-discovery.md). That report is the evidence authority; this v0.1 document remains the discovery-question design and is not retroactively converted into a final schema.
+
 It is not:
 
 - a verified EventKit field inventory;
