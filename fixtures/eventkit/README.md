@@ -1,6 +1,6 @@
 # EventKit sanitized specimens
 
-This directory is reserved for individually reviewed, synthetic specimens generated from structural behavior actually observed through the Phase 2 EventKit probe.
+This directory is reserved for individually reviewed, synthetic specimens generated from structural behavior actually observed through the Phase 2A EventKit probe.
 
 Rules:
 

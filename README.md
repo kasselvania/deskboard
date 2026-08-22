@@ -68,9 +68,13 @@ The repository contains the complete synthetic presentation spine: runtime-valid
 
 The Board has also been reached from the physical iPad over the local network. Phase 1 was accepted from the complete local Node 24 quality gate and device proof. The hosted GitHub Actions job did not execute repository steps because of the account billing/spending restriction; the workflow itself remains unchanged and should be rerun after that administrative issue is resolved.
 
-**Phase 2 — Apple Bridge Discovery Spike: active.**
+**Phase 2A — EventKit Discovery Evidence: implemented in draft PR [#7](https://github.com/kasselvania/deskboard/pull/7) and still at the implementation-review gate.**
 
-Phase 2 is a read-only discovery slice. It will determine what Apple Calendar and Reminders actually expose through EventKit before a production Bridge contract, database, homelab synchronization path, or Apple write action is designed.
+Phase 2A contains the read-only local probe, empirical field inventory, and owner-approved sanitized evidence set. Fixture approval does not accept the implementation or freeze a production contract; PR #7 must still be accepted and merged.
+
+**Phase 2B — Apple Source Contract and Reconciliation Semantics: defined by issue [#8](https://github.com/kasselvania/deskboard/issues/8), but not active.** Phase 2B may begin only after Phase 2A is accepted and merged. It will evaluate the Phase 2A recommendation and define the smallest versioned source contract without adding transport, persistence, deployment, or production synchronization.
+
+**Phase 3 — One-Way Apple Mirror: not begun.** No production Bridge, database, homelab synchronization path, or Apple write action has been implemented.
 
 The discovery boundary and candidate semantic distinctions are defined in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md).
 

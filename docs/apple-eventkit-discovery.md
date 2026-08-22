@@ -1,8 +1,10 @@
-# Apple EventKit Discovery
+# Apple EventKit Discovery — Phase 2A
 
 ## Status
 
-The empirical Phase 2 evidence pass is complete for the source cases listed as verified below. On 2026-08-21, the owner approved the twelve sanitized fixtures at the fixture/evidence review gate. The pull request remains the implementation review gate; this report does not declare the production Bridge or Phase 3 work complete.
+The empirical Phase 2A evidence pass is complete for the source cases listed as verified below. On 2026-08-21, the owner approved the twelve sanitized fixtures at the fixture/evidence review gate. Draft PR [#7](https://github.com/kasselvania/deskboard/pull/7) remains at the implementation-review gate; this report does not accept the implementation, freeze a production Bridge contract, or begin Phase 3.
+
+The source-shape recommendation in this report is evidence for Phase 2B issue [#8](https://github.com/kasselvania/deskboard/issues/8). Phase 2B is not active until Phase 2A is accepted and merged.
 
 This report uses four evidence labels:
 
@@ -30,6 +32,8 @@ Compiler availability alone is not runtime evidence. No private value is reprodu
 ## Probe and privacy boundary
 
 The contained project is `tools/apple-eventkit-probe/AppleEventKitProbe.xcodeproj`. It has one macOS SwiftUI app, a narrow command mode in the same executable, and one native unit-test target. It adds no Swift package, project generator, database, HTTP client, daemon, login item, Apple write call, or Deskboard Core path.
+
+The project sets `ENABLE_APP_SANDBOX = NO` so this contained local probe can use its explicit repository-root export path under ignored `private-fixtures/`. This is a probe/export convenience, not an approved security posture or implementation precedent for the production macOS Bridge. The production Bridge's sandbox, entitlement, and export-boundary decisions remain deferred to a separate security and architecture review.
 
 The command mode exists because macOS accessibility inspection of the development build was unreliable. It emits only:
 
@@ -83,9 +87,12 @@ The following behavior is verified:
 - explicit masked ordinals persisted across separate process launches;
 - only selected identifiers were passed to EventKit predicates;
 - Calendar reads used a 7-day-back, 45-day-forward window;
+- Calendar results are ordered by start, end, container identifier, Calendar item identifier, and finally event identifier before the cap is applied;
 - Reminder reads used only selected lists;
 - retained records were capped at 200 per entity;
 - a 200-record Reminder result reported truncation rather than silently claiming completeness;
+- authorization or effective source-selection changes invalidate the captured in-memory inspection before it can be exported;
+- losing permission clears available-source presentation and inspection data without erasing saved source identifiers;
 - both selections were cleared after discovery;
 - pure tests reconciled a disappeared identifier without affecting the other entity.
 
@@ -242,6 +249,8 @@ No bulk export is committed.
 
 The approved fixture set contains 12 files totaling 11,969 bytes. Its combined SHA-256 is `d7f138203445751910fe7e995814ac9d8bf1f92d74bc632b8a43fee31598b776`, calculated over the raw fixture bytes concatenated in the documented allowlist order. Immediately after approval, every per-file byte count and SHA-256 matched the ignored local review manifest. The review generator did not access the private EventKit export.
 
+A native test enumerates JSON files only in the two committed specimen directories, compares them with this exact twelve-path allowlist, and decodes each file as its concrete `ReminderProbeRecord` or `EventProbeRecord` type. The test has no path or operation that accesses `private-fixtures/`.
+
 ## Existing Board proof
 
 `fixtures/board/eventkit-derived.json` uses the unchanged Phase 1 contract to render:
@@ -253,7 +262,9 @@ The approved fixture set contains 12 files totaling 11,969 bytes. Its combined S
 
 The focused component test renders all four synthetic items and confirms that the Board exposes no button or link. No production fixture selector, route, endpoint, Apple adapter, action, setting, or navigation was added.
 
-## Recommendations
+## Phase 2A Recommendations for Phase 2B
+
+These recommendations summarize the observed evidence. Phase 2B must minimize and validate the versioned source contract; the structures below are not frozen production types.
 
 ### Verified constraints
 
@@ -266,7 +277,7 @@ The focused component test renders all four synthetic items and confirms that th
 - Keep organizer and attendee identities out of the initial source contract.
 - Treat local and external identifiers as provenance with unresolved durability.
 
-### Smallest recommended Bridge-to-Core source contract
+### Smallest recommended Bridge-to-Core source representation
 
 The later one-way mirror should carry two versioned record variants, not a generic adapter envelope.
 
@@ -290,7 +301,7 @@ A Calendar source record needs:
 - optional occurrence date and detached flag;
 - status, availability, optional recurrence structure, alarm count, and location presence.
 
-Content digests, synchronization generations, Core persistence, and transport belong to Phase 3. They are absent from this probe.
+Content digests, synchronization generations, Core persistence, and transport belong to Phase 3. They are absent from this probe and from the bounded Phase 2B contract slice.
 
 ### Unresolved
 
@@ -329,7 +340,7 @@ Content digests, synchronization generations, Core persistence, and transport be
 
 ### Automated validation record
 
-On 2026-08-21, the documented native command built successfully and all 19 Swift tests passed. Under Node 24.19.0, `npm ci` and `npm run check` passed: lint, all workspace typechecks, 31 unit tests, all production builds, and Playwright with 5 passed and 1 intentional portrait skip. `git diff --check` passed.
+On 2026-08-21, the documented native command built successfully and all 27 Swift tests passed. That count includes five deterministic Calendar ordering/cap tests, two inspection-scope invalidation tests, and one exact committed-fixture allowlist/decoding test. Under Node 24.19.0, `npm ci` and `npm run check` passed: lint, all workspace typechecks, 31 unit tests, all production builds, and Playwright with 5 passed and 1 intentional portrait skip. `git diff --check` passed.
 
 Native build and test:
 

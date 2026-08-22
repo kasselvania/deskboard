@@ -256,7 +256,7 @@ This separation matters because:
 
 ## Initial Apple Field Map
 
-Phase 2 observations are recorded in [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md). The inventory below distinguishes observed availability from unresolved behavior; it does not freeze the final transport schema.
+Phase 2A observations are recorded in [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md). The inventory below distinguishes observed availability from unresolved behavior; it is evidence for Phase 2B and does not freeze the final transport schema.
 
 ### Verified through selected sources
 

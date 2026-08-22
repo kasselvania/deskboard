@@ -2,9 +2,9 @@
 
 ## Status
 
-This is a **Phase 2 discovery design**. It defines the questions, ownership boundaries, and candidate interpretations that the EventKit discovery spike must test.
+This is the **Phase 2A discovery design**. It defines the questions, ownership boundaries, and candidate interpretations that the EventKit discovery spike tested.
 
-The observed Phase 2 inventory, caveats, omitted cases, and recommended minimum source contract are recorded in [`apple-eventkit-discovery.md`](apple-eventkit-discovery.md). That report is the evidence authority; this v0.1 document remains the discovery-question design and is not retroactively converted into a final schema.
+The observed Phase 2A inventory, caveats, omitted cases, and recommended minimum representation are recorded in [`apple-eventkit-discovery.md`](apple-eventkit-discovery.md). That report is the evidence authority; this v0.1 document remains the discovery-question design and is not retroactively converted into a final schema. The recommendation is evidence for Phase 2B issue [#8](https://github.com/kasselvania/deskboard/issues/8), not a frozen production contract.
 
 It is not:
 
@@ -29,7 +29,7 @@ Related project documents:
 
 ## 1. Purpose
 
-Phase 1 proved that Deskboard can present a small, calm, persistent field of attention. Phase 2 must determine how real Apple objects can supply that Board without turning Deskboard into a second Calendar, Reminder manager, or project-management system.
+Phase 1 proved that Deskboard can present a small, calm, persistent field of attention. Phase 2A determines how real Apple objects can supply evidence for later contract work without turning Deskboard into a second Calendar, Reminder manager, or project-management system.
 
 The central question is:
 
@@ -394,7 +394,7 @@ This table records the expected semantic use of Reminder fields. Availability an
 
 ## 7. Candidate Portable Metadata Matrix
 
-The following fields already appear in the Manifesto's proposed Reminder-note block. Phase 2 should verify their practicality before freezing a parser contract.
+The following fields already appear in the Manifesto's proposed Reminder-note block. Phase 2A was intended to verify their practicality before later contract work; the empirical report records that no qualifying source block was observed, so no parser contract is frozen.
 
 | Field | Applies to | Purpose | Required initially? |
 |---|---|---|---:|
@@ -487,7 +487,7 @@ Primary future action:
 Attended
 ```
 
-### Mode rules for Phase 2
+### Mode rules for Phase 2A
 
 - Mode is user intent, not something inferred from recurrence.
 - Mode applies to Open Loops, not ordinary Tasks or Calendar Commitments.
@@ -525,7 +525,7 @@ Domains may eventually support balance and diversity on the Board. They should n
 
 ## 10. Inputs to Future Attention Selection
 
-Phase 2 must preserve the facts needed for later attention selection without finalizing a scoring system.
+Phase 2A preserves the facts needed for later attention selection without finalizing a scoring system.
 
 Candidate inputs include:
 
@@ -698,21 +698,21 @@ The discovery spike must provide evidence before the project decides:
 
 ---
 
-## 16. Phase 2 Handoff
+## 16. Phase 2A Evidence and Phase 2B Handoff
 
-The next implementation slice is a minimal EventKit discovery utility.
+Phase 2A implemented the minimal EventKit discovery utility and produced:
 
-Its output should include:
-
-1. a source-selection interface or minimal controlled selection mechanism;
+1. a controlled source-selection interface;
 2. read-only access to Calendar and Reminders;
 3. a bounded local inspection/export path;
 4. documented permission behavior;
-5. sanitized fixtures covering the required temporal and source cases;
-6. an updated, verified field inventory;
-7. a recommendation for the smallest stable Bridge-to-Core contract.
+5. an owner-approved allowlist of sanitized fixtures for observed cases;
+6. an updated, verified field inventory with unavailable and `not tested` cases;
+7. a recommendation for the smallest representation Phase 2B should evaluate.
 
-The spike stops before:
+Issue [#8](https://github.com/kasselvania/deskboard/issues/8) owns Phase 2B contract minimization, deterministic snapshot semantics, and reconciliation policy after Phase 2A is accepted and merged. Phase 2A evidence does not freeze that contract.
+
+Phase 2A stops before:
 
 - homelab deployment;
 - network synchronization;
@@ -723,4 +723,4 @@ The spike stops before:
 - attention ranking;
 - changes to the current Board interaction model.
 
-The purpose of Phase 2 is to replace assumptions with observed source behavior. It is not to implement the entire semantic layer.
+The purpose of Phase 2A is to replace assumptions with observed source behavior. It is not to implement the entire semantic layer, Phase 2B, or the Phase 3 mirror.

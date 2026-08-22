@@ -24,17 +24,19 @@ A complete slice includes working behavior, tests, error states, documentation, 
 
 Phase 1 — Fixture-Backed Board — is accepted and merged.
 
-The current implementation target is **Phase 2 — Apple Bridge Discovery Spike** from `ROADMAP.md`.
+The current branch remains **Phase 2A — EventKit Discovery Evidence** acceptance cleanup for draft PR #7. The empirical probe and approved evidence set are implemented, but Phase 2A remains unaccepted until the pull request passes implementation review and is merged.
 
-The question for this phase is:
+The question for Phase 2A is:
 
 > What supported EventKit data is actually available from selected Apple Calendar and Reminder sources, and what is the smallest lossless representation Deskboard will need for the later one-way mirror?
 
 This is an empirical, read-only discovery slice. It is not the production Bridge.
 
-### Allowed Phase 2 shape
+Issue #8 defines **Phase 2B — Apple Source Contract and Reconciliation Semantics** as the next bounded slice after Phase 2A merge. Agents must not begin Phase 2B or Phase 3 while PR #7 remains unaccepted.
 
-Phase 2 may add only what the discovery spike requires, approximately:
+### Allowed Phase 2A shape
+
+Phase 2A may add only what the discovery spike and its acceptance corrections require, approximately:
 
 ```text
 tools/apple-eventkit-probe/   minimal native macOS Swift/SwiftUI probe
@@ -44,7 +46,7 @@ docs/apple-eventkit-discovery.md
 
 A focused synthetic Board fixture and test may be added only to prove that the existing Phase 1 presentation contract can render an EventKit-derived shape. The production Board data path must remain fixture-backed.
 
-### Phase 2 permitted behavior
+### Phase 2A permitted behavior
 
 - request read access to Calendar and Reminders;
 - enumerate and explicitly select source calendars and Reminder lists;
@@ -56,7 +58,7 @@ A focused synthetic Board fixture and test may be added only to prove that the e
 - test pure normalization and sanitization behavior;
 - update architecture documentation after observations exist.
 
-### Phase 2 forbidden behavior
+### Phase 2A forbidden behavior
 
 Do not add:
 
@@ -106,7 +108,7 @@ Wrap EventKit-dependent reads behind the smallest practical boundary so pure tem
 
 ### Testing
 
-The Phase 2 slice is not complete without:
+The Phase 2A slice is not complete without:
 
 - a reproducible native macOS build;
 - Swift unit tests for pure normalization, selection persistence, and sanitization behavior;
@@ -143,7 +145,7 @@ Private inspection output must remain in an ignored local directory. Sanitizatio
 
 ## Decision Policy
 
-Agents may make ordinary implementation decisions inside Phase 2, including small native file organization, naming, test structure, and local UI details required for permission and source selection.
+Agents may make ordinary implementation decisions inside Phase 2A, including small native file organization, naming, test structure, and local UI details required for permission and source selection.
 
 Stop and ask before:
 
@@ -155,7 +157,7 @@ Stop and ask before:
 - adding a new production route, endpoint, application, persistent service, or Board interaction;
 - weakening a proof test or exit criterion;
 - exposing personal data outside the local environment;
-- beginning work from Phase 3 or later.
+- beginning work from Phase 2B, Phase 3, or later while PR #7 remains unaccepted.
 
 An unobserved source case remains `not tested`. Do not fabricate support.
 

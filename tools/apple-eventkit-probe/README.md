@@ -1,6 +1,6 @@
-# Apple EventKit Discovery Probe
+# Apple EventKit Discovery Probe — Phase 2A
 
-This directory contains Deskboard's Phase 2 native discovery utility. It is a local, read-only inspector for Apple Calendar and Apple Reminders. It is not the production Bridge and has no Deskboard Core or network path.
+This directory contains Deskboard's Phase 2A native discovery utility. It is a local, read-only inspector for Apple Calendar and Apple Reminders. It is not the production Bridge and has no Deskboard Core or network path. Its observed structures and recommendation are evidence for Phase 2B issue [#8](https://github.com/kasselvania/deskboard/issues/8), not a frozen production contract.
 
 ## Environment
 
@@ -16,6 +16,8 @@ The deployment target is the first macOS release that provides EventKit's curren
 
 ## Privacy and read-only boundary
 
+The Xcode project sets `ENABLE_APP_SANDBOX = NO` so the contained probe can write an explicitly confirmed export beneath the repository's ignored local `private-fixtures/` path. The disabled sandbox is a local probe/export convenience only. It is not an approved production security posture or precedent; the production macOS Bridge's sandbox and entitlement design remains deferred to a dedicated security and architecture decision.
+
 The probe:
 
 - requests Calendar and Reminders permission separately and only after an explicit button press;
@@ -23,7 +25,9 @@ The probe:
 - defaults to no selected calendars or Reminder lists;
 - persists only the two sets of selected container identifiers in `UserDefaults`;
 - reads Calendar events from 7 days before through 45 days after the current time;
+- orders Calendar events by start, end, container identifier, Calendar item identifier, and event identifier before applying the retained-record cap;
 - retains at most 200 inspected records per entity;
+- clears a captured in-memory inspection when either authorization state or either effective source selection changes;
 - never calls an EventKit save or remove API;
 - imports no networking framework and contains no HTTP client;
 - shows field structure instead of record content, with source titles masked by default.
@@ -58,7 +62,7 @@ xcodebuild \
   build test
 ```
 
-The tests use synthetic values and do not request or read the user's EventKit store.
+The tests use synthetic values and do not request or read the user's EventKit store. They also enumerate only the two committed EventKit specimen directories, require the exact approved twelve-file JSON allowlist, and decode every specimen with its concrete Swift model. They do not access `private-fixtures/`.
 
 ## Run the probe
 
@@ -74,7 +78,7 @@ The intended flow is:
 6. generate destructively sanitized candidates;
 7. inspect every candidate by hand before copying any representative specimen into `fixtures/eventkit/`.
 
-If a selected source disappears, the next successful source enumeration removes its identifier from the saved selection. Loss of permission does not erase selections merely because containers cannot be enumerated.
+If a selected source disappears, the next successful source enumeration removes its identifier from the saved selection and invalidates any inspection captured for the prior scope. Loss of permission clears the in-memory inspection but does not erase selections merely because containers cannot be enumerated.
 
 ## Exports
 
