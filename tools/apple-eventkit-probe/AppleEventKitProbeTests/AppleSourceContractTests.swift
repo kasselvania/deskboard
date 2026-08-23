@@ -4,6 +4,7 @@ import XCTest
 
 final class AppleSourceContractV1Tests: XCTestCase {
     private let reminderValidFixtureNames = [
+        "reminder-empty.json",
         "reminder-undated.json",
         "reminder-date-only.json",
         "reminder-local-date-time.json",
@@ -12,8 +13,10 @@ final class AppleSourceContractV1Tests: XCTestCase {
         "reminder-truncated.json",
     ]
     private let calendarValidFixtureNames = [
+        "calendar-empty.json",
         "calendar-local-timed.json",
         "calendar-time-zone-timed.json",
+        "calendar-time-zone-offset-transition.json",
         "calendar-all-day-single-day.json",
         "calendar-recurring-occurrence.json",
         "calendar-subscribed-read-only.json",
@@ -28,6 +31,8 @@ final class AppleSourceContractV1Tests: XCTestCase {
         "impossible-date.json",
         "impossible-clock-time.json",
         "offset-in-local-date-time.json",
+        "ambiguous-local-date-time.json",
+        "nonexistent-local-date-time.json",
         "timed-end-not-after-start.json",
         "all-day-end-not-after-start.json",
         "incomplete-reminder-with-completion-date.json",
@@ -40,6 +45,8 @@ final class AppleSourceContractV1Tests: XCTestCase {
         "calendar-record-outside-window.json",
         "reminder-record-order.json",
         "calendar-record-order.json",
+        "duplicate-reminder-order-coordinate.json",
+        "duplicate-calendar-order-coordinate.json",
     ]
 
     func testExactSharedFixtureInventories() throws {
@@ -55,13 +62,13 @@ final class AppleSourceContractV1Tests: XCTestCase {
             let decoded = try AppleSourceContractDecoder.decode(
                 data(collection: "valid", fixtureName: fixtureName)
             )
-            guard case let .reminder(snapshot) = decoded else {
-                return XCTFail("Expected Reminder variant for \(fixtureName)")
-            }
+            let snapshot = try XCTUnwrap(decoded.reminderSnapshot, fixtureName)
+            XCTAssertNil(decoded.calendarSnapshot, fixtureName)
             let encoded = try JSONEncoder().encode(snapshot)
-            guard case let .reminder(roundTripped) = try AppleSourceContractDecoder.decode(encoded) else {
-                return XCTFail("Expected Reminder round trip for \(fixtureName)")
-            }
+            let roundTripped = try XCTUnwrap(
+                AppleSourceContractDecoder.decode(encoded).reminderSnapshot,
+                fixtureName
+            )
             XCTAssertEqual(roundTripped, snapshot, fixtureName)
         }
 
@@ -69,13 +76,13 @@ final class AppleSourceContractV1Tests: XCTestCase {
             let decoded = try AppleSourceContractDecoder.decode(
                 data(collection: "valid", fixtureName: fixtureName)
             )
-            guard case let .calendar(snapshot) = decoded else {
-                return XCTFail("Expected Calendar variant for \(fixtureName)")
-            }
+            let snapshot = try XCTUnwrap(decoded.calendarSnapshot, fixtureName)
+            XCTAssertNil(decoded.reminderSnapshot, fixtureName)
             let encoded = try JSONEncoder().encode(snapshot)
-            guard case let .calendar(roundTripped) = try AppleSourceContractDecoder.decode(encoded) else {
-                return XCTFail("Expected Calendar round trip for \(fixtureName)")
-            }
+            let roundTripped = try XCTUnwrap(
+                AppleSourceContractDecoder.decode(encoded).calendarSnapshot,
+                fixtureName
+            )
             XCTAssertEqual(roundTripped, snapshot, fixtureName)
         }
     }
@@ -112,6 +119,8 @@ final class AppleSourceContractV1Tests: XCTestCase {
             "impossible-date.json",
             "impossible-clock-time.json",
             "offset-in-local-date-time.json",
+            "ambiguous-local-date-time.json",
+            "nonexistent-local-date-time.json",
             "timed-end-not-after-start.json",
             "all-day-end-not-after-start.json",
             "incomplete-reminder-with-completion-date.json",
@@ -123,6 +132,8 @@ final class AppleSourceContractV1Tests: XCTestCase {
             "calendar-record-outside-window.json",
             "reminder-record-order.json",
             "calendar-record-order.json",
+            "duplicate-reminder-order-coordinate.json",
+            "duplicate-calendar-order-coordinate.json",
         ] {
             XCTAssertThrowsError(
                 try AppleSourceContractDecoder.decode(
@@ -133,9 +144,12 @@ final class AppleSourceContractV1Tests: XCTestCase {
         }
     }
 
-    func testOnlyCompleteScopesAuthorizeAbsence() throws {
-        let complete = try AppleSourceContractDecoder.decode(
-            data(collection: "valid", fixtureName: "reminder-undated.json")
+    func testOnlyStrictlyValidatedCompleteScopesAuthorizeAbsence() throws {
+        let emptyReminder = try AppleSourceContractDecoder.decode(
+            data(collection: "valid", fixtureName: "reminder-empty.json")
+        )
+        let emptyCalendar = try AppleSourceContractDecoder.decode(
+            data(collection: "valid", fixtureName: "calendar-empty.json")
         )
         let truncatedReminder = try AppleSourceContractDecoder.decode(
             data(collection: "valid", fixtureName: "reminder-truncated.json")
@@ -144,9 +158,39 @@ final class AppleSourceContractV1Tests: XCTestCase {
             data(collection: "valid", fixtureName: "calendar-truncated.json")
         )
 
-        XCTAssertTrue(complete.absenceIsAuthoritative)
+        XCTAssertTrue(emptyReminder.absenceIsAuthoritative)
+        XCTAssertTrue(emptyCalendar.absenceIsAuthoritative)
         XCTAssertFalse(truncatedReminder.absenceIsAuthoritative)
         XCTAssertFalse(truncatedCalendar.absenceIsAuthoritative)
+
+        for fixtureName in [
+            "unknown-top-level-key.json",
+            "unsupported-schema-version.json",
+            "non-truncated-count-inconsistency.json",
+        ] {
+            XCTAssertThrowsError(
+                try AppleSourceContractDecoder.decode(
+                    data(collection: "invalid", fixtureName: fixtureName)
+                ),
+                fixtureName
+            )
+        }
+    }
+
+    func testTimezoneQualifiedRangePreservesExactTransitionInstants() throws {
+        let decoded = try AppleSourceContractDecoder.decode(
+            data(
+                collection: "valid",
+                fixtureName: "calendar-time-zone-offset-transition.json"
+            )
+        )
+        let temporal = try XCTUnwrap(decoded.calendarSnapshot?.records.first?.temporal)
+
+        XCTAssertEqual(temporal.kind, .timeZoneTimedRange)
+        XCTAssertEqual(temporal.start, "2026-11-01T01:30:00-07:00")
+        XCTAssertEqual(temporal.end, "2026-11-01T01:30:00-08:00")
+        XCTAssertNil(temporal.startLocalDateTime)
+        XCTAssertNil(temporal.endLocalDateTime)
     }
 
     func testRecurringOccurrenceDoesNotImportRecurrenceGrammar() throws {
@@ -154,9 +198,9 @@ final class AppleSourceContractV1Tests: XCTestCase {
             collection: "valid",
             fixtureName: "calendar-recurring-occurrence.json"
         )
-        guard case let .calendar(snapshot) = try AppleSourceContractDecoder.decode(fixtureData) else {
-            return XCTFail("Expected Calendar variant")
-        }
+        let snapshot = try XCTUnwrap(
+            AppleSourceContractDecoder.decode(fixtureData).calendarSnapshot
+        )
 
         XCTAssertNotNil(snapshot.records.first?.occurrenceDate)
         let object = try XCTUnwrap(

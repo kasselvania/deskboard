@@ -8,8 +8,6 @@ import {
   appleReminderSourceSnapshotV1Schema,
   appleSourceSnapshotAuthorizesAbsence,
   appleSourceSnapshotV1Schema,
-  type AppleCalendarSourceSnapshotV1,
-  type AppleReminderSourceSnapshotV1,
 } from "../src/index";
 
 const fixtureDirectory = fileURLToPath(
@@ -17,6 +15,7 @@ const fixtureDirectory = fileURLToPath(
 );
 
 const reminderValidFixtureNames = [
+  "reminder-empty.json",
   "reminder-undated.json",
   "reminder-date-only.json",
   "reminder-local-date-time.json",
@@ -26,8 +25,10 @@ const reminderValidFixtureNames = [
 ] as const;
 
 const calendarValidFixtureNames = [
+  "calendar-empty.json",
   "calendar-local-timed.json",
   "calendar-time-zone-timed.json",
+  "calendar-time-zone-offset-transition.json",
   "calendar-all-day-single-day.json",
   "calendar-recurring-occurrence.json",
   "calendar-subscribed-read-only.json",
@@ -43,6 +44,8 @@ const invalidFixtureNames = [
   "impossible-date.json",
   "impossible-clock-time.json",
   "offset-in-local-date-time.json",
+  "ambiguous-local-date-time.json",
+  "nonexistent-local-date-time.json",
   "timed-end-not-after-start.json",
   "all-day-end-not-after-start.json",
   "incomplete-reminder-with-completion-date.json",
@@ -55,6 +58,8 @@ const invalidFixtureNames = [
   "calendar-record-outside-window.json",
   "reminder-record-order.json",
   "calendar-record-order.json",
+  "duplicate-reminder-order-coordinate.json",
+  "duplicate-calendar-order-coordinate.json",
 ] as const;
 
 async function readFixture(
@@ -145,6 +150,8 @@ describe("Apple source contract v1", () => {
       "impossible-date.json",
       "impossible-clock-time.json",
       "offset-in-local-date-time.json",
+      "ambiguous-local-date-time.json",
+      "nonexistent-local-date-time.json",
       "timed-end-not-after-start.json",
       "all-day-end-not-after-start.json",
       "malformed-calendar-window.json",
@@ -167,6 +174,8 @@ describe("Apple source contract v1", () => {
       "truncated-without-omission.json",
       "reminder-record-order.json",
       "calendar-record-order.json",
+      "duplicate-reminder-order-coordinate.json",
+      "duplicate-calendar-order-coordinate.json",
     ]) {
       expect(
         appleSourceSnapshotV1Schema.safeParse(
@@ -177,20 +186,63 @@ describe("Apple source contract v1", () => {
     }
   });
 
-  it("derives absence authority only from a valid non-truncated scope", async () => {
-    const complete = appleReminderSourceSnapshotV1Schema.parse(
-      await readFixture("valid", "reminder-undated.json"),
-    ) satisfies AppleReminderSourceSnapshotV1;
-    const truncatedReminder = appleReminderSourceSnapshotV1Schema.parse(
-      await readFixture("valid", "reminder-truncated.json"),
-    ) satisfies AppleReminderSourceSnapshotV1;
-    const truncatedCalendar = appleCalendarSourceSnapshotV1Schema.parse(
-      await readFixture("valid", "calendar-truncated.json"),
-    ) satisfies AppleCalendarSourceSnapshotV1;
+  it("authorizes absence only after strict runtime validation", async () => {
+    const emptyReminder = await readFixture("valid", "reminder-empty.json");
+    const emptyCalendar = await readFixture("valid", "calendar-empty.json");
+    const truncatedReminder = await readFixture(
+      "valid",
+      "reminder-truncated.json",
+    );
+    const truncatedCalendar = await readFixture(
+      "valid",
+      "calendar-truncated.json",
+    );
 
-    expect(appleSourceSnapshotAuthorizesAbsence(complete)).toBe(true);
+    expect(appleSourceSnapshotAuthorizesAbsence(emptyReminder)).toBe(true);
+    expect(appleSourceSnapshotAuthorizesAbsence(emptyCalendar)).toBe(true);
     expect(appleSourceSnapshotAuthorizesAbsence(truncatedReminder)).toBe(false);
     expect(appleSourceSnapshotAuthorizesAbsence(truncatedCalendar)).toBe(false);
+    expect(
+      appleSourceSnapshotAuthorizesAbsence({ truncated: false }),
+    ).toBe(false);
+    expect(
+      appleSourceSnapshotAuthorizesAbsence(
+        await readFixture("invalid", "unsupported-schema-version.json"),
+      ),
+    ).toBe(false);
+    expect(
+      appleSourceSnapshotAuthorizesAbsence(
+        await readFixture(
+          "invalid",
+          "non-truncated-count-inconsistency.json",
+        ),
+      ),
+    ).toBe(false);
+    expect(
+      appleSourceSnapshotAuthorizesAbsence({
+        ...(emptyReminder as Record<string, unknown>),
+        unexpected: "strict validation must reject this cast-shaped value",
+      }),
+    ).toBe(false);
+  });
+
+  it("preserves exact timezone-qualified instants across an offset transition", async () => {
+    const snapshot = appleCalendarSourceSnapshotV1Schema.parse(
+      await readFixture(
+        "valid",
+        "calendar-time-zone-offset-transition.json",
+      ),
+    );
+    const temporal = snapshot.records[0]?.temporal;
+
+    expect(temporal?.kind).toBe("timeZoneTimedRange");
+    if (temporal?.kind !== "timeZoneTimedRange") {
+      throw new Error("Expected timezone-qualified Calendar range.");
+    }
+    expect(temporal.start).toBe("2026-11-01T01:30:00-07:00");
+    expect(temporal.end).toBe("2026-11-01T01:30:00-08:00");
+    expect(temporal).not.toHaveProperty("startLocalDateTime");
+    expect(temporal).not.toHaveProperty("endLocalDateTime");
   });
 
   it("represents expanded recurring occurrences without recurrence grammar", async () => {

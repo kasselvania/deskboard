@@ -14,21 +14,7 @@
     "timeZone": "America/Los_Angeles",
     "boundarySemantics": "overlapStartInclusiveEndExclusive"
   },
-  "matchedCount": 1,
+  "matchedCount": 0,
   "truncated": false,
-  "records": [
-    {
-      "localIdentifier": "calendar-contract-002",
-      "eventIdentifier": "calendar-event-002",
-      "title": "Synthetic timezone event",
-      "temporal": {
-        "kind": "timeZoneTimedRange",
-        "start": "2026-08-11T13:00:00Z",
-        "end": "2026-08-11T14:30:00Z",
-        "timeZone": "America/New_York"
-      },
-      "isDetached": false,
-      "status": "none"
-    }
-  ]
+  "records": []
 }

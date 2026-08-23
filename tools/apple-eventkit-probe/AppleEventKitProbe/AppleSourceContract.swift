@@ -84,6 +84,8 @@ struct AppleCalendarTemporalV1: Codable, Equatable {
     let kind: AppleCalendarTemporalKindV1
     let startLocalDateTime: String?
     let endLocalDateTime: String?
+    let start: String?
+    let end: String?
     let timeZone: String?
     let startDate: String?
     let endDate: String?
@@ -97,6 +99,8 @@ struct AppleCalendarTemporalV1: Codable, Equatable {
                 AppleSourceTemporalValidation.isLocalDateTime(startLocalDateTime),
                 AppleSourceTemporalValidation.isLocalDateTime(endLocalDateTime),
                 startLocalDateTime < endLocalDateTime,
+                start == nil,
+                end == nil,
                 timeZone == nil,
                 startDate == nil,
                 endDate == nil
@@ -107,13 +111,15 @@ struct AppleCalendarTemporalV1: Codable, Equatable {
             }
         case .timeZoneTimedRange:
             guard
-                let startLocalDateTime,
-                let endLocalDateTime,
+                let start,
+                let end,
                 let timeZone,
-                AppleSourceTemporalValidation.isLocalDateTime(startLocalDateTime),
-                AppleSourceTemporalValidation.isLocalDateTime(endLocalDateTime),
-                startLocalDateTime < endLocalDateTime,
+                let startInstant = AppleSourceTemporalValidation.instant(start),
+                let endInstant = AppleSourceTemporalValidation.instant(end),
+                startInstant < endInstant,
                 TimeZone(identifier: timeZone) != nil,
+                startLocalDateTime == nil,
+                endLocalDateTime == nil,
                 startDate == nil,
                 endDate == nil
             else {
@@ -130,6 +136,8 @@ struct AppleCalendarTemporalV1: Codable, Equatable {
                 startDate < endDate,
                 startLocalDateTime == nil,
                 endLocalDateTime == nil,
+                start == nil,
+                end == nil,
                 timeZone == nil
             else {
                 throw AppleSourceContractValidationError.invalid(
@@ -252,8 +260,6 @@ struct AppleReminderSourceSnapshotV1: Codable, Equatable {
     let truncated: Bool
     let records: [AppleReminderSourceRecordV1]
 
-    var absenceIsAuthoritative: Bool { !truncated }
-
     func validate() throws {
         guard schemaVersion == 1, entityType == .reminder else {
             throw AppleSourceContractValidationError.invalid(
@@ -274,14 +280,19 @@ struct AppleReminderSourceSnapshotV1: Codable, Equatable {
             try record.validate()
         }
         for index in records.indices.dropFirst() {
-            if AppleSourceContractSemantics.compareReminderRecords(
+            let comparison = AppleSourceContractSemantics.compareReminderRecords(
                 left: records[index - 1],
                 leftSourceContainerId: source.sourceContainerId,
                 right: records[index],
                 rightSourceContainerId: source.sourceContainerId
-            ) == .orderedDescending {
+            )
+            if comparison == .orderedDescending {
                 throw AppleSourceContractValidationError.invalid(
                     "Reminder records are not in deterministic provenance order"
+                )
+            } else if comparison == .orderedSame {
+                throw AppleSourceContractValidationError.invalid(
+                    "Reminder provenance ordering coordinate collides"
                 )
             }
         }
@@ -298,8 +309,6 @@ struct AppleCalendarSourceSnapshotV1: Codable, Equatable {
     let matchedCount: Int
     let truncated: Bool
     let records: [AppleCalendarSourceRecordV1]
-
-    var absenceIsAuthoritative: Bool { !truncated }
 
     func validate() throws {
         guard schemaVersion == 1, entityType == .calendar else {
@@ -348,36 +357,63 @@ struct AppleCalendarSourceSnapshotV1: Codable, Equatable {
         }
 
         for index in records.indices.dropFirst() {
-            if AppleSourceContractSemantics.compareCalendarRecords(
+            let comparison = AppleSourceContractSemantics.compareCalendarRecords(
                 left: records[index - 1],
                 leftBounds: bounds[index - 1],
                 leftSourceContainerId: source.sourceContainerId,
                 right: records[index],
                 rightBounds: bounds[index],
                 rightSourceContainerId: source.sourceContainerId
-            ) == .orderedDescending {
+            )
+            if comparison == .orderedDescending {
                 throw AppleSourceContractValidationError.invalid(
                     "Calendar records are not in deterministic source order"
+                )
+            } else if comparison == .orderedSame {
+                throw AppleSourceContractValidationError.invalid(
+                    "Calendar provenance ordering coordinate collides"
                 )
             }
         }
     }
 }
 
-enum AppleSourceSnapshotV1: Equatable {
-    case reminder(AppleReminderSourceSnapshotV1)
-    case calendar(AppleCalendarSourceSnapshotV1)
+struct ValidatedAppleSourceSnapshotV1: Equatable {
+    private enum Storage: Equatable {
+        case reminder(AppleReminderSourceSnapshotV1)
+        case calendar(AppleCalendarSourceSnapshotV1)
+    }
+
+    private let storage: Storage
+
+    fileprivate init(reminder: AppleReminderSourceSnapshotV1) {
+        storage = .reminder(reminder)
+    }
+
+    fileprivate init(calendar: AppleCalendarSourceSnapshotV1) {
+        storage = .calendar(calendar)
+    }
+
+    var reminderSnapshot: AppleReminderSourceSnapshotV1? {
+        guard case let .reminder(snapshot) = storage else { return nil }
+        return snapshot
+    }
+
+    var calendarSnapshot: AppleCalendarSourceSnapshotV1? {
+        guard case let .calendar(snapshot) = storage else { return nil }
+        return snapshot
+    }
 
     var absenceIsAuthoritative: Bool {
-        switch self {
-        case let .reminder(snapshot): snapshot.absenceIsAuthoritative
-        case let .calendar(snapshot): snapshot.absenceIsAuthoritative
+        switch storage {
+        case let .reminder(snapshot): !snapshot.truncated
+        case let .calendar(snapshot): !snapshot.truncated
         }
     }
 }
 
 enum AppleSourceContractDecoder {
-    static func decode(_ data: Data) throws -> AppleSourceSnapshotV1 {
+    static func decode(_ data: Data) throws -> ValidatedAppleSourceSnapshotV1 {
         let object = try JSONSerialization.jsonObject(with: data)
         try AppleSourceStrictKeyValidator.rejectNulls(object, path: "$")
         let root = try AppleSourceStrictKeyValidator.object(object, path: "$")
@@ -393,12 +429,12 @@ enum AppleSourceContractDecoder {
             try AppleSourceStrictKeyValidator.validateReminderSnapshot(root)
             let snapshot = try decoder.decode(AppleReminderSourceSnapshotV1.self, from: data)
             try snapshot.validate()
-            return .reminder(snapshot)
+            return ValidatedAppleSourceSnapshotV1(reminder: snapshot)
         case AppleSourceEntityTypeV1.calendar.rawValue:
             try AppleSourceStrictKeyValidator.validateCalendarSnapshot(root)
             let snapshot = try decoder.decode(AppleCalendarSourceSnapshotV1.self, from: data)
             try snapshot.validate()
-            return .calendar(snapshot)
+            return ValidatedAppleSourceSnapshotV1(calendar: snapshot)
         default:
             throw AppleSourceContractValidationError.invalid(
                 "unsupported source snapshot entity discriminator"
@@ -546,7 +582,7 @@ private enum AppleSourceStrictKeyValidator {
         case AppleCalendarTemporalKindV1.localTimedRange.rawValue:
             allowed = ["kind", "startLocalDateTime", "endLocalDateTime"]
         case AppleCalendarTemporalKindV1.timeZoneTimedRange.rawValue:
-            allowed = ["kind", "startLocalDateTime", "endLocalDateTime", "timeZone"]
+            allowed = ["kind", "start", "end", "timeZone"]
         case AppleCalendarTemporalKindV1.allDayRange.rawValue:
             allowed = ["kind", "startDate", "endDate"]
         default:
@@ -680,7 +716,7 @@ private enum AppleSourceTemporalValidation {
             ?? instantWithoutFractionalSeconds.date(from: value)
     }
 
-    static func localDate(_ value: String, in timeZoneIdentifier: String) -> Date? {
+    static func unambiguousLocalDate(_ value: String, in timeZoneIdentifier: String) -> Date? {
         guard
             isLocalDateTime(value),
             let timeZone = TimeZone(identifier: timeZoneIdentifier)
@@ -691,33 +727,50 @@ private enum AppleSourceTemporalValidation {
         let dateAndClock = value.split(separator: "T")
         let date = dateAndClock[0].split(separator: "-")
         let clock = dateAndClock[1].split(separator: ":")
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        var components = DateComponents()
-        components.calendar = calendar
-        components.timeZone = timeZone
-        components.year = Int(date[0])
-        components.month = Int(date[1])
-        components.day = Int(date[2])
-        components.hour = Int(clock[0])
-        components.minute = Int(clock[1])
-        components.second = Int(clock[2])
-        guard let result = calendar.date(from: components) else { return nil }
-        let resolved = calendar.dateComponents(
-            [.year, .month, .day, .hour, .minute, .second],
-            from: result
-        )
+        var matchingComponents = DateComponents()
+        matchingComponents.year = Int(date[0])
+        matchingComponents.month = Int(date[1])
+        matchingComponents.day = Int(date[2])
+        matchingComponents.hour = Int(clock[0])
+        matchingComponents.minute = Int(clock[1])
+        matchingComponents.second = Int(clock[2])
+
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        var anchorComponents = matchingComponents
+        anchorComponents.calendar = utcCalendar
+        anchorComponents.timeZone = utcCalendar.timeZone
         guard
-            resolved.year == components.year,
-            resolved.month == components.month,
-            resolved.day == components.day,
-            resolved.hour == components.hour,
-            resolved.minute == components.minute,
-            resolved.second == components.second
+            let civilAsUTC = utcCalendar.date(from: anchorComponents),
+            let anchor = utcCalendar.date(byAdding: .day, value: -2, to: civilAsUTC)
         else {
             return nil
         }
-        return result
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let first = calendar.nextDate(
+            after: anchor,
+            matching: matchingComponents,
+            matchingPolicy: .strict,
+            repeatedTimePolicy: .first,
+            direction: .forward
+        )
+        let last = calendar.nextDate(
+            after: anchor,
+            matching: matchingComponents,
+            matchingPolicy: .strict,
+            repeatedTimePolicy: .last,
+            direction: .forward
+        )
+        guard
+            let first,
+            let last,
+            first == last
+        else {
+            return nil
+        }
+        return first
     }
 }
 
@@ -769,56 +822,57 @@ private enum AppleSourceContractSemantics {
         windowTimeZone: String
     ) throws -> CalendarBounds {
         let temporal = record.temporal
-        let timeZone: String
-        let startValue: String
-        let endValue: String
-
         switch temporal.kind {
         case .localTimedRange:
-            timeZone = windowTimeZone
             guard
                 let start = temporal.startLocalDateTime,
-                let end = temporal.endLocalDateTime
+                let end = temporal.endLocalDateTime,
+                let startDate = AppleSourceTemporalValidation.unambiguousLocalDate(
+                    start,
+                    in: windowTimeZone
+                ),
+                let endDate = AppleSourceTemporalValidation.unambiguousLocalDate(
+                    end,
+                    in: windowTimeZone
+                )
             else {
                 throw AppleSourceContractValidationError.invalid(
-                    "missing local Calendar range values"
+                    "local Calendar range is missing, nonexistent, or ambiguous"
                 )
             }
-            startValue = start
-            endValue = end
+            return CalendarBounds(start: startDate, end: endDate)
         case .timeZoneTimedRange:
             guard
-                let temporalTimeZone = temporal.timeZone,
-                let start = temporal.startLocalDateTime,
-                let end = temporal.endLocalDateTime
+                temporal.timeZone != nil,
+                let start = temporal.start,
+                let end = temporal.end,
+                let startDate = AppleSourceTemporalValidation.instant(start),
+                let endDate = AppleSourceTemporalValidation.instant(end)
             else {
                 throw AppleSourceContractValidationError.invalid(
                     "missing timezone-qualified Calendar range values"
                 )
             }
-            timeZone = temporalTimeZone
-            startValue = start
-            endValue = end
+            return CalendarBounds(start: startDate, end: endDate)
         case .allDayRange:
-            timeZone = windowTimeZone
-            guard let start = temporal.startDate, let end = temporal.endDate else {
+            guard
+                let start = temporal.startDate,
+                let end = temporal.endDate,
+                let startDate = AppleSourceTemporalValidation.unambiguousLocalDate(
+                    "\(start)T00:00:00",
+                    in: windowTimeZone
+                ),
+                let endDate = AppleSourceTemporalValidation.unambiguousLocalDate(
+                    "\(end)T00:00:00",
+                    in: windowTimeZone
+                )
+            else {
                 throw AppleSourceContractValidationError.invalid(
-                    "missing all-day Calendar range values"
+                    "all-day Calendar range cannot be interpreted unambiguously"
                 )
             }
-            startValue = "\(start)T00:00:00"
-            endValue = "\(end)T00:00:00"
+            return CalendarBounds(start: startDate, end: endDate)
         }
-
-        guard
-            let start = AppleSourceTemporalValidation.localDate(startValue, in: timeZone),
-            let end = AppleSourceTemporalValidation.localDate(endValue, in: timeZone)
-        else {
-            throw AppleSourceContractValidationError.invalid(
-                "Calendar values cannot be interpreted in their declared time zone"
-            )
-        }
-        return CalendarBounds(start: start, end: end)
     }
 
     static func compareReminderRecords(
@@ -856,9 +910,39 @@ private enum AppleSourceContractSemantics {
             return source
         }
         let local = compareUnicodeScalars(left.localIdentifier, right.localIdentifier)
-        return local == .orderedSame
-            ? compareOptionalIdentifiers(left.eventIdentifier, right.eventIdentifier)
-            : local
+        if local != .orderedSame {
+            return local
+        }
+        let event = compareOptionalIdentifiers(left.eventIdentifier, right.eventIdentifier)
+        if event != .orderedSame {
+            return event
+        }
+        let occurrence = compareOptionalInstants(left.occurrenceDate, right.occurrenceDate)
+        return occurrence == .orderedSame
+            ? compareOptionalIdentifiers(left.externalIdentifier, right.externalIdentifier)
+            : occurrence
+    }
+
+    private static func compareOptionalInstants(
+        _ left: String?,
+        _ right: String?
+    ) -> ComparisonResult {
+        switch (left, right) {
+        case (nil, nil): return .orderedSame
+        case (nil, _): return .orderedAscending
+        case (_, nil): return .orderedDescending
+        case let (left?, right?):
+            guard
+                let leftDate = AppleSourceTemporalValidation.instant(left),
+                let rightDate = AppleSourceTemporalValidation.instant(right)
+            else {
+                return .orderedSame
+            }
+            if leftDate == rightDate {
+                return .orderedSame
+            }
+            return leftDate < rightDate ? .orderedAscending : .orderedDescending
+        }
     }
 
     private static func compareOptionalIdentifiers(

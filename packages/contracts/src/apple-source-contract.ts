@@ -107,22 +107,17 @@ export const appleCalendarLocalTimedRangeSchema = z
 export const appleCalendarTimeZoneTimedRangeSchema = z
   .object({
     kind: z.literal("timeZoneTimedRange"),
-    startLocalDateTime: localDateTimeSchema,
-    endLocalDateTime: localDateTimeSchema,
+    start: isoInstantSchema,
+    end: isoInstantSchema,
     timeZone: timeZoneSchema,
   })
   .strict()
   .superRefine((value, context) => {
-    if (
-      compareFixedLocalDateTimes(
-        value.startLocalDateTime,
-        value.endLocalDateTime,
-      ) >= 0
-    ) {
+    if (Date.parse(value.end) <= Date.parse(value.start)) {
       context.addIssue({
         code: "custom",
-        path: ["endLocalDateTime"],
-        message: "Timed range end must be later than its start.",
+        path: ["end"],
+        message: "Timezone-qualified end instant must be later than its start.",
       });
     }
   });
@@ -288,6 +283,21 @@ function compareOptionalIdentifiers(
   return compareUnicodeScalars(left, right);
 }
 
+function compareOptionalInstants(
+  left: string | undefined,
+  right: string | undefined,
+): number {
+  if (left === undefined) {
+    return right === undefined ? 0 : -1;
+  }
+  if (right === undefined) {
+    return 1;
+  }
+  const leftInstant = Date.parse(left);
+  const rightInstant = Date.parse(right);
+  return leftInstant < rightInstant ? -1 : leftInstant > rightInstant ? 1 : 0;
+}
+
 export type AppleReminderSourceRecordV1 = z.infer<
   typeof appleReminderSourceRecordV1Schema
 >;
@@ -410,31 +420,46 @@ function sameParts(
   );
 }
 
-function localDateTimeToEpochMilliseconds(
+function localDateTimeCandidateEpochMilliseconds(
   value: string,
   timeZone: string,
-): number | undefined {
+): number[] {
   const desired = parseLocalDateTime(value);
   if (!desired || !isRecognizedTimeZone(timeZone)) {
-    return undefined;
+    return [];
   }
 
   const desiredAsUTC = utcMilliseconds(desired);
-  let candidate = desiredAsUTC;
-  for (let iteration = 0; iteration < 4; iteration += 1) {
-    const represented = representedParts(candidate, timeZone);
+  const candidates = new Set<number>();
+  const hourMilliseconds = 60 * 60 * 1000;
+
+  // Offset samples on both sides of the civil value expose both sides of an
+  // ordinary time-zone transition. Every sampled offset is used to construct
+  // and round-trip an exact candidate; zero or multiple candidates are
+  // rejected by the caller instead of silently selecting one.
+  for (let hour = -48; hour <= 48; hour += 6) {
+    const sampleInstant = desiredAsUTC + hour * hourMilliseconds;
+    const represented = representedParts(sampleInstant, timeZone);
     if (!represented) {
-      return undefined;
+      continue;
     }
-    const adjustment = desiredAsUTC - utcMilliseconds(represented);
-    candidate += adjustment;
-    if (adjustment === 0) {
-      break;
+    const offset = utcMilliseconds(represented) - sampleInstant;
+    const candidate = desiredAsUTC - offset;
+    const verified = representedParts(candidate, timeZone);
+    if (verified && sameParts(verified, desired)) {
+      candidates.add(candidate);
     }
   }
 
-  const verified = representedParts(candidate, timeZone);
-  return verified && sameParts(verified, desired) ? candidate : undefined;
+  return [...candidates].sort((left, right) => left - right);
+}
+
+function unambiguousLocalDateTimeToEpochMilliseconds(
+  value: string,
+  timeZone: string,
+): number | undefined {
+  const candidates = localDateTimeCandidateEpochMilliseconds(value, timeZone);
+  return candidates.length === 1 ? candidates[0] : undefined;
 }
 
 function dateOnlyToLocalMidnight(value: string): string {
@@ -451,10 +476,13 @@ function calendarSortBounds(
   windowTimeZone: string,
 ): CalendarSortBounds | undefined {
   const temporal = record.temporal;
-  const timeZone =
-    temporal.kind === "timeZoneTimedRange"
-      ? temporal.timeZone
-      : windowTimeZone;
+  if (temporal.kind === "timeZoneTimedRange") {
+    return {
+      start: Date.parse(temporal.start),
+      end: Date.parse(temporal.end),
+    };
+  }
+
   const startValue =
     temporal.kind === "allDayRange"
       ? dateOnlyToLocalMidnight(temporal.startDate)
@@ -463,8 +491,14 @@ function calendarSortBounds(
     temporal.kind === "allDayRange"
       ? dateOnlyToLocalMidnight(temporal.endDate)
       : temporal.endLocalDateTime;
-  const start = localDateTimeToEpochMilliseconds(startValue, timeZone);
-  const end = localDateTimeToEpochMilliseconds(endValue, timeZone);
+  const start = unambiguousLocalDateTimeToEpochMilliseconds(
+    startValue,
+    windowTimeZone,
+  );
+  const end = unambiguousLocalDateTimeToEpochMilliseconds(
+    endValue,
+    windowTimeZone,
+  );
 
   return start === undefined || end === undefined ? undefined : { start, end };
 }
@@ -501,9 +535,28 @@ export function compareAppleCalendarSourceRecordsV1(
     left.localIdentifier,
     right.localIdentifier,
   );
-  return localComparison !== 0
-    ? localComparison
-    : compareOptionalIdentifiers(left.eventIdentifier, right.eventIdentifier);
+  if (localComparison !== 0) {
+    return localComparison;
+  }
+
+  const eventComparison = compareOptionalIdentifiers(
+    left.eventIdentifier,
+    right.eventIdentifier,
+  );
+  if (eventComparison !== 0) {
+    return eventComparison;
+  }
+
+  const occurrenceComparison = compareOptionalInstants(
+    left.occurrenceDate,
+    right.occurrenceDate,
+  );
+  return occurrenceComparison !== 0
+    ? occurrenceComparison
+    : compareOptionalIdentifiers(
+        left.externalIdentifier,
+        right.externalIdentifier,
+      );
 }
 
 export const appleReminderSourceSnapshotV1Schema = z
@@ -524,21 +577,27 @@ export const appleReminderSourceSnapshotV1Schema = z
     for (let index = 1; index < value.records.length; index += 1) {
       const previous = value.records[index - 1];
       const current = value.records[index];
-      if (
-        previous &&
-        current &&
-        compareAppleReminderSourceRecordsV1(
+      if (previous && current) {
+        const comparison = compareAppleReminderSourceRecordsV1(
           previous,
           current,
           value.source.sourceContainerId,
           value.source.sourceContainerId,
-        ) > 0
-      ) {
-        context.addIssue({
-          code: "custom",
-          path: ["records", index],
-          message: "Reminder records are not in deterministic provenance order.",
-        });
+        );
+        if (comparison > 0) {
+          context.addIssue({
+            code: "custom",
+            path: ["records", index],
+            message:
+              "Reminder records are not in deterministic provenance order.",
+          });
+        } else if (comparison === 0) {
+          context.addIssue({
+            code: "custom",
+            path: ["records", index],
+            message: "Reminder provenance ordering coordinate collides.",
+          });
+        }
       }
     }
   });
@@ -603,12 +662,20 @@ export const appleCalendarSourceSnapshotV1Schema = z
         value.source.sourceContainerId,
         value.window.timeZone,
       );
-      if (comparison !== undefined && comparison > 0) {
-        context.addIssue({
-          code: "custom",
-          path: ["records", index],
-          message: "Calendar records are not in deterministic source order.",
-        });
+      if (comparison !== undefined) {
+        if (comparison > 0) {
+          context.addIssue({
+            code: "custom",
+            path: ["records", index],
+            message: "Calendar records are not in deterministic source order.",
+          });
+        } else if (comparison === 0) {
+          context.addIssue({
+            code: "custom",
+            path: ["records", index],
+            message: "Calendar provenance ordering coordinate collides.",
+          });
+        }
       }
     }
   });
@@ -644,9 +711,10 @@ export type AppleSourceSnapshotV1 = z.infer<
 >;
 
 export function appleSourceSnapshotAuthorizesAbsence(
-  snapshot: AppleSourceSnapshotV1,
+  input: unknown,
 ): boolean {
-  return !snapshot.truncated;
+  const result = appleSourceSnapshotV1Schema.safeParse(input);
+  return result.success && !result.data.truncated;
 }
 
 export function parseAppleReminderSourceSnapshotV1(
