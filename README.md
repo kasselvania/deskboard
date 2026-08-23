@@ -76,15 +76,17 @@ Phase 2A established the read-only local probe, empirical field inventory, owner
 
 Phase 2B defines the strict versioned Reminder and Calendar source snapshots, cross-language validation, exact Calendar instant semantics, deterministic collision handling, truncation and authority rules, and the minimum privacy-preserving field set in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md).
 
-**Phase 3A — Atomic Core Apple Source Mirror: active under issue [#12](https://github.com/kasselvania/deskboard/issues/12).**
+**Phase 3A — Atomic Core Apple Source Mirror: accepted and merged in PR [#14](https://github.com/kasselvania/deskboard/pull/14).**
 
-Phase 3A is intentionally limited to a SQLite-backed Core persistence boundary that proves transactional Reminder scope replacement, Calendar overlap-window replacement, revision/idempotency behavior, and rollback safety with synthetic source-contract fixtures. It does not add a network ingestion endpoint, production Bridge conversion, Board integration, deployment, or any Apple write path.
+Phase 3A provides the isolated SQLite-backed Core mirror, ordered strict migrations, validation-before-mutation, source-scoped revisions and normalized digests, transactional Reminder and Calendar replacement, out-of-window Calendar retention, idempotency, rollback proof, and close/reopen persistence. Its accepted behavior is documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md).
 
-The active feature slice implements that internal mirror with ordered strict migrations, validation-before-mutation, normalized digests, explicit non-applied results, narrow reads, and close/reopen proof. Its exact behavior and later-phase boundary are documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md). Phase 3A remains active until its draft pull request is reviewed and merged.
+**Phase 3B — Authenticated Manual Bridge Delivery: active under issue [#15](https://github.com/kasselvania/deskboard/issues/15).**
 
-**Later Phase 3 connected work: not begun.** No Bridge-to-Core transport, production EventKit conversion, homelab deployment, real-data Board composition, background scheduling, or Apple write action exists.
+Phase 3B is intentionally limited to one sandboxed read-only macOS Bridge, production EventKit-to-v1 conversion, crash-safe per-source revision and pending-envelope state, and one authenticated loopback-only Core ingestion route invoked by an explicit `Sync Now` action. The real manual proof runs Bridge and Core on the same Mac. LAN listening, Tailscale, homelab deployment, background scheduling, Board composition, and every Apple write path remain blocked.
 
-The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md), and the active Core mirror design is in [docs/apple-source-mirror.md](docs/apple-source-mirror.md).
+**Phase 3C and later connected work: not begun.** No private remote topology, real-data Board composition, background Bridge schedule, deployment, or Apple write action exists.
+
+The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md), and the accepted Core mirror is documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md).
 
 ## Phase 1 development
 
@@ -137,7 +139,7 @@ npm run check
 ### Repository structure
 
 ```text
-apps/api/                         Fastify API, fixture Board, and Core tests
+apps/api/                         Fastify API, fixture Board, and Core mirror tests
 apps/web/                         React/Vite Board and component tests
 packages/contracts/               Board and Apple source runtime contracts
 fixtures/board/                   Publish-safe Board fixtures
@@ -158,6 +160,7 @@ Deskboard should earn complexity through use. Before contributing or directing a
 - [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md)
 - [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md)
 - [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md)
+- [docs/apple-source-mirror.md](docs/apple-source-mirror.md)
 - [AGENTS.md](AGENTS.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
