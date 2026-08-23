@@ -1,18 +1,18 @@
 # Deskboard Roadmap
 
-Deskboard will be developed as a sequence of bounded vertical slices. Every slice must prove one product or architectural assumption, include explicit tests, and end before the next layer of capability begins.
+Deskboard is developed as a sequence of bounded vertical slices. Every slice must prove one product or architectural assumption, include explicit tests, and stop before the next layer begins.
 
-This roadmap is intentionally conservative. The project should earn complexity through real use.
+This roadmap is intentionally conservative. The project should earn complexity through evidence and real use.
 
 ## Delivery Rules
 
-1. **One slice, one thesis.** Each phase must have a single dominant question it answers.
-2. **No speculative scaffolding.** Do not create empty services, packages, adapters, or abstractions for future phases.
-3. **Exit criteria are mandatory.** A phase is complete only when its proof conditions pass.
-4. **Deferred means absent.** Features listed as deferred should not appear partially implemented behind an unfinished interface.
+1. **One slice, one thesis.** Each slice has one dominant question.
+2. **No speculative scaffolding.** Do not create empty services, adapters, transports, or abstractions for future work.
+3. **Exit criteria are mandatory.** A slice is complete only when its proof conditions pass.
+4. **Deferred means absent.** Later behavior must not appear partially implemented.
 5. **The previous slice remains usable.** New work must not turn the Board into a development-only demo.
-6. **Privacy comes before convenience.** No real personal data enters committed fixtures, logs, screenshots, or tests.
-7. **Stop and use it.** After meaningful product slices, pause implementation long enough to learn from actual desk use.
+6. **Privacy comes before convenience.** No real personal data enters committed fixtures, logs, screenshots, tests, issues, or pull requests.
+7. **Stop and use it.** After connected product slices, pause long enough to learn from actual desk use.
 
 ---
 
@@ -20,277 +20,267 @@ This roadmap is intentionally conservative. The project should earn complexity t
 
 **Question:** Do we agree on what Deskboard is, what it is not, and how development will remain bounded?
 
+**Status:** accepted and complete.
+
 ### Deliverables
 
-- README with the product overview
-- root-level manifesto
-- architecture and data-ownership document
-- phased roadmap
-- coding-agent guardrails
-- contribution and Git hygiene files
+- product README and Manifesto;
+- architecture and data-ownership document;
+- phased roadmap;
+- coding-agent, contribution, privacy, and Git guardrails.
 
 ### Exit criteria
 
-- a new contributor can explain the first slice without inventing features;
-- the repository clearly states that the initial Apple path is read-only;
-- the first implementation can begin without making another architecture decision;
-- no framework or application scaffold has been committed prematurely.
-
-**Status:** complete when the repository-foundation commit set is verified.
+- a contributor can explain the first slice without inventing features;
+- Apple Calendar and Reminders are explicitly authoritative;
+- the initial Apple path is explicitly read-only;
+- no application framework is scaffolded prematurely.
 
 ---
 
 ## Phase 1 — Fixture-Backed Board
 
-**Question:** Can a deliberately constrained Board feel useful, calm, and appliance-like on the iPad Pro and Steam Deck before any private integration exists?
+**Question:** Can a deliberately constrained Board feel useful, calm, and appliance-like on the iPad Pro and Steam Deck before private integration exists?
+
+**Status:** accepted and merged in PR #3.
 
 ### Scope
 
-Build a small monorepo containing:
+- React/Vite web client;
+- Fastify API;
+- shared runtime-validated Board contracts;
+- synthetic Board fixtures;
+- one `/board` route;
+- `GET /health` and `GET /v1/board` only;
+- loading, empty, stale, saved, and unreachable states;
+- deterministic capacity limits and browser proofs.
 
-- `apps/web`: React, TypeScript, and Vite;
-- `apps/api`: Fastify and TypeScript;
-- `packages/contracts`: runtime-validated shared contracts;
-- synthetic fixtures for the Board;
-- automated tests and GitHub Actions CI.
-
-The application exposes only:
-
-```text
-GET /health
-GET /v1/board
-```
-
-The Board contains only:
-
-- date/time header;
-- source-freshness presentation;
-- **Today** with no more than three fixture reminders;
-- **Next** with no more than two fixture Calendar commitments;
-- one optional **Sideways Prompt**;
-- calm loading, empty, stale, and error states.
-
-### UI boundaries
-
-- one route: `/board`;
-- no application navigation;
-- no settings page;
-- no editable controls;
-- no document-level vertical scrolling at the primary target viewports;
-- no animation required to understand state;
-- no hover-only behavior;
-- no generic dashboard cards or charting library;
-- no notification permission;
-- no links out to source applications.
-
-### Technical boundaries
+### Boundaries
 
 - no Apple integration;
-- no database;
-- no authentication;
-- no Docker requirement for local development;
-- no Tailscale configuration;
-- no service worker beyond what is needed for a minimal installable shell and cached static assets;
-- no WebSockets or Server-Sent Events;
-- no state-management library unless React state is demonstrably insufficient;
-- no UI component framework;
-- no AI.
-
-### Proof tests
-
-- contract schemas accept all committed fixtures and reject malformed examples;
-- `GET /v1/board` returns a schema-valid response;
-- ordering and capacity limits are deterministic;
-- iPad landscape reference viewport renders without document-level vertical overflow;
-- Steam Deck `1280 × 800` renders without document-level vertical overflow;
-- content is legible and usable with touch, keyboard, and controller-emulated keyboard navigation;
-- no essential distinction relies only on color;
-- loading, empty, stale, and API-error states are covered;
-- lint, typecheck, unit tests, API tests, browser tests, and production build pass in CI.
+- no database or authentication;
+- no write actions;
+- no deployment requirement;
+- no AI, generic dashboard framework, settings, or navigation.
 
 ### Exit criteria
 
-- the project starts with one documented command;
-- both applications run locally without private credentials;
-- the same fixture Board is visible on the iPad and Steam Deck over the local network;
-- screenshots or test artifacts demonstrate both target layouts;
-- there are no TODO implementations for deferred phases;
-- README local-development instructions match reality;
-- the implementation is small enough for a reviewer to understand in one sitting.
-
-### Deliberate pause
-
-Use the Board for several days with fixture content. Adjust typography, density, ordering, and whitespace before connecting Apple data.
+- complete Node quality gate passes;
+- iPad landscape and Steam Deck layouts have no document-level vertical overflow;
+- physical iPad access over the local network is proved;
+- the Board remains small, calm, read-only, and fixture-backed.
 
 ---
 
 ## Phase 2A — EventKit Discovery Evidence
 
-**Question:** What supported EventKit data is actually available from selected Calendar and Reminder sources, and what is the smallest lossless representation that later contract work should evaluate?
+**Question:** What supported EventKit data is actually available from selected Calendar and Reminder sources, and which distinctions must later contract work preserve?
 
-This is an empirical, read-only discovery slice, not the production Bridge or a frozen source contract.
-
-**Status:** accepted and merged in PR [#7](https://github.com/kasselvania/deskboard/pull/7), with owner-approved sanitized fixtures and the complete local native and Node acceptance gates.
-
-**Discovery evidence:** [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md).
+**Status:** accepted and merged in PR #7.
 
 ### Scope
 
-- create a minimal macOS Swift/SwiftUI utility;
-- request read access to Calendar and Reminders;
-- show a source whitelist for selected calendars and Reminder lists;
-- read a bounded local source scope and invalidate stale in-memory inspections;
-- export sanitized, normalized examples to local development fixtures;
-- document the verified field inventory, unavailable fields, and honestly untested cases;
-- recommend a minimum source representation for Phase 2B to evaluate.
+- contained macOS Swift/SwiftUI discovery probe;
+- separate Calendar and Reminder permission states;
+- explicit empty-by-default source selection;
+- bounded local reads;
+- destructive sanitization and ignored private exports;
+- empirical field inventory and honest `not tested` cases;
+- owner-approved synthetic EventKit specimens;
+- EventKit-derived Board fixture through the unchanged Phase 1 contract.
 
-### Required evidence
+### Accepted evidence
 
-- observed date-only, timed, undated, notes-bearing, priority, and completed Reminder shapes;
-- observed timed, single-day all-day, timezone-qualified, recurring-occurrence, read-only-source, and location-bearing Calendar shapes;
-- explicit `not tested` status for required cases not available through selected sources;
-- an exact owner-approved committed specimen allowlist.
-
-### Boundaries
-
-- no EventKit save or remove calls and no Apple write behavior;
-- no frozen production source contract;
-- no homelab synchronization, network transport, database, or synchronization generations;
-- no background daemon or login item;
-- no attempt to expose unsupported Apple UI concepts;
-- no real personal data committed to Git.
-
-### Proof tests
-
-- the utility handles the observed permission states without coupling Calendar and Reminders;
-- source selection persists locally and successful enumeration reconciles disappeared identifiers;
-- authorization or effective selection changes invalidate captured in-memory inspection data;
-- Calendar events are deterministically ordered before the retained-record cap;
-- the exact committed specimen allowlist is enumerated and decoded with the Swift models;
-- exported candidates contain no private identifying information;
-- normalized temporal structures preserve date-only, local-time, all-day, and timezone-qualified distinctions;
-- malformed or unavailable fields fail safely.
-
-### Exit criteria
-
-- `ARCHITECTURE.md` contains an observed field map instead of assumptions;
-- the fixture Board renders a sanitized EventKit-derived shape;
-- every committed specimen is synthetic, approved, and executable as test evidence;
-- unsupported and untested cases are explicit;
-- the report makes a bounded recommendation without claiming a frozen contract;
-- Phase 2B and Phase 3 implementation remain absent at acceptance.
-
-## Phase 2B — Apple Source Contract and Reconciliation Semantics
-
-**Question:** What is the smallest versioned Apple-source contract that a later one-way mirror can transport and reconcile without losing the distinctions established in Phase 2A?
-
-**Status:** active under issue [#8](https://github.com/kasselvania/deskboard/issues/8). The feature branch implements the draft v1 contract documented in [`docs/apple-source-contract-v1.md`](docs/apple-source-contract-v1.md), but Phase 2B remains unaccepted until implementation review and merge. Phase 3 remains blocked.
-
-### Scope
-
-- define separate versioned Reminder and Calendar source-record variants;
-- classify observed fields as required, optional with a present use, deferred, or excluded;
-- document bridge-scoped identity and conservative remove-plus-add reconciliation;
-- define deterministic Calendar and Reminder ordering before caps and explicit truncation semantics;
-- preserve exact timezone-qualified Calendar instants and reject ambiguous or nonexistent local Calendar times;
-- reject duplicate complete ordering coordinates rather than inheriting upstream order;
-- validate the same synthetic contract fixtures in Swift and TypeScript;
-- derive absence authority only for successful, non-truncated snapshots inside their exact declared scope;
-- document complete atomic source-scope snapshot semantics for later Phase 3 implementation.
+- six Reminder specimens;
+- six Calendar specimens;
+- exact twelve-file allowlist and byte/hash hold;
+- deterministic Calendar ordering before the discovery cap;
+- stale-inspection invalidation;
+- native and Node quality gates.
 
 ### Boundaries
 
-- no HTTP, WebSockets, or another Bridge-to-Core transport;
-- no SQLite or another database;
-- no synchronization-generation or persistence implementation;
-- no Tailscale, Docker, CasaOS, homelab deployment, daemon, login item, or background scheduling;
-- no Calendar or Reminder writes, Reminder completion, or metadata parsing/write-back;
-- no Open Loop, Project, session, timer, ranking, AI, or Board interaction behavior;
-- no generic adapter framework or speculative future-source abstraction.
-
-### Proof tests
-
-- Swift and TypeScript independently validate the same versioned synthetic shapes;
-- unsupported versions and malformed temporal values fail closed;
-- strict Swift and TypeScript validation reject unknown keys at the same promised boundaries;
-- ordering, collision, cap, and truncation semantics are deterministic;
-- timezone-qualified Calendar transition ranges retain exact start/end instants;
-- complete empty Reminder and Calendar scopes authorize absence only after runtime validation;
-- identity limitations and source-scope reconciliation rules are explicit;
-- all approved Phase 2A specimens remain validated without private data access.
-
-### Exit criteria
-
-- source contract v1 is minimal, versioned, and runtime validated in both languages;
-- every included or excluded field has a current rationale;
-- the later Phase 3 mirror can begin without inventing another source-contract decision;
-- no Phase 3 implementation has begun.
+- no EventKit write behavior;
+- no frozen production contract;
+- no network, database, daemon, deployment, or Board integration;
+- no fabricated support for unobserved cases.
 
 ---
 
-## Phase 3 — One-Way Apple Mirror
+## Phase 2B — Apple Source Contract and Reconciliation Semantics
 
-**Question:** Can real Calendar and Reminder changes travel reliably from Apple to the two Deskboard clients without Deskboard modifying the source systems?
+**Question:** What is the smallest versioned Apple-source contract that a one-way mirror can validate and reconcile without losing the distinctions established in Phase 2A?
 
-**Status:** not begun; blocked on accepted Phase 2B contract and reconciliation semantics.
+**Status:** accepted and merged in PR #11.
 
-### Scope
+**Contract:** [`docs/apple-source-contract-v1.md`](docs/apple-source-contract-v1.md).
 
-- macOS Bridge performs bounded read-only scans;
-- Bridge posts versioned synchronization generations to Deskboard Core;
-- Core validates and atomically stores normalized source records;
-- SQLite is introduced for the source mirror and sync bookkeeping;
-- Core composes the Board from real data;
-- clients display freshness and stale-source states;
-- deploy Core and Web to the Ubuntu/CasaOS homelab;
-- expose the service privately through Tailscale.
+### Accepted shape
 
-### Initial source limits
+- separate `AppleReminderSourceSnapshotV1` and `AppleCalendarSourceSnapshotV1` documents;
+- one opaque Bridge and one selected source container per snapshot;
+- explicit matched count and truncation state;
+- exact Calendar window scope;
+- strict TypeScript and Swift validation of the same fixtures;
+- exact timezone-qualified Calendar instants;
+- rejection of ambiguous or nonexistent local Calendar times;
+- deterministic ordering with collision rejection;
+- complete empty scopes as authoritative cases;
+- absence authority exposed only after runtime and semantic validation;
+- privacy-minimized field set.
 
-- only whitelisted calendars and reminder lists;
-- each v1 Reminder snapshot covers all accessible records from one selected list; Phase 3 must not add an undeclared completion or temporal filter and still claim authoritative absence;
-- a bounded Calendar range, initially approximately seven days behind and forty-five days ahead;
-- any production cap is applied after deterministic ordering and makes the snapshot explicitly truncated and non-authoritative for unseen records;
-- no Notes ingestion;
-- no Home Assistant data.
+### Accepted authority rule
+
+> Unseen is absent only after a successful, strict, non-truncated snapshot covers the exact scope in which absence is claimed.
+
+Truncated, malformed, failed, partial, collision-bearing, or otherwise invalid candidates authorize no deletion.
 
 ### Boundaries
 
-- Calendar is read-only;
-- Reminders is read-only;
-- no commands from Core to Bridge;
-- no client write actions;
-- no background push notification system;
-- no source-management UI in the Board.
+- no transport or ingestion endpoint;
+- no database or persistence implementation;
+- no synchronization generations, deployment, Board integration, or Apple writes.
 
-### Proof tests
+---
 
-- editing a selected Reminder in Apple eventually changes both Boards;
-- completing a Reminder in Apple removes or updates it on both Boards;
-- creating, moving, or cancelling a selected Calendar event updates both Boards;
-- a failed or partial synchronization does not delete the last good generation;
-- a sleeping or disconnected Mac produces an honest stale-source state;
-- duplicate sync delivery is idempotent;
-- database backup and restore are documented and exercised;
-- no Apple credentials leave the Mac.
+# Phase 3 — One-Way Apple Mirror
+
+**Question:** Can real Calendar and Reminder changes travel reliably from Apple to both Deskboard clients without Deskboard modifying the source systems?
+
+The original connected phase contained persistence, transport, native conversion, Board composition, deployment, freshness, and a real-use soak. It is therefore delivered as bounded sub-slices. Later sub-slices must preserve the accepted Phase 2B authority semantics rather than redesigning them opportunistically.
+
+## Phase 3A — Atomic Core Apple Source Mirror
+
+**Question:** Can Core persist and transactionally reconcile validated Apple source snapshots without deleting unseen facts?
+
+**Status:** active under issue #12.
+
+### Scope
+
+- isolated SQLite-backed Apple source mirror inside Core;
+- source-controlled migrations and foreign-key enforcement;
+- strict validation before mutation;
+- operational source revision and normalized digest outside source contract v1;
+- transactional Reminder whole-scope replacement;
+- transactional Calendar overlap-window replacement;
+- retained out-of-window Calendar rows;
+- explicit duplicate, stale, conflict, truncated, invalid, and applied results;
+- rollback, reopen, and migration proofs;
+- narrow internal read methods for tests and later slices;
+- `docs/apple-source-mirror.md`.
+
+### Core rules
+
+- revision scope is Bridge + entity + source container;
+- same revision and same digest is an idempotent duplicate;
+- same revision and different digest is a conflict;
+- lower revision is stale;
+- invalid or truncated input does not mutate records, freshness, or accepted revision;
+- complete Reminder snapshots replace the entire selected-list scope;
+- Calendar snapshots replace only stored rows overlapping the accepted window;
+- Calendar rows outside the window remain stored but are not current-window candidates;
+- all destructive work and scope metadata commit in one transaction.
+
+### Boundaries
+
+- no HTTP or other ingestion endpoint;
+- no Swift network client or production EventKit conversion;
+- no Board composition or change to `GET /v1/board`;
+- no authentication, deployment, scheduler, daemon, Docker, or Tailscale;
+- no Apple writes or later semantic features;
+- no generic persistence framework.
 
 ### Exit criteria
 
-- the one-way path runs for at least one week without manual database repair;
-- the Board remains useful when the Bridge is temporarily offline;
-- source freshness is understandable without being noisy;
-- personal source selection is explicit and reviewable;
-- the system is still simpler than opening the source applications for the default glance use case.
+- authoritative snapshots apply atomically to exact scopes;
+- complete empty scopes clear only their authoritative regions;
+- truncated, invalid, stale, conflicting, and failed candidates preserve previous good state;
+- duplicate delivery is idempotent;
+- Calendar window shifts never delete unobserved out-of-window records;
+- injected destructive failure rolls back completely;
+- migrations and close/reopen persistence are proved;
+- native and complete Node gates pass;
+- Phase 1 Board remains fixture-backed and unchanged.
+
+## Phase 3B — Authenticated Manual Bridge Delivery
+
+**Question:** Can the Mac produce contract-v1 snapshots from selected EventKit sources and deliver them to Core safely on explicit demand?
+
+**Status:** planned; blocked on accepted Phase 3A.
+
+### Intended scope
+
+- production EventKit-to-contract conversion behind the accepted source boundary;
+- persistent opaque Bridge identity and monotonic per-source revisions;
+- one narrow authenticated Core ingestion route;
+- outbound-only Bridge delivery;
+- strict payload and operational-envelope limits;
+- idempotent application through the Phase 3A mirror;
+- explicit manual “sync now” behavior and status;
+- no background scheduler yet.
+
+### Boundaries
+
+- Calendar and Reminders remain read-only;
+- no Board composition from the mirror;
+- no daemon, login item, deployment, Tailscale, or public ingress;
+- no write commands or general command bus;
+- no source administration in the Board.
+
+### Exit criteria
+
+- a synthetic or deliberately controlled local source change can be manually delivered end to end;
+- duplicate, stale, conflict, truncated, rejected, and successful results are visible without leaking source content;
+- credentials remain local and excluded from Git;
+- no Apple credential leaves the Mac;
+- failed delivery preserves the previous Core mirror.
+
+## Phase 3C — Real Read-Only Board and Private Deployment
+
+**Question:** Can the validated one-way mirror drive the real Board reliably on the iPad and Steam Deck in the private homelab?
+
+**Status:** planned; blocked on accepted Phase 3B.
+
+### Intended scope
+
+- Core composition of Tasks and Commitments from the source mirror;
+- deterministic reasons and existing Board capacity limits;
+- source freshness and honest stale states;
+- background Bridge scheduling only after manual delivery is reliable;
+- Ubuntu/CasaOS deployment;
+- private Tailscale access;
+- backup and restore for the Core database;
+- one-week read-only soak on both target devices.
+
+### Boundaries
+
+- Calendar and Reminders remain read-only;
+- no client write actions;
+- no source-management UI in the Board;
+- no Notes, Home Assistant, Open Loops, Projects, sessions, timers, ranking, or AI;
+- no public internet ingress requirement.
+
+### Exit criteria
+
+- Apple edits eventually change both Boards;
+- a sleeping or disconnected Mac produces understandable staleness rather than silent incorrectness;
+- failed or partial synchronization never deletes the last good scope;
+- duplicate delivery remains idempotent;
+- backup and restore are exercised;
+- the path runs for at least one week without manual database repair;
+- the Board remains simpler and calmer than opening the source applications for the default glance use case.
 
 ### Deliberate pause
 
-Use this read-only Deskboard daily. Record which information deserves space, which reasons are useful, and what is repeatedly ignored. Do not add interactions merely because the plumbing permits them.
+Use the read-only Deskboard daily. Record which facts deserve space, which reasons help, which source fields are unnecessary, and what is repeatedly ignored. Do not add interactions merely because the plumbing permits them.
 
 ---
 
 ## Phase 4 — One Reminder Round Trip
 
-**Question:** Can Deskboard safely acknowledge completion of one ordinary Reminder without becoming a Reminder-management application?
+**Question:** Can Deskboard acknowledge completion of one ordinary Reminder safely without becoming a Reminder-management application?
+
+**Status:** blocked on a reliable read-only Phase 3 path and its deliberate pause.
 
 ### Scope
 
@@ -306,128 +296,89 @@ Required pieces:
 - Core command queue;
 - unique client mutation IDs;
 - Bridge command polling over its existing outbound connection;
-- source-version or content-hash conflict detection;
+- source-version conflict detection;
 - EventKit completion and save;
-- success, pending, conflict, and failed states;
+- pending, success, conflict, and failed states;
 - audit history;
-- ordinary read synchronization as the final confirmation path.
+- normal read synchronization as final confirmation.
 
 ### Boundaries
 
-- no creating Reminders;
-- no editing titles or notes;
-- no changing due dates;
-- no moving between lists;
+- no Reminder creation, title editing, due-date editing, or list movement;
 - no Calendar writes;
-- no optimistic permanent removal before confirmation;
-- no general command bus for imagined future actions.
-
-### Proof tests
-
-- completing on the iPad completes the real Reminder and updates the Steam Deck;
-- completing on the Steam Deck produces the same result;
-- duplicate client requests complete only once;
-- a changed source item produces an explicit conflict instead of an overwrite;
-- a sleeping Mac leaves the command visibly pending and later completes it;
-- Bridge failure leaves Apple data unchanged and reports a useful error;
-- every attempt has an auditable actor, time, command, and result.
+- no optimistic permanent removal before source confirmation;
+- no general command bus.
 
 ### Exit criteria
 
-- the single write path is reliable enough that the Board does not become visibly incorrect after a real task is completed;
-- no other Apple-editing controls have appeared;
-- the interaction remains a tiny acknowledgment, not source administration.
+- completion from either client updates the real Reminder and both Boards;
+- duplicate commands complete only once;
+- source changes produce explicit conflicts rather than overwrites;
+- a sleeping Mac leaves the command visibly pending;
+- every attempt is auditable;
+- no other Apple-editing control appears.
 
 ---
 
 ## Phase 5 — First Open Loop
 
-**Question:** Does elapsed time since engagement help invite a return without producing guilt or another recurring-task backlog?
+**Question:** Does elapsed time since engagement invite a return without producing guilt or another recurring-task backlog?
 
 ### Scope
 
-Introduce one manually chosen loop, preferably a session-oriented creative activity.
-
-Add:
-
-- a stable loop declaration;
-- a preferred minimum and maximum gap;
-- `resting`, `available`, `calling`, and `paused` derived states;
+- one manually chosen loop;
+- preferred minimum and maximum return gap;
+- resting, available, calling, and paused states;
 - elapsed-time explanation;
-- one Deskboard-owned `I Did This` action;
-- append-only activity history;
-- one Open Loops slot on the Board.
-
-A Reminder note metadata block may act as the portable declaration once its parser has been verified, but dynamic history stays in Core.
+- one `I Did This` action;
+- append-only engagement history;
+- one Open Loop slot on the Board.
 
 ### Boundaries
 
-- one loop first, not an import wizard;
-- no streaks;
-- no missed-occurrence debt;
-- no AI ranking;
-- no charts;
-- no automatic cadence prescription;
-- no completion of the persistent Reminder anchor.
-
-### Proof tests
-
-- engagement resets elapsed time and loop state;
-- crossing the minimum gap makes the loop eligible without forcing display;
-- crossing the preferred maximum changes the explanation to `calling` behavior;
-- pausing removes the loop intentionally without deleting history;
-- clients show the same derived state;
-- the Board never labels the user as failed, behind, or unproductive.
+- one loop first;
+- no streaks, missed-instance debt, charts, AI ranking, or automatic cadence prescription;
+- no completion of a persistent Reminder anchor.
 
 ### Exit criteria
 
-- the loop is used in real life for at least two preferred windows;
-- elapsed-time context is experienced as useful rather than punitive;
-- the interaction adds less maintenance than it removes.
+- engagement resets elapsed time and derived state;
+- pause is intentional and preserves history;
+- both clients show the same state;
+- the Board never labels the user failed, behind, or unproductive;
+- the loop is used for at least two preferred windows and adds less maintenance than it removes.
 
 ---
 
 ## Phase 6 — One Session Timer
 
-**Question:** Can a lightweight timer reduce the mental barrier to beginning without turning Deskboard into surveillance or detailed time tracking?
+**Question:** Can a lightweight timer reduce the barrier to beginning without becoming surveillance or detailed time tracking?
 
 ### Scope
 
-- start one server-owned active session;
-- display it consistently on both clients;
-- stop it from either client;
-- record duration and engagement;
-- allow a small correction for an accidentally running timer;
-- enforce one active session per user initially.
+- one server-owned active session;
+- start and stop from either client;
+- duration and engagement record;
+- small correction for an abandoned timer;
+- one active session per user initially.
 
 ### Boundaries
 
-- no Pomodoro framework;
-- no billing or timesheets;
-- no productivity score;
-- no automatic activity monitoring;
-- no multiple overlapping timers;
-- no elaborate reports.
-
-### Proof tests
-
-- start on iPad, inspect on Steam Deck, and stop on either device;
-- the timer survives client reload, lock, and reconnect;
-- duplicate start/stop requests are idempotent;
-- session completion updates the associated loop’s engagement time;
-- an abandoned timer can be corrected without corrupting history.
+- no Pomodoro framework, billing, timesheets, productivity score, automatic monitoring, overlapping timers, or elaborate reports.
 
 ### Exit criteria
 
-- the timer is useful for at least one creative activity and one project activity;
-- recorded durations feel informative rather than burdensome;
-- the Board remains quiet while a session is active.
+- start on one client and stop on the other;
+- the timer survives reload, lock, and reconnect;
+- duplicate requests are idempotent;
+- session completion updates associated engagement;
+- durations feel informative rather than burdensome.
 
 ---
 
 ## Later Candidates — Not Scheduled
 
-These are possible directions, not commitments:
+Possible future bounded slices include:
 
 - three-slot active-project model and `last moved` history;
 - next actions linked to Reminders;
@@ -435,14 +386,13 @@ These are possible directions, not commitments:
 - weather and one-line Home state;
 - carefully scoped Sonos or household scenes;
 - Home Assistant and ESP32 signals;
-- agent and Shortcut commands through an audited API;
+- audited agent and Shortcut commands;
 - family-safe profiles;
-- Android wall mode;
-- E-Ink paper profile;
-- server-rendered Pi/Kindle frame client;
+- Android and E-Ink rendering profiles;
+- server-rendered low-power display clients;
 - weekly descriptive reflection.
 
-Each candidate requires a new bounded slice with its own thesis, exclusions, and proof tests.
+These are candidates, not commitments. Each requires its own thesis, boundaries, and proof tests.
 
 ---
 
@@ -450,13 +400,14 @@ Each candidate requires a new bounded slice with its own thesis, exclusions, and
 
 A slice is not complete until:
 
-- its acceptance tests pass locally and in CI;
-- documentation describes what exists, not what was intended;
-- no secrets or personal fixture data are committed;
+- its acceptance tests pass locally;
+- hosted CI results are reported honestly, including administrative non-starts;
+- documentation describes what exists rather than what was intended;
+- no secrets or personal data are committed;
 - new dependencies are justified by current requirements;
-- error and empty states are implemented;
-- the prior slice’s use case still works;
-- deferred features remain absent;
-- the repository can be cloned and run from documented commands;
-- the change is small enough to review coherently;
-- the next phase has not been partially started.
+- failure and empty states are proved;
+- the previous slice remains usable;
+- deferred behavior remains absent;
+- the repository can be cloned and validated from documented commands;
+- the change is small enough for coherent review;
+- the next slice has not been partially started.
