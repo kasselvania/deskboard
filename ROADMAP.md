@@ -155,6 +155,13 @@ The original connected phase contained persistence, transport, native conversion
 
 **Status:** active under issue #12.
 
+The active feature slice now contains the internal SQLite mirror, ordered
+migration, strict validation boundary, transactional replacement service, and
+focused synthetic proofs described in
+[`docs/apple-source-mirror.md`](docs/apple-source-mirror.md). These remain
+Phase 3A review artifacts until the draft pull request is accepted and merged;
+Phase 3B and Phase 3C have not begun.
+
 ### Scope
 
 - isolated SQLite-backed Apple source mirror inside Core;

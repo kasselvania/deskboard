@@ -97,7 +97,7 @@ The web technology is a delivery mechanism. The experience should feel like a de
 
 **Initial technology:** TypeScript and Fastify.
 
-**Initial persistence:** none beyond fixtures. SQLite is introduced only when real source snapshots or Deskboard-owned state need persistence.
+**Initial persistence:** Phase 3A introduces an isolated SQLite Apple source mirror. The fixture-backed Board and every other Core concern remain unchanged and non-persistent.
 
 **Responsibilities:**
 
@@ -252,6 +252,30 @@ This separation matters because:
 - a Reminder is not automatically an Open Loop;
 - later metadata parsers can be revised without losing the original normalized record;
 - synchronization errors can be diagnosed without guessing what EventKit returned.
+
+### Phase 3A atomic source mirror
+
+The active Phase 3A implementation is specified in
+[`docs/apple-source-mirror.md`](docs/apple-source-mirror.md). It accepts an
+unknown candidate plus a positive operational source revision, validates the
+candidate through the accepted Phase 2B union, and derives a deterministic
+SHA-256 digest only from the normalized parsed document. Revision and digest
+remain Core delivery metadata; the accepted v1 source contract is unchanged.
+
+Core stores one strict scope row per Bridge, entity, and selected container,
+with separate strict Reminder and Calendar record tables. Scope metadata and
+records commit in one SQLite transaction. Complete Reminder snapshots replace
+their entire exact scope. Complete Calendar snapshots replace only stored rows
+whose interpreted exact ranges overlap the declared `[start, end)` window;
+unobserved out-of-window rows remain stored and are excluded from the normal
+current-window read. Complete empty snapshots clear only those authoritative
+regions.
+
+Invalid, truncated, stale, conflicting, or failed candidates do not change
+records, accepted revision, digest, timestamps, counts, or Calendar window. An
+equal revision with an equal digest is an idempotent no-op. Phase 3A performs no
+identity-history merge through EventKit provenance hints and exposes no
+transport or Board path.
 
 ## Initial Apple Field Map
 
@@ -546,7 +570,7 @@ The following choices are intentional for the opening phases:
 | Front end | React + TypeScript + Vite PWA |
 | Server | Fastify + TypeScript |
 | Monorepo | npm workspaces unless a concrete need suggests otherwise |
-| Database | none in slice 1; SQLite when persistence becomes necessary |
+| Database | none for the Phase 1 Board; isolated SQLite Apple source mirror in Phase 3A |
 | Cloud | none required |
 | Private access | Tailscale |
 | Live updates | ordinary polling |
