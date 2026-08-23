@@ -33,6 +33,12 @@ Phase 2B — Apple Source Contract and Reconciliation Semantics — is accepted 
 
 The current implementation target is **Phase 3A — Atomic Core Apple Source Mirror** from issue #12.
 
+The feature branch contains the draft internal SQLite mirror, ordered migration,
+strict apply boundary, and synthetic transaction proofs documented in
+`docs/apple-source-mirror.md`. They are Phase 3A review artifacts, not a Bridge,
+transport, production source path, or accepted basis for Phase 3B. Phase 3A
+remains active until review and merge.
+
 The question for Phase 3A is:
 
 > Can Deskboard Core persist and transactionally reconcile validated Apple source snapshots without deleting unseen facts when a candidate is truncated, stale, duplicated, conflicting, invalid, or scoped to a shifted Calendar window?

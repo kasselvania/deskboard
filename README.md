@@ -80,9 +80,11 @@ Phase 2B defines the strict versioned Reminder and Calendar source snapshots, cr
 
 Phase 3A is intentionally limited to a SQLite-backed Core persistence boundary that proves transactional Reminder scope replacement, Calendar overlap-window replacement, revision/idempotency behavior, and rollback safety with synthetic source-contract fixtures. It does not add a network ingestion endpoint, production Bridge conversion, Board integration, deployment, or any Apple write path.
 
+The active feature slice implements that internal mirror with ordered strict migrations, validation-before-mutation, normalized digests, explicit non-applied results, narrow reads, and close/reopen proof. Its exact behavior and later-phase boundary are documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md). Phase 3A remains active until its draft pull request is reviewed and merged.
+
 **Later Phase 3 connected work: not begun.** No Bridge-to-Core transport, production EventKit conversion, homelab deployment, real-data Board composition, background scheduling, or Apple write action exists.
 
-The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), and the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md).
+The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md), and the active Core mirror design is in [docs/apple-source-mirror.md](docs/apple-source-mirror.md).
 
 ## Phase 1 development
 

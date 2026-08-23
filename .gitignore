@@ -57,9 +57,20 @@ data/
 *.sqlite
 *.sqlite3
 *.db
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
 *.db-shm
 *.db-wal
 *.db-journal
+*.sqlite-backup
+*.sqlite3-backup
+*.db-backup
+*.sqlite-dump
+*.sqlite3-dump
+*.db-dump
+*.dump
+*.backup
 
 # Local exports and private fixtures
 exports/
