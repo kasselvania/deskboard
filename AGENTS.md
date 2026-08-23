@@ -129,7 +129,10 @@ Notes, alarms, URLs, locations, availability, participant information, creation 
 - Apply deterministic ordering before any cap.
 - Define what the retained subset means for Calendar and Reminders.
 - Represent matched count and truncation honestly.
+- Preserve exact instants for timezone-qualified Calendar ranges; reject ambiguous or nonexistent local Calendar times instead of choosing an occurrence.
+- Require complete ordering coordinates to be unique; a collision invalidates the candidate and retains the previous good scope.
 - Authorize absence only for a successful non-truncated snapshot inside its exact Bridge, entity, container, and Calendar-window scope.
+- Expose absence authority only after strict runtime and semantic validation; a structural type or Codable decode alone is not authority.
 - A failed, partial, malformed, or truncated replacement must retain the previous good scope and must not delete unseen records.
 - Preserve the accepted Calendar discovery window unless evidence justifies a documented change.
 - Do not silently discard records while claiming a complete scope.

@@ -235,9 +235,11 @@ AppleReminderSourceSnapshotV1
 AppleCalendarSourceSnapshotV1
 ```
 
-Each snapshot covers one opaque Bridge identity, one selected source container, one entity type, one capture time, and one deterministically ordered retained record set. Calendar additionally declares an offset-bearing `[start, end)` overlap window and the civil time zone used to interpret local and all-day values.
+Each snapshot covers one opaque Bridge identity, one selected source container, one entity type, one capture time, and one deterministically ordered retained record set. Calendar additionally declares an offset-bearing `[start, end)` overlap window and the civil time zone used to interpret local and all-day values. Timezone-qualified Calendar records carry exact offset-bearing start/end instants plus a display time zone; civil display values are derived rather than used to reconstruct identity.
 
-The v1 document carries exact matched count and truncation state. A valid non-truncated snapshot may assert absence only inside its declared scope. A truncated, partial, failed, malformed, or semantically invalid result cannot authorize deletion of unseen records. `records.length` supplies the retained count, and absence authority is derived rather than duplicated on the wire.
+The v1 document carries exact matched count and truncation state. Only a runtime-validated non-truncated snapshot may assert absence inside its declared scope. A complete empty snapshot is authoritative for removing the old contents of that exact scope. A truncated, partial, failed, malformed, collision-bearing, or otherwise semantically invalid result cannot authorize deletion of unseen records. `records.length` supplies the retained count, and absence authority is derived rather than duplicated on the wire.
+
+The ordering coordinate is total only when it is unique. Equal complete coordinates invalidate the candidate and preserve the previous good scope; Core must not choose from upstream order, merge, or discard colliding records.
 
 The contract deliberately excludes source/account titles, notes, URLs, locations, participants, alarms, creation/modification times, complete recurrence grammar, normalization diagnostics, content hashes, synchronization generations, database identifiers, and transport/deployment metadata. Phase 3 operational data must remain outside the source-fact document.
 
@@ -299,7 +301,7 @@ Reminder: absent | dateOnly | localDateTime | timeZoneDateTime
 Calendar: localTimedRange | timeZoneTimedRange | allDayRange
 ```
 
-All values use real Gregorian dates and real clocks. A local date-time cannot carry an offset. Timed and exclusive all-day ends must be later than their starts. Date-only Reminders and all-day Calendar ranges remain civil values; they are not flattened to UTC. Calendar window boundaries, capture time, completion date, and occurrence date are offset-bearing instants because those fields have instant semantics.
+All values use real Gregorian dates and real clocks. A local date-time cannot carry an offset. Timezone-qualified Calendar ranges use exact offset-bearing start/end instants and retain a time zone only for civil display context. Local/floating Calendar boundaries must each resolve to exactly one instant in the window zone; repeated and nonexistent civil times fail instead of choosing an occurrence. Timed and exclusive all-day ends must be later than their starts. Date-only Reminders and all-day Calendar ranges remain civil values; they are not flattened to UTC.
 
 ## Synchronization
 
@@ -487,6 +489,9 @@ Phase 2B independently proves in TypeScript and Swift that:
 - every invalid snapshot fails;
 - unknown keys fail at every strict object boundary;
 - dates, clocks, ranges, completion, counts, truncation, order, and Calendar scope are semantic invariants;
+- timezone-qualified Calendar ranges preserve exact instants, while ambiguous/nonexistent local ranges fail;
+- complete ordering-coordinate collisions fail rather than inherit upstream order;
+- complete empty Reminder and Calendar scopes authorize absence only after strict runtime validation;
 - truncated snapshots never authorize absence;
 - the accepted Phase 2A specimen allowlist continues to decode without accessing private fixtures.
 

@@ -87,7 +87,7 @@ bridgeId
 
 An event overlaps when its normalized start is earlier than `window.end` and its normalized end is later than `window.start`. An event ending exactly at the window start does not match. An event starting exactly at the window end does not match. An event may begin before the window or end after it; overlap, not full containment, is the declared predicate.
 
-The validator rejects a Calendar record that does not overlap its declared scope. `window.timeZone` interprets `localTimedRange` and `allDayRange`; `timeZoneTimedRange` uses its own time-zone identifier.
+The validator rejects a Calendar record that does not overlap its declared scope. `window.timeZone` interprets `localTimedRange` and `allDayRange`. A `timeZoneTimedRange` carries exact offset-bearing start/end instants; its own time-zone identifier is display context and is not used to reconstruct an instant from civil text.
 
 ## 3. Version 1 records
 
@@ -129,9 +129,11 @@ Calendar temporal variants are:
 
 ```text
 localTimedRange(startLocalDateTime, endLocalDateTime)
-timeZoneTimedRange(startLocalDateTime, endLocalDateTime, timeZone)
+timeZoneTimedRange(start instant, end instant, timeZone)
 allDayRange(startDate, exclusive endDate)
 ```
+
+Timezone-qualified Calendar start/end values are exact offset-bearing instants copied from the EventKit `Date` meaning. Civil display values are derived from each instant plus `timeZone`; local civil strings are not serialized as substitutes for exact-time identity.
 
 The contract supports `tentative` and `canceled` status, detached occurrences, local timed ranges, and multi-day all-day ranges. Phase 2A observed only `none`/`confirmed`, non-detached records, timezone-qualified timed records, and a single-day all-day source case. Contract support does not rewrite those empirical classifications.
 
@@ -175,7 +177,7 @@ The classification labels in this table are exhaustive for v1:
 | Reminder completion date | optional in v1 with a current use | Preserves current completed-record evidence without claiming history. |
 | Reminder raw Apple priority | deferred extension | No concrete Phase 3 use exists; it is not attention ranking. |
 | Reminder recurrence structure | deferred extension | It was not observed and must not be fabricated; v1 does not need it. |
-| Calendar timed start and end | required in v1 | Required for window membership, ordering, and Commitment timing. |
+| Calendar timed start and end | required in v1 | Required for window membership, ordering, and Commitment timing. Timezone-qualified values are exact offset-bearing instants; local/floating values remain civil strings under the declared window zone. |
 | Calendar all-day state plus start/end | required in v1 | Represented once by the all-day temporal discriminator and exclusive dates. |
 | probe window `daysBefore` / `daysAfter` | excluded for privacy or lack of need | Discovery-policy offsets are redundant with exact v1 window boundaries and must not freeze the probe cap/window policy. |
 | separate probe `isAllDay` boolean | excluded for privacy or lack of need | Redundant with the strict temporal discriminator. |
@@ -221,17 +223,23 @@ Reconciliation must therefore be conservative:
 
 False merging is prohibited. Conservative remove-plus-add behavior may lose continuity, but it does not claim two Apple facts are one when the evidence cannot establish that.
 
+The complete ordering coordinate is also a validation coordinate, not a durable primary key. If two retained records collide on that coordinate, the candidate snapshot is invalid. Core must retain the previous good scope; it must not merge, discard, or arbitrarily order the colliding records.
+
 ## 6. Temporal semantics
 
 All calendar dates use the proleptic Gregorian calendar and must be real dates. Local date-times use exact `YYYY-MM-DDTHH:mm:ss` civil-time form and must contain real clock values. A `Z` or numeric offset in a local date-time is rejected rather than silently reclassified.
 
-Offset-bearing instants are used only where the source meaning is an instant: capture time, completion date, occurrence date, and Calendar window boundaries.
+Offset-bearing instants are used where the source meaning is an instant: capture time, completion date, occurrence date, Calendar window boundaries, and timezone-qualified Calendar start/end.
 
 Reminder date-only values remain dates. Calendar all-day values remain exclusive civil-date ranges. Neither is flattened to UTC.
 
-Timed and all-day ends must be later than their starts. Time-zone identifiers must be recognized by the validating platform. Calendar window membership is validated after interpreting local/all-day values in `window.timeZone` and timezone-qualified values in their own declared time zone.
+Timezone-qualified Calendar ranges require exact start/end instants with end later than start. Ordering and Calendar-window overlap use those exact instants. The associated `timeZone` preserves civil display context; consumers derive display text from the instant rather than accepting an ambiguous local substitute.
 
-The Phase 2A source pass did not observe a daylight-saving transition or an ambiguous repeated civil time. Version 1 rejects civil values that cannot round-trip through the declared zone, but repeated-time identity remains unresolved evidence. Phase 3 must not make stronger DST claims; a new offset-bearing temporal variant requires a new schema version if real evidence proves it necessary.
+Local/floating Calendar ranges remain civil values interpreted in `window.timeZone`. Both validators require each local start and end to resolve to exactly one instant. A nonexistent civil time resolves to none and fails. A repeated civil time resolves to more than one and fails. Neither language silently chooses the first or last repeated occurrence. After unique resolution, the exact end must be later than the exact start and the range must overlap the window.
+
+All-day dates remain exclusive civil ranges interpreted in `window.timeZone`. Time-zone identifiers must be recognized by the validating platform.
+
+The Phase 2A source pass did not observe a daylight-saving transition, ambiguous repeated civil time, or local/floating Calendar value. The exact-instant and local-rejection rules are contract-correctness decisions derived from the exact `Date` values EventKit already supplies; they are not new empirical evidence.
 
 ## 7. Deterministic ordering and retained-set meaning
 
@@ -239,11 +247,13 @@ Ordering is applied to the complete matched set before any safety cap. String co
 
 Calendar order remains the accepted Phase 2A order:
 
-1. interpreted start;
-2. interpreted end;
+1. exact start instant, or the uniquely interpreted local/all-day start;
+2. exact end instant, or the uniquely interpreted local/all-day end;
 3. source container identifier;
 4. local Calendar item identifier;
-5. event identifier, with absence before presence.
+5. event identifier, with absence before presence;
+6. occurrence date as an exact instant, with absence before presence;
+7. external identifier, with absence before presence.
 
 Because each v1 snapshot contains one container, step 3 is constant inside that document but remains part of the provenance order across source coordinates.
 
@@ -254,6 +264,8 @@ Reminder order is a stable provenance order with no attention meaning:
 3. external identifier, with absence before presence.
 
 Reminder title, start, due, completion, and Apple priority do not affect retained order. The retained prefix is not “the most important Reminders.”
+
+The complete Calendar and Reminder ordering coordinates must each be unique inside one snapshot. Equality is a provenance collision, not a stable tie. The validators reject the entire candidate rather than selecting from upstream order, merging records, or discarding one. Calendar occurrence date and external identifier are ordering-only tie-breakers; this use makes no durability or universal-identity claim.
 
 The Phase 2A cap of 200 was a disposable probe safety limit. V1 does not serialize or mandate a production cap. Phase 3 may choose an operational cap, but it must sort first, report exact `matchedCount`, set `truncated`, and preserve the semantics here.
 
@@ -270,6 +282,8 @@ truncated = true   => matchedCount > records.length
 
 A valid non-truncated snapshot is authoritative for absence only inside its exact declared scope. It may say that a previously mirrored record in that same scope is no longer present.
 
+The valid empty case is explicit: `matchedCount: 0`, `records: []`, and `truncated: false`. After strict and semantic validation, an empty Reminder or Calendar snapshot authorizes removal of every previously mirrored record inside only that exact scope.
+
 A valid truncated snapshot is an incomplete retained prefix. It may update or add records that are present, but it must never authorize absence, removal, or deletion of an unseen record.
 
 A malformed, failed, interrupted, partially decoded, or semantically invalid document is not a snapshot at all. It authorizes no replacement and no absence inference.
@@ -283,7 +297,7 @@ This rule is the central reconciliation invariant:
 Phase 3 must implement these rules without changing their meaning:
 
 1. Receive a complete candidate document before mutating the mirror.
-2. Reject unsupported versions, unknown keys, malformed temporal values, invalid counts, invalid order, and out-of-window Calendar records.
+2. Reject unsupported versions, unknown keys, malformed temporal values, invalid counts, invalid order, duplicate ordering coordinates, and out-of-window Calendar records.
 3. Treat a failed or partial transfer as no candidate document.
 4. For a valid truncated candidate, retain the previous good source scope and do not delete unseen records. Present records may be staged only under an explicitly designed non-destructive policy.
 5. For a valid non-truncated candidate, atomically replace only the declared scope.
@@ -292,21 +306,25 @@ Phase 3 must implement these rules without changing their meaning:
 8. If storage or composition fails, preserve the previous good scope.
 9. Cancellation is carried as record status when supplied; it is not inferred from truncation or transport failure.
 
+A provenance/order-coordinate collision invalidates the complete candidate and follows the same retain-previous-good-scope rule as any other semantic failure.
+
 Synchronization generation IDs, idempotency receipts, database keys, retry state, transport envelopes, and failure/freshness storage are Phase 3 design and implementation. They must wrap or store this document without weakening its scope authority.
 
 ## 10. Strict validation strategy
 
-TypeScript uses strict Zod objects at every promised object boundary and discriminated temporal unions. Semantic refinements validate dates, clocks, instants, zones, ranges, completion, counts, truncation, ordering, and Calendar overlap.
+TypeScript uses strict Zod objects at every promised object boundary and discriminated temporal unions. Semantic refinements validate dates, clocks, exact instants, zones, ranges, local-time uniqueness, completion, counts, truncation, ordering-coordinate uniqueness, and Calendar overlap. The public absence-authority helper accepts `unknown`, runs the strict union schema internally, and returns authority only after successful validation.
 
 Swift uses three layers:
 
 1. a narrowly scoped JSON object walk rejects `null` and any unknown key at the snapshot, scope, window, record, and temporal-variant levels;
 2. `JSONDecoder`/`Codable` enforces concrete field types and enum values;
-3. pure semantic validation enforces the same date, range, count, completion, scope, truncation, and ordering rules as Zod.
+3. pure semantic validation enforces the same date, exact-instant, local-time uniqueness, range, count, completion, scope, truncation, and ordering-collision rules as Zod.
 
 Codable success by itself is never treated as strict wire validation.
 
-Both implementations enumerate the exact same 12 valid and 20 invalid fixture names. Swift additionally encodes every valid decoded model and passes the result back through the strict decoder. The existing Phase 2A test separately preserves the exact twelve accepted EventKit evidence files and never reads `private-fixtures/`.
+Swift returns a `ValidatedAppleSourceSnapshotV1` wrapper only after all three layers pass. Only that wrapper exposes `absenceIsAuthoritative`; raw Codable snapshot structs do not.
+
+Both implementations enumerate the exact same 15 valid and 24 invalid fixture names. Swift additionally encodes every valid decoded model and passes the result back through the strict decoder. The valid inventory includes complete empty Reminder and Calendar scopes and an exact-instant range whose endpoints share a repeated civil clock reading on opposite sides of an offset transition. The invalid inventory includes ambiguous/nonexistent local times and duplicate complete ordering coordinates. The existing Phase 2A test separately preserves the exact twelve accepted EventKit evidence files and never reads `private-fixtures/`.
 
 ## 11. Privacy rationale
 
@@ -326,7 +344,7 @@ The following remain unresolved or empirically not tested:
 - true detached Calendar exceptions;
 - Calendar cancellation, tentative status, and decline behavior from selected sources;
 - local/floating timed EventKit values from selected sources;
-- daylight-saving transitions and repeated civil times;
+- source-observed daylight-saving transitions and repeated civil times; v1 preserves exact timezone-qualified instants and rejects ambiguous local values without claiming new empirical evidence;
 - multi-day all-day values from selected sources;
 - Reminder recurrence and repeated completion history;
 - provider behavior beyond the selected CalDAV and subscribed cases;

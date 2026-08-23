@@ -192,6 +192,8 @@ This is an empirical, read-only discovery slice, not the production Bridge or a 
 - classify observed fields as required, optional with a present use, deferred, or excluded;
 - document bridge-scoped identity and conservative remove-plus-add reconciliation;
 - define deterministic Calendar and Reminder ordering before caps and explicit truncation semantics;
+- preserve exact timezone-qualified Calendar instants and reject ambiguous or nonexistent local Calendar times;
+- reject duplicate complete ordering coordinates rather than inheriting upstream order;
 - validate the same synthetic contract fixtures in Swift and TypeScript;
 - derive absence authority only for successful, non-truncated snapshots inside their exact declared scope;
 - document complete atomic source-scope snapshot semantics for later Phase 3 implementation.
@@ -211,7 +213,9 @@ This is an empirical, read-only discovery slice, not the production Bridge or a 
 - Swift and TypeScript independently validate the same versioned synthetic shapes;
 - unsupported versions and malformed temporal values fail closed;
 - strict Swift and TypeScript validation reject unknown keys at the same promised boundaries;
-- ordering, cap, and truncation semantics are deterministic;
+- ordering, collision, cap, and truncation semantics are deterministic;
+- timezone-qualified Calendar transition ranges retain exact start/end instants;
+- complete empty Reminder and Calendar scopes authorize absence only after runtime validation;
 - identity limitations and source-scope reconciliation rules are explicit;
 - all approved Phase 2A specimens remain validated without private data access.
 
