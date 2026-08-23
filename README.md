@@ -70,13 +70,19 @@ The Board has also been reached from the physical iPad over the local network. P
 
 **Phase 2A — EventKit Discovery Evidence: accepted and merged in PR [#7](https://github.com/kasselvania/deskboard/pull/7).**
 
-Phase 2A established the read-only local probe, empirical field inventory, owner-approved sanitized evidence set, deterministic bounded Calendar reads, inspection-scope invalidation, and executable fixture evidence. Its recommendations are evidence for contract design; they are not production Bridge types.
+Phase 2A established the read-only local probe, empirical field inventory, owner-approved sanitized evidence set, deterministic bounded Calendar reads, inspection-scope invalidation, and executable fixture evidence.
 
-**Phase 2B — Apple Source Contract and Reconciliation Semantics: active under issue [#8](https://github.com/kasselvania/deskboard/issues/8).** The feature branch defines and validates the draft v1 contract in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md) without adding transport, persistence, deployment, or production synchronization. Phase 2B remains unaccepted until implementation review and merge.
+**Phase 2B — Apple Source Contract and Reconciliation Semantics: accepted and merged in PR [#11](https://github.com/kasselvania/deskboard/pull/11).**
 
-**Phase 3 — One-Way Apple Mirror: not begun.** No production Bridge, database, homelab synchronization path, or Apple write action has been implemented.
+Phase 2B defines the strict versioned Reminder and Calendar source snapshots, cross-language validation, exact Calendar instant semantics, deterministic collision handling, truncation and authority rules, and the minimum privacy-preserving field set in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md).
 
-The discovery boundary and candidate semantic distinctions are defined in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), while the accepted empirical findings are recorded in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md).
+**Phase 3A — Atomic Core Apple Source Mirror: active under issue [#12](https://github.com/kasselvania/deskboard/issues/12).**
+
+Phase 3A is intentionally limited to a SQLite-backed Core persistence boundary that proves transactional Reminder scope replacement, Calendar overlap-window replacement, revision/idempotency behavior, and rollback safety with synthetic source-contract fixtures. It does not add a network ingestion endpoint, production Bridge conversion, Board integration, deployment, or any Apple write path.
+
+**Later Phase 3 connected work: not begun.** No Bridge-to-Core transport, production EventKit conversion, homelab deployment, real-data Board composition, background scheduling, or Apple write action exists.
+
+The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), and the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md).
 
 ## Phase 1 development
 
@@ -129,12 +135,15 @@ npm run check
 ### Repository structure
 
 ```text
-apps/api/             Fastify API and injection tests
-apps/web/             React/Vite Board and component tests
-packages/contracts/   Zod runtime schema and shared TypeScript types
-fixtures/board/       Publish-safe valid and malformed fixtures
-tests/browser/        Playwright viewport proofs
-.github/workflows/    The complete CI quality gate
+apps/api/                         Fastify API, fixture Board, and Core tests
+apps/web/                         React/Vite Board and component tests
+packages/contracts/               Board and Apple source runtime contracts
+fixtures/board/                   Publish-safe Board fixtures
+fixtures/eventkit/                Owner-approved sanitized discovery evidence
+fixtures/apple-source-contract/   Strict cross-language source-contract fixtures
+tools/apple-eventkit-probe/       Contained native EventKit discovery probe
+tests/browser/                    Playwright viewport proofs
+.github/workflows/                The complete CI quality gate
 ```
 
 ## Scope discipline
@@ -145,6 +154,8 @@ Deskboard should earn complexity through use. Before contributing or directing a
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [ROADMAP.md](ROADMAP.md)
 - [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md)
+- [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md)
+- [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md)
 - [AGENTS.md](AGENTS.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
