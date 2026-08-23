@@ -11,9 +11,10 @@ Before changing code or configuration, read:
 5. `docs/apple-source-mapping-v0.1.md`
 6. `docs/apple-eventkit-discovery.md`
 7. `docs/apple-source-contract-v1.md`
-8. `CONTRIBUTING.md`
-9. `SECURITY.md`
-10. the active GitHub issue and its review context
+8. `docs/apple-source-mirror.md`
+9. `CONTRIBUTING.md`
+10. `SECURITY.md`
+11. the active GitHub issue and its review context
 
 If a task conflicts with those documents, pause and explain the conflict instead of silently expanding or redesigning the project.
 
@@ -29,65 +30,66 @@ Phase 1 — Fixture-Backed Board — is accepted and merged.
 
 Phase 2A — EventKit Discovery Evidence — is accepted and merged in PR #7. Its probe, empirical findings, caveats, and twelve owner-approved sanitized specimens remain evidence inputs.
 
-Phase 2B — Apple Source Contract and Reconciliation Semantics — is accepted and merged in PR #11. The strict v1 Reminder and Calendar snapshots, temporal semantics, ordering/collision rules, truncation authority, and privacy-minimized field set are now the source boundary for connected work.
+Phase 2B — Apple Source Contract and Reconciliation Semantics — is accepted and merged in PR #11. `AppleReminderSourceSnapshotV1` and `AppleCalendarSourceSnapshotV1` are strict accepted boundaries.
 
-The current implementation target is **Phase 3A — Atomic Core Apple Source Mirror** from issue #12.
+Phase 3A — Atomic Core Apple Source Mirror — is accepted and merged in PR #14. Its SQLite migrations, revision/digest behavior, exact scope replacement, truncation rules, and transaction semantics are accepted infrastructure.
 
-The feature branch contains the draft internal SQLite mirror, ordered migration,
-strict apply boundary, and synthetic transaction proofs documented in
-`docs/apple-source-mirror.md`. They are Phase 3A review artifacts, not a Bridge,
-transport, production source path, or accepted basis for Phase 3B. Phase 3A
-remains active until review and merge.
+The current implementation target is **Phase 3B — Authenticated Manual Bridge Delivery** from issue #15.
 
-The question for Phase 3A is:
+The question for Phase 3B is:
 
-> Can Deskboard Core persist and transactionally reconcile validated Apple source snapshots without deleting unseen facts when a candidate is truncated, stale, duplicated, conflicting, invalid, or scoped to a shifted Calendar window?
+> Can an explicitly invoked, read-only Mac Bridge produce accepted source snapshots and deliver each scope to the atomic Core mirror without leaking credentials or private content, losing retry identity, or reusing one revision for changed content after an uncertain response?
 
-This is a Core persistence slice. It is not the Bridge transport, production EventKit conversion, Board integration, homelab deployment, scheduling, or an Apple write path.
+This is a manual loopback transport slice. It is not homelab deployment, background synchronization, Board integration, or an Apple write path.
 
-### Allowed Phase 3A shape
+### Allowed Phase 3B shape
 
-Phase 3A may add only what the isolated source-mirror proof requires, approximately:
+Phase 3B may add only what issue #15 requires, approximately:
 
 ```text
-apps/api/src/apple-source-mirror/   SQLite migrations, repository, and apply service
-apps/api/test/                      focused persistence and transaction proofs
-docs/apple-source-mirror.md         accepted mirror and reconciliation semantics
+apps/api/src/apple-source-ingestion/    one authenticated loopback ingestion route
+apps/api/test/                           route/auth/mirror integration proofs
+native/apple-bridge/                     dedicated sandboxed manual macOS Bridge
+native/apple-bridge-tests/               pure converter/state/transport tests
+docs/apple-bridge-manual-delivery.md     trust, retry, setup, and proof record
 ```
 
-Use the accepted Phase 2B source contract and synthetic fixtures as the input boundary. The production Board must remain fixture-backed.
+The exact native directory is an implementation choice. Do not convert the Phase 2A probe into the production Bridge or inherit its disabled sandbox and private-export behavior.
 
-### Phase 3A permitted behavior
+### Phase 3B permitted behavior
 
-- use the pinned Node 24 built-in `node:sqlite` module for an isolated Core mirror;
-- add source-controlled deterministic migrations and enable SQLite foreign keys;
-- validate `unknown` input through the accepted strict Apple source contract before mutation;
-- accept positive, source-scoped operational revisions outside the source contract;
-- derive a deterministic normalized request digest with the Node standard library;
-- atomically replace complete Reminder source scopes;
-- atomically replace only the overlapping region of complete Calendar windows;
-- preserve retained Calendar rows outside the latest accepted window without surfacing them as current-window records;
-- reject truncated, invalid, stale, conflicting, or collision-bearing candidates without mutation;
-- prove duplicate idempotency, rollback, close/reopen persistence, and migration repeatability;
-- expose only narrow internal read methods needed to prove the mirror;
-- use in-memory or isolated temporary SQLite databases and synthetic fixtures in tests;
-- update architecture and status documentation after the behavior exists.
+- create one sandboxed, hardened macOS Bridge target with outgoing network access and EventKit/Calendar entitlement;
+- retain separate intentional Calendar and Reminders permissions and source selections;
+- convert selected EventKit records directly into the accepted v1 fields;
+- create one strict operational envelope containing `sourceRevision` and one v1 snapshot;
+- add one authenticated Core ingestion route that applies through the accepted Phase 3A mirror;
+- keep Core and Bridge traffic on loopback for real manual proof;
+- use one high-entropy bearer token bound to one opaque Bridge identity;
+- store the Bridge token in macOS Keychain and inject fakes in tests;
+- persist Bridge identity, per-source acknowledged revisions, pending envelopes, and content-free status in the sandbox container;
+- atomically persist an exact pending envelope before sending it;
+- retry the same pending envelope and revision after uncertain delivery;
+- provide one explicit `Sync Now` action and local content-free per-source status;
+- define explicit finite Calendar/Reminder record and HTTP body limits;
+- document and prove auth, retry, truncation, stale/conflict, timeout, permission, and cleanup behavior.
 
-### Phase 3A forbidden behavior
+### Phase 3B forbidden behavior
 
 Do not add:
 
-- an HTTP, WebSocket, or other ingestion endpoint;
-- a Swift network client or production EventKit-to-contract converter;
-- authentication, tokens, Tailscale, Docker, CasaOS, or deployment configuration;
-- a daemon, login item, timer, watcher, or background synchronization schedule;
-- Board composition from the mirror;
-- changes to `GET /v1/board`, the web client, Board contracts, actions, settings, navigation, or source-management UI;
+- LAN or public API listening;
+- Tailscale, TLS termination, reverse proxy, Docker, CasaOS, or homelab deployment;
+- background scheduling, daemon, launch-at-login, menu-bar agent, watcher, or notification;
+- Board composition from the source mirror;
+- changes to `GET /v1/board`, Board contracts, web client, navigation, settings, or source-management UI;
+- more than one ingestion route;
+- a Core read/status route for the Board;
 - Calendar or Reminder writes, Reminder completion, or metadata write-back;
-- Open Loop history, Project state, sessions, timers, attention ranking, or AI behavior;
-- backup/restore automation or operational monitoring;
-- a generic persistence framework or speculative adapter abstraction for future sources;
-- private EventKit values in fixtures, tests, logs, errors, issues, PRs, or completion reports.
+- automatic conflict/stale recovery or silent Bridge identity reset;
+- multi-user accounts, OAuth, sessions, token service, certificate authority, or general authentication framework;
+- generic adapter, outbox, transport, credential, or persistence frameworks for imagined future sources;
+- Notes, Home Assistant, Open Loops, Projects, sessions, timers, ranking, AI, or later-phase features;
+- private source values, credentials, pending envelopes, databases, or screenshots in GitHub.
 
 Deferred means absent, not partially implemented.
 
@@ -95,185 +97,211 @@ Deferred means absent, not partially implemented.
 
 - Apple Calendar and Reminders remain authoritative for source facts.
 - Deskboard replicates facts, not authority.
-- Ordinary Reminders remain candidate Tasks by default.
-- Selected Calendar events remain candidate Commitments by default.
-- Recurrence is a source schedule fact, not automatic Open Loop classification.
-- Date-only, local-time, timezone-qualified, and all-day values remain distinct.
-- The Board remains a curated field of attention, not a backlog.
-- The Core mirror stores validated source facts; it does not invent semantic interpretation.
-- The source contract must not be widened merely to simplify storage.
-- Every committed example remains synthetic and safe to publish.
+- Calendar and Reminders remain read-only.
+- Ordinary Reminders remain candidate Tasks; Calendar events remain candidate Commitments.
+- Recurrence remains a source schedule fact, not an Open Loop classification.
+- Date-only, local-time, timezone-qualified, and all-day meanings remain distinct.
+- The Board remains fixture-backed and a curated field of attention, not a backlog.
+- The production Bridge reads and emits only accepted v1 fields; it must not collect excluded private fields for convenience.
+- Every committed fixture and automated example remains synthetic and publish-safe.
 
-## Accepted Source-Contract Guardrails
+## Accepted Boundaries
 
-### Contract immutability
+### Source contract
 
-`AppleReminderSourceSnapshotV1` and `AppleCalendarSourceSnapshotV1` are accepted boundaries. Do not add, remove, rename, or reinterpret a v1 field during Phase 3A. Stop for architecture review before proposing a new schema version.
+Do not add, remove, rename, or reinterpret a v1 source-contract field. Stop for architecture review before proposing another version.
 
-### Scope authority
+- Reminder scope is one Bridge + one selected Reminder list + all accessible records in that list.
+- Calendar scope is one Bridge + one selected Calendar + records overlapping the exact declared window.
+- Only a strict, semantically valid, non-truncated snapshot authorizes absence.
+- Complete empty snapshots are authoritative only inside their exact scopes.
+- Provenance/order collisions invalidate the candidate.
 
-- A Reminder snapshot covers one Bridge, one Reminder list, and every accessible Reminder in that declared scope.
-- A Calendar snapshot covers one Bridge, one Calendar container, and events overlapping its exact `[window.start, window.end)` scope.
-- Only a strictly and semantically validated, non-truncated snapshot may authorize absence.
-- A complete empty snapshot is authoritative only inside its exact declared scope.
-- A truncated, malformed, failed, partial, collision-bearing, or semantically invalid candidate authorizes no deletion.
-- Calendar rows outside a newly accepted window were not observed and must not be called absent.
+### Core mirror
 
-### Identity
+Do not duplicate or weaken Phase 3A behavior in the route.
 
-- Local identifiers are scoped to Bridge + entity + source container.
-- External identifiers, Calendar event identifiers, and occurrence dates remain optional provenance hints.
-- Do not false-merge records.
-- Phase 3A performs scoped replacement, not historical continuity matching.
-- Equal complete ordering coordinates invalidate the candidate and preserve the previous good scope.
+- source revision scope is Bridge + entity + container;
+- same revision/same digest is idempotent;
+- same revision/different digest is conflict;
+- lower revision is stale;
+- truncated or invalid input does not mutate or advance the accepted scope;
+- Reminder replacement is whole-scope;
+- Calendar replacement is overlap-window only;
+- all accepted destructive work commits atomically.
 
-## Mirror and Sequencing Guardrails
+## Trust and Topology Guardrails
 
-### Operational revision
+### Loopback only
 
-`sourceRevision` is positive operational metadata supplied by a later transport layer and scoped to:
+During Phase 3B, real source payloads travel only between processes on the same Mac through an explicit loopback origin. The API server must remain bound to `127.0.0.1` or `::1`.
 
-```text
-bridgeId + entityType + sourceContainerId
-```
+The Bridge must reject non-loopback delivery URLs. Phase 3C owns Tailscale and private remote deployment.
 
-It does not enter source contract v1.
+### One authenticated Bridge
 
-Required behavior:
+Core supports one configured opaque Bridge ID and one bearer token in this slice.
 
-- greater revision: candidate may apply;
-- same revision and same normalized digest: duplicate success with no state change;
-- same revision and different digest: conflict with no state change;
-- lower revision: stale with no state change;
-- invalid or truncated candidate: no state change and no revision advancement.
+- token only in the `Authorization: Bearer` header;
+- no token in query, URL, JSON, SQLite, logs, screenshots, or completion report;
+- route-level authentication runs before body parsing;
+- compare secret material in constant time;
+- accepted snapshot Bridge ID must match the authenticated Bridge ID;
+- route is absent or startup fails safely when required ingestion configuration is incomplete;
+- all errors and results remain content-free.
 
-A future Bridge state reset must use a new opaque `bridgeId`; do not silently restart revisions for an existing identity.
+### Body and source limits
 
-### Transactions
+Set explicit finite body and per-source record limits. Ordering happens before caps and `matchedCount` remains exact.
 
-- Validate before beginning destructive mutation.
-- Apply scope metadata and source records in one SQLite transaction.
-- Commit everything or nothing.
-- An injected failure after deletion must roll back deletions, inserts, metadata, revision, and freshness.
-- Never persist the original unvalidated request body.
-- Persisted JSON, if used, must come from accepted parsed values and be strictly revalidated when read.
+A truncated source is not synchronized. Do not silently filter, split a v1 scope, or narrow Reminder scope by completion/date without a new contract version.
 
-### Reminder replacement
+## Bridge State and Retry Guardrails
 
-A complete Reminder snapshot atomically replaces the whole Bridge/entity/container scope. A complete empty snapshot clears only that exact scope. Another Bridge or list is unaffected.
+### Persistent identity
 
-### Calendar replacement
+Generate and persist one opaque random Bridge ID in the sandbox container. Persist separate Calendar and Reminder source selections, acknowledged revisions, and pending state.
 
-A complete Calendar snapshot removes previously mirrored rows in the same Bridge/container whose interpreted ranges overlap the new window, inserts the accepted records, and updates accepted scope metadata atomically.
+If state is deliberately reset or lost, generate a new Bridge ID. Do not restart revision 1 under an old identity.
 
-Rows outside the new window remain stored because they were not observed. Current-window reads must not surface retained out-of-window rows. An empty Calendar snapshot clears only its overlap region.
+### Crash-safe pending envelope
 
-### Truncation
+Before a new send:
 
-Phase 3A deliberately does not partially apply a truncated snapshot. It returns an explicit non-applied result, preserves records and scope metadata, and does not advance revision or freshness.
+1. derive the next source-scoped revision;
+2. build and validate the complete envelope;
+3. atomically persist the exact envelope;
+4. send the persisted envelope.
+
+After timeout, crash, process restart, or uncertain response, resend the exact persisted envelope at the same revision. Do not reread EventKit and reuse that revision for changed content.
+
+Only `applied` and `unchangedDuplicate` acknowledge the revision and clear pending state.
+
+`rejectedTruncated`, `rejectedInvalid`, `rejectedStale`, `rejectedRevisionConflict`, transport failure, malformed response, and timeout do not advance revision. Preserve pending state and fail closed.
+
+Pending envelopes contain private source facts. Keep them only in the sandbox container. Never print, export, attach, screenshot, or commit them.
+
+## Native Security Guardrails
+
+The production Bridge target must prove:
+
+- App Sandbox enabled;
+- Hardened Runtime enabled;
+- outgoing network-client entitlement;
+- required EventKit/Calendar entitlement and full-access usage descriptions;
+- no incoming-network entitlement;
+- no arbitrary file access;
+- no private export or probe command mode;
+- no EventKit save/remove call;
+- token access through a Keychain-backed credential boundary;
+- synthetic tests use in-memory credential and state fakes.
+
+The local UI may show source titles on the owner’s Mac. Automated logs, screenshots, PRs, and reports must use masked labels, counts, and result kinds only.
 
 ## Engineering Guardrails
 
 ### Dependencies
 
-Prefer the pinned Node 24 built-in `node:sqlite` module and the existing standard-library and workspace dependencies. Stop for approval before adding a SQLite package, changing the Node major, adding an ORM, or adding a migration framework.
+Prefer Apple frameworks, Node standard library, existing Fastify/Zod workspaces, and existing project tooling. Stop before adding a package, Swift package, project generator, auth library, Keychain wrapper, networking framework, or generic storage abstraction.
 
-Do not add a generic repository framework. Implement the smallest Apple source-mirror boundary required by issue #12.
+### Core route
 
-### Database hygiene
+Use the existing `AppleSourceMirror`. Keep one strict route, one operational envelope, explicit response mapping, and an `onClose` hook for owned mirror resources.
 
-- Keep database files, journals, dumps, and backups ignored.
-- Tests use `:memory:` or isolated temporary files.
-- Enable foreign-key enforcement for every connection.
-- Use strict tables and explicit constraints where practical.
-- Migrations are source-controlled, ordered, repeatable, and tested against an existing database.
-- Close resources deterministically in tests and production code.
+Do not expose mirror read methods over HTTP.
+
+### Production converter
+
+Read only fields admitted by v1. Preserve exact Calendar instants, civil all-day dates, Reminder date-only values, accepted ordering, collision rejection, exact match count, and truncation.
+
+Do not read or copy notes, locations, URLs, participants, alarms, account titles, recurrence grammar, or other excluded probe fields.
 
 ### Logging and errors
 
-Logs, return values, and thrown errors may include only safe operational metadata such as entity type, opaque coordinate, revision, and result code. Never log titles, temporal payloads, identifiers from individual records, notes, locations, URLs, or full snapshot JSON.
+Never log request bodies, bearer tokens, source/container identifiers, record identifiers, titles, temporal payloads, pending envelopes, or complete snapshots.
 
-### Testing
+Use fixed error/result codes and safe operational status only.
 
-Phase 3A is not complete without:
+## Required Testing
 
-- acceptance of every shared valid Phase 2B fixture at the mirror boundary;
-- rejection of every shared invalid fixture before mutation;
-- exact preservation of the Phase 2A evidence allowlist and bytes;
-- Reminder first-apply, replacement, empty-scope, and scope-isolation tests;
-- Calendar overlapping-window, shifted-window, empty-window, out-of-window retention, and expanding-window tests;
-- duplicate, stale, conflict, newer-revision, and truncated no-mutation tests;
-- transaction rollback after destructive statements;
-- provenance-collision no-mutation proof;
-- database close/reopen persistence;
-- repeatable migration proof;
-- the complete existing Node quality gate;
-- the accepted native probe build and Swift test gate.
+Phase 3B is not complete without all proofs in issue #15, including:
 
-Tests must not access the user’s EventKit store or `private-fixtures/`.
+- auth before parsing/application;
+- strict envelope, Bridge-ID binding, body limit, and content-free results;
+- every Phase 3A result mapped through the route;
+- duplicate delivery idempotency through Fastify;
+- `/health` and fixture Board unchanged;
+- production converter from synthetic EventKit-shaped inputs;
+- exact v1 field minimization and temporal semantics;
+- separate empty-by-default source selections;
+- first revision, acknowledgement, exact retry, relaunch, timeout, conflict, stale, invalid, and truncation state proofs;
+- Keychain boundary with injected synthetic test credential;
+- loopback URL enforcement and strict response parsing;
+- built entitlement inspection and absence of EventKit writes;
+- complete existing Node and native gates;
+- content-free manual local Calendar and Reminder proof.
+
+Tests must not require the user’s real EventKit store unless explicitly marked as a private manual acceptance step. No private values may enter test output or Git.
 
 ## Privacy and Security
 
 Never commit or report:
 
-- real Calendar or Reminder records;
-- source titles, list names, calendar names, notes, URLs, or locations;
-- real EventKit identifiers;
-- organizer, attendee, contact, account, or provider details;
-- recovery, health, household, or work information;
-- `.env` files, credentials, certificates, provisioning profiles, or tokens;
-- Tailscale hostnames, keys, or tailnet identifiers;
-- private exports, production databases, dumps, backups, logs, or screenshots containing personal data.
+- real Calendar or Reminder titles, records, notes, locations, URLs, or temporal payloads;
+- real source/list/calendar/account names;
+- real EventKit or source identifiers;
+- participant, contact, provider, work, recovery, household, or health information;
+- bearer tokens, Keychain values, `.env` files, pending envelopes, production databases, logs, screenshots, certificates, or provisioning profiles;
+- Tailscale hostnames, keys, or tailnet identifiers.
 
-`private-fixtures/` remains local and ignored. The Phase 2A probe’s disabled app sandbox is not a production Bridge precedent.
+`private-fixtures/` remains local and ignored. Production Bridge state belongs only inside its sandbox container and Keychain.
 
 ## Git Safety
 
 - Begin from current accepted `main`.
 - Work on a feature branch, not directly on `main`.
-- Do not force-push shared branches or rewrite existing history.
-- Do not modify the twelve owner-approved Phase 2A specimen JSON bytes.
-- Do not weaken the accepted Phase 2B source contract or fixture proofs.
-- Do not delete or replace the Manifesto or architecture documents to simplify implementation.
+- Do not force-push or rewrite shared history.
+- Do not modify the twelve approved Phase 2A specimen bytes.
+- Do not change Phase 2B contract fixtures or semantics without stopping for review.
+- Do not weaken Phase 3A transaction, revision, digest, or replacement behavior.
 - Keep commits coherent and follow `CONTRIBUTING.md`.
-- Do not mix dependency upgrades, Board redesign, transport scaffolding, or deployment work into Phase 3A.
+- Do not mix deployment, Board, background scheduling, write paths, dependency upgrades, or unrelated formatting into Phase 3B.
 
 ## Decision Policy
 
-Agents may make ordinary implementation decisions inside Phase 3A, including SQLite table names, migration file organization, narrow internal interfaces, and focused synthetic test structure.
+Agents may make ordinary decisions inside Phase 3B about narrow file names, SwiftUI layout, local state-file structure, exact finite caps, HTTP status mapping, and focused test organization.
 
 Stop and ask before:
 
-- changing the source contract or data-ownership model;
-- adding any dependency, ORM, migration framework, or changing Node versions;
-- adding a network route, client, authentication, transport envelope, database API, or deployment system;
-- exposing the mirror to the Board or changing the Board contract;
-- applying truncated snapshots partially;
-- changing operational revision scope or reset semantics;
-- persisting unvalidated input;
-- weakening transaction, rollback, idempotency, privacy, or exit proofs;
-- modifying approved Phase 2A evidence bytes;
-- exposing personal data outside the trusted local environment;
-- beginning later Phase 3 work.
+- changing the source contract, authority model, revision scope, or mirror semantics;
+- adding a dependency or general framework;
+- allowing non-loopback delivery;
+- changing authentication from the one-Bridge bearer-token boundary;
+- adding another route or remote read API;
+- discarding or rewriting pending data after uncertain delivery;
+- automatically recovering stale/conflict state;
+- weakening sandbox, Keychain, privacy, body-limit, content-free error, or retry proofs;
+- exposing private data outside the trusted local environment;
+- beginning Phase 3C or any Apple write work.
 
 ## Completion Report
 
-At the end of a Phase 3A task, report:
+At the end of a Phase 3B task, report:
 
-1. SQLite and migration shape;
-2. operational revision and normalized digest semantics;
-3. Reminder replacement behavior;
-4. Calendar overlap-window replacement and out-of-window retention;
-5. apply-result variants;
-6. validation-before-mutation and rollback proofs;
-7. migration and reopen proofs;
-8. exact Node and native validation commands and results;
-9. Phase 2A evidence and Phase 2B fixture integrity;
-10. dependencies added, if any;
-11. files changed and deliberate deviations;
-12. what remains deferred to later Phase 3 slices;
+1. production Bridge target and security entitlements;
+2. EventKit-to-v1 conversion and excluded-field proof;
+3. Core route, auth, body limit, and Bridge-ID binding;
+4. Bridge identity and per-source revision persistence;
+5. crash-safe pending-envelope behavior;
+6. result/status mapping and failure behavior;
+7. converter, route, credential, retry, and entitlement tests;
+8. content-free manual local proof;
+9. exact Node and native validation commands and results;
+10. Phase 2A, Phase 2B, and Phase 3A integrity;
+11. files changed, dependencies added, and deliberate deviations;
+12. everything deferred to Phase 3C;
 13. branch, commits, push, draft PR, and clean-working-tree state.
 
-Never include real Calendar, Reminder, source, account, participant, location, note, or record-identifier values in the report.
+Never include real Calendar, Reminder, source, account, participant, location, note, token, pending-envelope, or record-identifier values in the report.
 
-Do not claim completion while tests are failing, the documented commands are unverified, private data is present, accepted evidence or contract guarantees have changed, or later Phase 3 work has begun.
+Do not claim completion while tests are failing, required commands are unverified, private data is present, pending retry semantics are unsafe, the production target is not sandboxed, or later-phase work has begun.
