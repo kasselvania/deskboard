@@ -10,9 +10,10 @@ Before changing code or configuration, read:
 4. `ROADMAP.md`
 5. `docs/apple-source-mapping-v0.1.md`
 6. `docs/apple-eventkit-discovery.md`
-7. `CONTRIBUTING.md`
-8. `SECURITY.md`
-9. the active GitHub issue and its review context
+7. `docs/apple-source-contract-v1.md`
+8. `CONTRIBUTING.md`
+9. `SECURITY.md`
+10. the active GitHub issue and its review context
 
 If a task conflicts with those documents, pause and explain the conflict instead of silently expanding or redesigning the project.
 
@@ -26,59 +27,61 @@ A complete slice includes working behavior, tests, error states, documentation, 
 
 Phase 1 — Fixture-Backed Board — is accepted and merged.
 
-Phase 2A — EventKit Discovery Evidence — is accepted and merged in PR #7. Its probe, empirical findings, caveats, and owner-approved sanitized specimens are evidence inputs. They are not the final production source contract.
+Phase 2A — EventKit Discovery Evidence — is accepted and merged in PR #7. Its probe, empirical findings, caveats, and twelve owner-approved sanitized specimens remain evidence inputs.
 
-The current implementation target is **Phase 2B — Apple Source Contract and Reconciliation Semantics** from issue #8.
+Phase 2B — Apple Source Contract and Reconciliation Semantics — is accepted and merged in PR #11. The strict v1 Reminder and Calendar snapshots, temporal semantics, ordering/collision rules, truncation authority, and privacy-minimized field set are now the source boundary for connected work.
 
-The feature branch contains the draft v1 contract in `docs/apple-source-contract-v1.md`, strict TypeScript and Swift validators, and separately versioned shared fixtures. These are Phase 2B review artifacts, not an accepted production Bridge. Phase 2B remains active and Phase 3 remains blocked until the draft pull request passes implementation review and is merged.
+The current implementation target is **Phase 3A — Atomic Core Apple Source Mirror** from issue #12.
 
-The question for Phase 2B is:
+The question for Phase 3A is:
 
-> What is the smallest versioned Apple-source contract that a later one-way mirror can transport and reconcile without losing the distinctions established in Phase 2A?
+> Can Deskboard Core persist and transactionally reconcile validated Apple source snapshots without deleting unseen facts when a candidate is truncated, stale, duplicated, conflicting, invalid, or scoped to a shifted Calendar window?
 
-This is a contract and reconciliation-design slice. It is not the production Bridge, transport, source mirror, deployment, or Board integration.
+This is a Core persistence slice. It is not the Bridge transport, production EventKit conversion, Board integration, homelab deployment, scheduling, or an Apple write path.
 
-### Allowed Phase 2B shape
+### Allowed Phase 3A shape
 
-Phase 2B may add only what the contract slice requires, approximately:
+Phase 3A may add only what the isolated source-mirror proof requires, approximately:
 
 ```text
-packages/contracts/                  runtime-validated Apple source schemas and derived TypeScript types
-tools/apple-eventkit-probe/          minimal Swift contract models/conversion and pure validation tests
-fixtures/apple-source-contract/      synthetic cross-language contract examples
-docs/                                field-minimization, identity, and reconciliation decisions
+apps/api/src/apple-source-mirror/   SQLite migrations, repository, and apply service
+apps/api/test/                      focused persistence and transaction proofs
+docs/apple-source-mirror.md         accepted mirror and reconciliation semantics
 ```
 
-Use the existing EventKit specimens as evidence. Do not rewrite them into the production contract by default. Contract fixtures should be separately named, versioned, synthetic, and minimal.
+Use the accepted Phase 2B source contract and synthetic fixtures as the input boundary. The production Board must remain fixture-backed.
 
-### Phase 2B permitted behavior
+### Phase 3A permitted behavior
 
-- define separate versioned Reminder and Calendar source-record variants;
-- define explicit temporal unions that preserve absence, date-only, local date-time, timezone-qualified date-time, timed start/end, and exclusive all-day ranges;
-- classify every observed field as required, optional with a present use, deferred, or excluded;
-- define bridge-scoped provenance and conservative identity/reconciliation rules;
-- define deterministic ordering, bounds, retained-set meaning, and explicit truncation semantics;
-- add matching Swift Codable/validation models and TypeScript runtime schemas;
-- validate the same synthetic JSON shapes in both languages;
-- add negative fixtures for unsupported versions, malformed unions, impossible dates, and invalid ranges;
-- document complete atomic source-scope snapshot semantics for Phase 3 without implementing them;
-- perform a narrowly targeted manual observation with synthetic Apple objects only when it materially changes the contract decision.
+- use the pinned Node 24 built-in `node:sqlite` module for an isolated Core mirror;
+- add source-controlled deterministic migrations and enable SQLite foreign keys;
+- validate `unknown` input through the accepted strict Apple source contract before mutation;
+- accept positive, source-scoped operational revisions outside the source contract;
+- derive a deterministic normalized request digest with the Node standard library;
+- atomically replace complete Reminder source scopes;
+- atomically replace only the overlapping region of complete Calendar windows;
+- preserve retained Calendar rows outside the latest accepted window without surfacing them as current-window records;
+- reject truncated, invalid, stale, conflicting, or collision-bearing candidates without mutation;
+- prove duplicate idempotency, rollback, close/reopen persistence, and migration repeatability;
+- expose only narrow internal read methods needed to prove the mirror;
+- use in-memory or isolated temporary SQLite databases and synthetic fixtures in tests;
+- update architecture and status documentation after the behavior exists.
 
-### Phase 2B forbidden behavior
+### Phase 3A forbidden behavior
 
 Do not add:
 
-- HTTP, WebSockets, another Bridge-to-Core transport, or any network client;
-- SQLite, Postgres, Redis, or another database;
-- synchronization-generation persistence or source-mirror implementation;
-- Tailscale, Docker, CasaOS, homelab deployment, a daemon, login item, or background scheduler;
-- Calendar or Reminder writes of any kind;
-- Reminder completion or metadata write-back;
-- production metadata parsing, Open Loop history, Project state, sessions, timers, or attention ranking;
-- AI classification, summaries, or agents;
-- new Board actions, settings, navigation, source management, or a production EventKit data path;
-- generic adapter frameworks, code-generation systems, or abstractions for future sources;
-- private EventKit values in fixtures, tests, logs, issues, PRs, or completion reports.
+- an HTTP, WebSocket, or other ingestion endpoint;
+- a Swift network client or production EventKit-to-contract converter;
+- authentication, tokens, Tailscale, Docker, CasaOS, or deployment configuration;
+- a daemon, login item, timer, watcher, or background synchronization schedule;
+- Board composition from the mirror;
+- changes to `GET /v1/board`, the web client, Board contracts, actions, settings, navigation, or source-management UI;
+- Calendar or Reminder writes, Reminder completion, or metadata write-back;
+- Open Loop history, Project state, sessions, timers, attention ranking, or AI behavior;
+- backup/restore automation or operational monitoring;
+- a generic persistence framework or speculative adapter abstraction for future sources;
+- private EventKit values in fixtures, tests, logs, errors, issues, PRs, or completion reports.
 
 Deferred means absent, not partially implemented.
 
@@ -89,149 +92,182 @@ Deferred means absent, not partially implemented.
 - Ordinary Reminders remain candidate Tasks by default.
 - Selected Calendar events remain candidate Commitments by default.
 - Recurrence is a source schedule fact, not automatic Open Loop classification.
-- Date-only, local-time, timezone-qualified, and all-day values must remain distinct.
+- Date-only, local-time, timezone-qualified, and all-day values remain distinct.
 - The Board remains a curated field of attention, not a backlog.
-- The source contract must not become a raw EventKit dump.
-- A field enters version 1 only when preservation or a present Phase 3 use justifies its privacy and maintenance cost.
-- Organizer and attendee identities remain excluded.
-- Every committed example must be synthetic and safe to publish.
+- The Core mirror stores validated source facts; it does not invent semantic interpretation.
+- The source contract must not be widened merely to simplify storage.
+- Every committed example remains synthetic and safe to publish.
 
-## Contract Guardrails
+## Accepted Source-Contract Guardrails
 
-### Separate records, shared primitives
+### Contract immutability
 
-Define explicit Apple Reminder and Apple Calendar record variants. Shared primitives such as provenance, container identity, temporal values, recurrence structure, or truncation metadata may be reused when their semantics are truly identical.
+`AppleReminderSourceSnapshotV1` and `AppleCalendarSourceSnapshotV1` are accepted boundaries. Do not add, remove, rename, or reinterpret a v1 field during Phase 3A. Stop for architecture review before proposing a new schema version.
 
-Do not hide entity differences behind a generic payload or an unvalidated dictionary.
+### Scope authority
 
-### Minimality and privacy
+- A Reminder snapshot covers one Bridge, one Reminder list, and every accessible Reminder in that declared scope.
+- A Calendar snapshot covers one Bridge, one Calendar container, and events overlapping its exact `[window.start, window.end)` scope.
+- Only a strictly and semantically validated, non-truncated snapshot may authorize absence.
+- A complete empty snapshot is authoritative only inside its exact declared scope.
+- A truncated, malformed, failed, partial, collision-bearing, or semantically invalid candidate authorizes no deletion.
+- Calendar rows outside a newly accepted window were not observed and must not be called absent.
 
-For each candidate field, document one of:
+### Identity
 
-- required in source contract version 1;
-- optional in version 1 with a current use;
-- deferred extension;
-- excluded for privacy or lack of need.
+- Local identifiers are scoped to Bridge + entity + source container.
+- External identifiers, Calendar event identifiers, and occurrence dates remain optional provenance hints.
+- Do not false-merge records.
+- Phase 3A performs scoped replacement, not historical continuity matching.
+- Equal complete ordering coordinates invalidate the candidate and preserve the previous good scope.
 
-Notes, alarms, URLs, locations, availability, participant information, creation timestamps, and other exposed EventKit fields do not enter version 1 merely because they were observed.
+## Mirror and Sequencing Guardrails
 
-### Identity and reconciliation
+### Operational revision
 
-- Scope local identifiers to a specific Bridge and source container.
-- Treat external identifiers as optional hints, not universal keys.
-- Keep Calendar event identifier and occurrence date as separate provenance facts.
-- Do not claim identifier durability that Phase 2A did not observe.
-- Prefer a conservative remove-plus-add result over a false merge when identity changes cannot be resolved safely.
-- Specify complete atomic source-scope snapshots for Phase 3 rather than assuming fragile incremental semantics.
+`sourceRevision` is positive operational metadata supplied by a later transport layer and scoped to:
 
-### Determinism and bounds
+```text
+bridgeId + entityType + sourceContainerId
+```
 
-- Apply deterministic ordering before any cap.
-- Define what the retained subset means for Calendar and Reminders.
-- Represent matched count and truncation honestly.
-- Preserve exact instants for timezone-qualified Calendar ranges; reject ambiguous or nonexistent local Calendar times instead of choosing an occurrence.
-- Require complete ordering coordinates to be unique; a collision invalidates the candidate and retains the previous good scope.
-- Authorize absence only for a successful non-truncated snapshot inside its exact Bridge, entity, container, and Calendar-window scope.
-- Expose absence authority only after strict runtime and semantic validation; a structural type or Codable decode alone is not authority.
-- A failed, partial, malformed, or truncated replacement must retain the previous good scope and must not delete unseen records.
-- Preserve the accepted Calendar discovery window unless evidence justifies a documented change.
-- Do not silently discard records while claiming a complete scope.
+It does not enter source contract v1.
+
+Required behavior:
+
+- greater revision: candidate may apply;
+- same revision and same normalized digest: duplicate success with no state change;
+- same revision and different digest: conflict with no state change;
+- lower revision: stale with no state change;
+- invalid or truncated candidate: no state change and no revision advancement.
+
+A future Bridge state reset must use a new opaque `bridgeId`; do not silently restart revisions for an existing identity.
+
+### Transactions
+
+- Validate before beginning destructive mutation.
+- Apply scope metadata and source records in one SQLite transaction.
+- Commit everything or nothing.
+- An injected failure after deletion must roll back deletions, inserts, metadata, revision, and freshness.
+- Never persist the original unvalidated request body.
+- Persisted JSON, if used, must come from accepted parsed values and be strictly revalidated when read.
+
+### Reminder replacement
+
+A complete Reminder snapshot atomically replaces the whole Bridge/entity/container scope. A complete empty snapshot clears only that exact scope. Another Bridge or list is unaffected.
+
+### Calendar replacement
+
+A complete Calendar snapshot removes previously mirrored rows in the same Bridge/container whose interpreted ranges overlap the new window, inserts the accepted records, and updates accepted scope metadata atomically.
+
+Rows outside the new window remain stored because they were not observed. Current-window reads must not surface retained out-of-window rows. An empty Calendar snapshot clears only its overlap region.
+
+### Truncation
+
+Phase 3A deliberately does not partially apply a truncated snapshot. It returns an explicit non-applied result, preserves records and scope metadata, and does not advance revision or freshness.
 
 ## Engineering Guardrails
 
 ### Dependencies
 
-Prefer the existing Zod contract package, Apple platform APIs, and the Swift/Foundation standard libraries. Add no dependency, project generator, code generator, or monorepo tool unless a current Phase 2B proof cannot reasonably be completed without it.
+Prefer the pinned Node 24 built-in `node:sqlite` module and the existing standard-library and workspace dependencies. Stop for approval before adding a SQLite package, changing the Node major, adding an ORM, or adding a migration framework.
 
-When adding a dependency, stop for approval and record the exact current requirement it satisfies.
+Do not add a generic repository framework. Implement the smallest Apple source-mirror boundary required by issue #12.
 
-### Cross-language agreement
+### Database hygiene
 
-Swift and TypeScript must independently validate the same committed contract fixtures. Agreement means compatible wire semantics, not duplicated source code or generated models.
+- Keep database files, journals, dumps, and backups ignored.
+- Tests use `:memory:` or isolated temporary files.
+- Enable foreign-key enforcement for every connection.
+- Use strict tables and explicit constraints where practical.
+- Migrations are source-controlled, ordered, repeatable, and tested against an existing database.
+- Close resources deterministically in tests and production code.
 
-The contract boundary must reject:
+### Logging and errors
 
-- unsupported schema versions;
-- unknown or contradictory temporal shapes where strictness is intended;
-- impossible dates and date-times;
-- all-day ranges whose exclusive end is not after the start;
-- inconsistent completion, occurrence, or truncation facts defined by the contract.
+Logs, return values, and thrown errors may include only safe operational metadata such as entity type, opaque coordinate, revision, and result code. Never log titles, temporal payloads, identifiers from individual records, notes, locations, URLs, or full snapshot JSON.
 
 ### Testing
 
-The Phase 2B slice is not complete without:
+Phase 3A is not complete without:
 
-- TypeScript runtime-schema tests for valid and invalid contract fixtures;
-- Swift encode/decode and semantic-validation tests against the same fixtures;
-- exact committed contract-fixture inventory checks;
-- continued validation of the twelve approved Phase 2A EventKit specimens without reading private data;
-- deterministic ordering, cap, and truncation tests;
-- documentation proving field inclusion/exclusion and identity/reconciliation decisions;
-- the existing native probe build and Swift test gate;
-- the existing Node lint, typecheck, unit, browser, and production-build gate.
+- acceptance of every shared valid Phase 2B fixture at the mirror boundary;
+- rejection of every shared invalid fixture before mutation;
+- exact preservation of the Phase 2A evidence allowlist and bytes;
+- Reminder first-apply, replacement, empty-scope, and scope-isolation tests;
+- Calendar overlapping-window, shifted-window, empty-window, out-of-window retention, and expanding-window tests;
+- duplicate, stale, conflict, newer-revision, and truncated no-mutation tests;
+- transaction rollback after destructive statements;
+- provenance-collision no-mutation proof;
+- database close/reopen persistence;
+- repeatable migration proof;
+- the complete existing Node quality gate;
+- the accepted native probe build and Swift test gate.
 
-Tests must not require access to the user's real EventKit store.
+Tests must not access the user’s EventKit store or `private-fixtures/`.
 
-### Privacy and Security
+## Privacy and Security
 
 Never commit or report:
 
 - real Calendar or Reminder records;
 - source titles, list names, calendar names, notes, URLs, or locations;
-- local or external EventKit identifiers;
+- real EventKit identifiers;
 - organizer, attendee, contact, account, or provider details;
 - recovery, health, household, or work information;
-- `.env` files, credentials, certificates, or provisioning profiles;
+- `.env` files, credentials, certificates, provisioning profiles, or tokens;
 - Tailscale hostnames, keys, or tailnet identifiers;
-- private exports, database files, production logs, or screenshots containing personal data.
+- private exports, production databases, dumps, backups, logs, or screenshots containing personal data.
 
-`private-fixtures/` remains local and ignored. The Phase 2A probe's disabled app sandbox is not a production precedent; production Bridge sandbox and entitlement decisions remain deferred.
+`private-fixtures/` remains local and ignored. The Phase 2A probe’s disabled app sandbox is not a production Bridge precedent.
 
-### Git Safety
+## Git Safety
 
-- Work on a feature branch, not directly on `main`, unless the user explicitly directs otherwise.
-- Begin from the accepted Phase 2A `main` branch.
+- Begin from current accepted `main`.
+- Work on a feature branch, not directly on `main`.
 - Do not force-push shared branches or rewrite existing history.
-- Do not modify the twelve owner-approved Phase 2A specimen bytes without stopping for renewed owner review.
-- Do not delete or replace product philosophy or architecture documents to make implementation easier.
-- Keep commits coherent and use the conventions in `CONTRIBUTING.md`.
-- Do not mix broad formatting, dependency upgrades, Phase 1 redesign, or Phase 3 scaffolding into the contract slice.
+- Do not modify the twelve owner-approved Phase 2A specimen JSON bytes.
+- Do not weaken the accepted Phase 2B source contract or fixture proofs.
+- Do not delete or replace the Manifesto or architecture documents to simplify implementation.
+- Keep commits coherent and follow `CONTRIBUTING.md`.
+- Do not mix dependency upgrades, Board redesign, transport scaffolding, or deployment work into Phase 3A.
 
 ## Decision Policy
 
-Agents may make ordinary implementation decisions inside Phase 2B, including schema file organization, names for current contract primitives, focused test structure, and synthetic negative examples.
+Agents may make ordinary implementation decisions inside Phase 3A, including SQLite table names, migration file organization, narrow internal interfaces, and focused synthetic test structure.
 
 Stop and ask before:
 
-- changing the architecture or data-ownership model;
-- adding a field without a present use or preservation rationale;
-- claiming an EventKit identifier is durable beyond observed evidence;
-- requesting or performing Apple write access;
-- adding any network communication, database, cloud service, deployment, or authentication system;
-- adding a generic adapter or code-generation framework;
-- changing the Board contract or interaction model;
-- weakening a proof test or exit criterion;
-- modifying approved Phase 2A fixture bytes;
-- exposing personal data outside the local environment;
-- beginning Phase 3 or later work.
-
-An unobserved source case remains `not tested`. Do not fabricate support.
+- changing the source contract or data-ownership model;
+- adding any dependency, ORM, migration framework, or changing Node versions;
+- adding a network route, client, authentication, transport envelope, database API, or deployment system;
+- exposing the mirror to the Board or changing the Board contract;
+- applying truncated snapshots partially;
+- changing operational revision scope or reset semantics;
+- persisting unvalidated input;
+- weakening transaction, rollback, idempotency, privacy, or exit proofs;
+- modifying approved Phase 2A evidence bytes;
+- exposing personal data outside the trusted local environment;
+- beginning later Phase 3 work.
 
 ## Completion Report
 
-At the end of a Phase 2B task, report:
+At the end of a Phase 3A task, report:
 
-1. the exact versioned contract shape and files;
-2. the field inclusion/exclusion matrix and rationale;
-3. the identity and reconciliation policy;
-4. deterministic ordering, bounds, and truncation semantics;
-5. the same-fixture Swift and TypeScript proof results;
-6. the exact native and Node validation commands and results;
-7. any deliberate deviations;
-8. files changed and dependencies added, if any;
-9. what remains deferred to Phase 3;
-10. branch, commits, push, pull-request, and working-tree state.
+1. SQLite and migration shape;
+2. operational revision and normalized digest semantics;
+3. Reminder replacement behavior;
+4. Calendar overlap-window replacement and out-of-window retention;
+5. apply-result variants;
+6. validation-before-mutation and rollback proofs;
+7. migration and reopen proofs;
+8. exact Node and native validation commands and results;
+9. Phase 2A evidence and Phase 2B fixture integrity;
+10. dependencies added, if any;
+11. files changed and deliberate deviations;
+12. what remains deferred to later Phase 3 slices;
+13. branch, commits, push, draft PR, and clean-working-tree state.
 
-Never include real Calendar, Reminder, source, account, participant, location, note, or identifier values in the report.
+Never include real Calendar, Reminder, source, account, participant, location, note, or record-identifier values in the report.
 
-Do not claim completion while tests are failing, the documented commands are unverified, private data is present, approved evidence has changed without review, or Phase 3 work has begun.
+Do not claim completion while tests are failing, the documented commands are unverified, private data is present, accepted evidence or contract guarantees have changed, or later Phase 3 work has begun.
