@@ -2,7 +2,9 @@
 
 ## Status
 
-This document defines the Phase 2B Apple source contract and reconciliation semantics implemented on `feat/apple-source-contract-v1`. Phase 2B remains active until its draft pull request is reviewed and merged. Phase 3 has not begun.
+This document defines the accepted Phase 2B Apple source contract and reconciliation semantics merged in PR #11 on 2026-08-22. It is the source boundary for connected Phase 3 work; it is not itself a production Bridge, transport, database, deployment, Board integration, or Apple write path.
+
+Phase 3A is active under issue #12 and is limited to the atomic Core source mirror. Bridge delivery, production EventKit conversion, Board use, deployment, scheduling, and Apple writes remain absent.
 
 The runtime implementations are:
 
