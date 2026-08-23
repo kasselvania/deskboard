@@ -72,7 +72,7 @@ The Board has also been reached from the physical iPad over the local network. P
 
 Phase 2A established the read-only local probe, empirical field inventory, owner-approved sanitized evidence set, deterministic bounded Calendar reads, inspection-scope invalidation, and executable fixture evidence. Its recommendations are evidence for contract design; they are not production Bridge types.
 
-**Phase 2B — Apple Source Contract and Reconciliation Semantics: active under issue [#8](https://github.com/kasselvania/deskboard/issues/8).** Phase 2B will define and validate the smallest versioned source contract justified by Phase 2A without adding transport, persistence, deployment, or production synchronization.
+**Phase 2B — Apple Source Contract and Reconciliation Semantics: active under issue [#8](https://github.com/kasselvania/deskboard/issues/8).** The feature branch defines and validates the draft v1 contract in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md) without adding transport, persistence, deployment, or production synchronization. Phase 2B remains unaccepted until implementation review and merge.
 
 **Phase 3 — One-Way Apple Mirror: not begun.** No production Bridge, database, homelab synchronization path, or Apple write action has been implemented.
 

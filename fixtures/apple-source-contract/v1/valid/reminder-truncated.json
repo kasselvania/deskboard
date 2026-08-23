@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "entityType": "reminder",
+  "bridgeId": "bridge-example-1",
+  "source": {
+    "sourceContainerId": "reminder-container-1",
+    "allowsContentModifications": true
+  },
+  "capturedAt": "2026-08-15T18:00:00Z",
+  "matchedCount": 3,
+  "truncated": true,
+  "records": [
+    {
+      "localIdentifier": "reminder-contract-101",
+      "start": {
+        "kind": "absent"
+      },
+      "due": {
+        "kind": "absent"
+      },
+      "isCompleted": false
+    },
+    {
+      "localIdentifier": "reminder-contract-102",
+      "externalIdentifier": "reminder-external-102",
+      "start": {
+        "kind": "absent"
+      },
+      "due": {
+        "kind": "dateOnly",
+        "localDate": "2026-08-20"
+      },
+      "isCompleted": false
+    }
+  ]
+}

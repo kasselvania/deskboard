@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "entityType": "reminder",
+  "bridgeId": "bridge-example-1",
+  "source": {
+    "sourceContainerId": "reminder-container-1",
+    "allowsContentModifications": true
+  },
+  "capturedAt": "2026-08-15T18:00:00Z",
+  "matchedCount": 2,
+  "truncated": false,
+  "records": [
+    {
+      "localIdentifier": "reminder-invalid-b",
+      "start": {
+        "kind": "absent"
+      },
+      "due": {
+        "kind": "absent"
+      },
+      "isCompleted": false
+    },
+    {
+      "localIdentifier": "reminder-invalid-a",
+      "start": {
+        "kind": "absent"
+      },
+      "due": {
+        "kind": "absent"
+      },
+      "isCompleted": false
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "entityType": "reminder",
+  "bridgeId": "bridge-example-1",
+  "source": {
+    "sourceContainerId": "reminder-container-1",
+    "allowsContentModifications": true
+  },
+  "capturedAt": "2026-08-15T18:00:00Z",
+  "matchedCount": 1,
+  "truncated": false,
+  "records": [
+    {
+      "localIdentifier": "reminder-contract-005",
+      "externalIdentifier": "reminder-external-005",
+      "title": "Synthetic completed task",
+      "start": {
+        "kind": "absent"
+      },
+      "due": {
+        "kind": "dateOnly",
+        "localDate": "2026-08-14"
+      },
+      "isCompleted": true,
+      "completionDate": "2026-08-14T19:20:00Z"
+    }
+  ]
+}
