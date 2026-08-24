@@ -217,6 +217,7 @@ The review implementation is documented in [`docs/apple-bridge-manual-delivery.m
 - dedicated sandboxed, hardened, read-only macOS Bridge separate from the Phase 2A probe;
 - production EventKit-to-v1 conversion that reads only accepted contract fields;
 - separate intentional Calendar and Reminder permissions and empty-by-default source selections;
+- explicit content-free permission-request results that distinguish system errors from completed requests with no TCC decision;
 - persistent opaque Bridge identity and source-scoped acknowledged revisions;
 - one crash-safe pending delivery envelope per source coordinate;
 - one strict authenticated Core ingestion route;
@@ -252,6 +253,7 @@ The Bridge must not reread EventKit and reuse an uncertain revision for changed 
 - an uncertain response retries the exact persisted envelope and revision;
 - credentials remain in injected Core configuration and macOS Keychain, excluded from Git and SQLite;
 - entitlement inspection proves sandbox, outgoing client, Calendar access, no incoming service, and no EventKit writes;
+- an Apple Development-signed installed Release product produces independent Calendar and Reminders decisions and retains them across a same-identity rebuild;
 - a content-free manual local Calendar and Reminder delivery proof passes;
 - `/health` and the fixture-backed Board remain unchanged;
 - Phase 3C, deployment, background operation, and Apple writes remain absent.

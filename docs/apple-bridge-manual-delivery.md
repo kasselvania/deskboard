@@ -4,6 +4,8 @@
 
 This document describes the Phase 3B review implementation for issue #15. Phase 3B remains active until technical review and merge.
 
+Manual TCC acceptance requires an Apple Development-signed Release product launched from the stable installed path `~/Applications/DeskboardAppleBridge.app`. The project commits neither a development team nor a certificate identity and does not force ad hoc signing on the production application target. Ad hoc signing is acceptable only as an explicit command-line override for automated structural builds and synthetic tests; it is not permission, reinstall, relaunch, or update evidence.
+
 The slice proves one explicitly invoked, read-only macOS Bridge delivering accepted Apple source snapshots to Deskboard Core on the same Mac. The Board remains fixture-backed. Remote topology, deployment, background operation, Board composition from the mirror, stale/conflict recovery, and every Apple write path are deferred.
 
 The production Bridge is separate from the Phase 2A discovery probe. It reuses only the accepted pure Swift source-contract implementation. It does not reuse the probe application, disabled sandbox, private export, or command mode.
@@ -157,7 +159,23 @@ The production target declares:
 
 The generated application property list includes `NSCalendarsFullAccessUsageDescription` and `NSRemindersFullAccessUsageDescription`. Calendar and Reminders access is requested independently and remains independently usable.
 
+The production application target uses automatic signing without a committed `DEVELOPMENT_TEAM`, signer, Team ID, certificate, or provisioning profile. Phase 3B supports no self-signed certificate, local certificate authority, custom signing script, Developer ID distribution, or notarization workflow. A local Apple Development identity from an enrolled Xcode team or Personal Team is required only for the manual TCC acceptance build. A machine without that identity may run the synthetic test gate through an explicit ad hoc command-line override, but must stop before claiming manual permission acceptance.
+
 The production app has no probe command mode, private export path, incoming service, scheduler, daemon, launch-at-login behavior, notification, or EventKit save/remove invocation. It stores private state only within its sandbox container and opens only outbound loopback HTTP connections.
+
+## Explicit permission-request results
+
+Every intentional Calendar or Reminders request returns one content-free `BridgePermissionRequestResult` to the view model. It records:
+
+- the requested entity category;
+- authorization category before the system request;
+- the Boolean returned by the EventKit full-access request when it completed;
+- authorization category after the request;
+- one normalized outcome: `granted`, `denied`, `restricted`, `unavailable`, `systemRequestError`, or `noSystemDecision`.
+
+A thrown EventKit request is `systemRequestError`; it is not collapsed into the current authorization category. A completed request that leaves authorization `notDetermined` is `noSystemDecision`. Calendar and Reminders retain separate last-request results in `BridgeViewModel`, and requesting one never changes the other's recorded result.
+
+The UI displays only fixed operator messages. In particular, a completed request with no decision says that the entity access request did not produce a system decision and directs the owner to verify signing and installation. Arbitrary localized errors, source names, identifiers, and EventKit content are not displayed or logged.
 
 ## Source selection and read-only conversion
 
@@ -223,6 +241,8 @@ The bearer token is not in this file. Pending envelopes do contain private norma
 
 If the state file is intentionally reset or lost, the next creation generates a new Bridge ID and empty selections/revisions. Core must then be reconfigured for that new identity. Corrupt state fails closed; the app does not silently reset identity or restart revision 1 under an old identity.
 
+Changing from an ad hoc build to Apple Development signing may change access to the existing sandbox container or Keychain item. Before any reset, inspect only content-free pending and status counts. Do not copy, reinterpret, print, or publicly move the old state. If the signed installed product cannot safely use it, stop for owner awareness and perform an intentional state and credential reset. That reset must create a new opaque Bridge ID, require Core reconfiguration for the new identity, and start revisions under that new identity. Revision 1 must never restart under the old Bridge ID.
+
 ## Crash-safe pending lifecycle
 
 For a source without pending work, **Sync Now** performs this sequence:
@@ -259,16 +279,20 @@ Per-source operational rows use masked entity ordinals rather than source identi
 
 Run this only on the owner's Mac. Do not capture or publish the source-selection UI, pending state, mirror rows, token, or source values.
 
-1. Build and launch the production Bridge once so it creates an identity.
-2. Configure Core with that identity, one newly generated high-entropy token, and a private local mirror path.
-3. Store the same token through the Bridge `SecureField` into Keychain.
-4. Request Calendar and Reminders permission separately.
-5. Select at least one controlled source for each entity when available.
-6. Choose **Sync Now** and record only masked source ordinals, counts, result kinds, permission categories, versions, and safe timing.
-7. Retry the exact already-delivered envelope/revision and observe `unchangedDuplicate`.
-8. Make one controlled Apple-side source change and deliver the next revision.
-9. Deny one entity and verify the other remains usable without changing either selection.
-10. Remove the private acceptance database when the proof is complete and no longer needed.
+1. Run `security find-identity -v -p codesigning` privately. Continue only when an Apple Development identity is available through Xcode. Do not create signing credentials automatically. If none exists, complete automated corrections and stop with that human prerequisite.
+2. Inspect the previous Bridge only for content-free pending and status counts. If its state or Keychain item is unavailable to the signed product, stop for owner awareness before the intentional new-identity reset described above.
+3. Supply the local team only in the shell environment and build a Release product with Apple Development signing, automatic provisioning, the committed entitlements, and Hardened Runtime. Never commit or publish the team or signer.
+4. Quit every running Bridge copy. Copy the exact signed product with `ditto` to `~/Applications/DeskboardAppleBridge.app`. Launch no DerivedData copy concurrently.
+5. Verify the installed product's strict signature, Apple Development authority, stable designated requirement, `runtime` flag, bundle identifier, and entitlement allowlist. Record only the content-free conclusions.
+6. Quit the installed app and run `tccutil reset Calendar com.kasselvania.deskboard.AppleBridge`. Launch only the installed app, intentionally request Calendar access, and record only before category, normalized outcome, returned Boolean, after category, and whether the prompt appeared. Acceptance requires `granted` or `denied`; `notDetermined` without a prompt fails.
+7. Repeat independently with `tccutil reset Reminders com.kasselvania.deskboard.AppleBridge`. Prove each reset/request leaves the other entity's decision unchanged. Do not reset another app or service.
+8. Build a second Release product from the same branch with the same Apple Development identity. Compare designated requirements locally, replace the installed bundle with the second signed product, and prove both permission decisions remain associated without a rebuild-only prompt. Report only three yes/no conclusions: requirement stable, Calendar decision persisted, Reminders decision persisted.
+9. Configure Core with the accepted or intentionally reset Bridge identity, one newly generated high-entropy token, and a private local mirror path. Store the same token through the Bridge `SecureField` into Keychain.
+10. Select at least one controlled source for each granted entity when available. Choose **Sync Now** and record only masked source ordinals, counts, result kinds, permission categories, versions, and safe timing.
+11. Retry the exact already-delivered envelope/revision and observe `unchangedDuplicate`. Make one controlled Apple-side source change and deliver the next revision. Deny one entity and prove the other remains usable without changing either selection.
+12. Remove the private acceptance database when the proof is complete and no longer needed.
+
+If a correctly Apple-Development-signed installed product still completes a request as `noSystemDecision`, stop without opening a PR. Retain only content-free before/result/after diagnostics, collect local TCC/EventKit material only as needed for Feedback Assistant, file Apple feedback, and report only its number and the normalized result. Do not disable SIP, edit the TCC database, insert grants, broaden entitlements, or reset unrelated applications or services.
 
 No manual-proof record belongs in Git unless it is fully content-free.
 
@@ -283,6 +307,8 @@ No manual-proof record belongs in Git unless it is fully content-free.
 | `operatorActionConflict` | Same revision has different Core content | Stop; recovery is not implemented |
 | `permissionUnavailable` | One entity permission is not granted | The other entity may still sync independently |
 | `sourceUnavailable` | A selected source disappeared | Preserve the selection/state; do not substitute another source |
+| `noSystemDecision` | EventKit completed but TCC remained `notDetermined` | Verify Apple Development signing and stable installation; retry only after correcting them |
+| `systemRequestError` | EventKit threw while requesting permission | Preserve the other entity and use only normalized local diagnosis |
 
 Never troubleshoot by printing request bodies, pending envelopes, source identifiers, titles, times, database rows, or Keychain values.
 
@@ -323,28 +349,50 @@ xcodebuild \
   -configuration Debug \
   -destination 'platform=macOS,arch=arm64' \
   -derivedDataPath /private/tmp/deskboard-phase3b-bridge-derived \
+  CODE_SIGN_STYLE=Manual \
+  CODE_SIGN_IDENTITY=- \
+  DEVELOPMENT_TEAM= \
   build test
 ```
 
-Build a clean non-test product and inspect its signature and entitlements:
+The three trailing settings are the explicit no-identity override for automated structural tests. They are not manual TCC evidence.
+
+Before the manual proof, verify an Apple Development identity privately, provide its team without committing it, and build a signed product:
 
 ```bash
+security find-identity -v -p codesigning
+export DESKBOARD_APPLE_DEVELOPMENT_TEAM="<local team id>"
+
 xcodebuild \
   -project native/apple-bridge/DeskboardAppleBridge.xcodeproj \
   -scheme DeskboardAppleBridge \
   -configuration Release \
   -destination 'platform=macOS,arch=arm64' \
-  -derivedDataPath /private/tmp/deskboard-phase3b-release-derived \
+  -derivedDataPath /private/tmp/deskboard-phase3b-signed-release \
+  DEVELOPMENT_TEAM="$DESKBOARD_APPLE_DEVELOPMENT_TEAM" \
+  CODE_SIGN_STYLE=Automatic \
+  CODE_SIGN_IDENTITY="Apple Development" \
+  -allowProvisioningUpdates \
   build
 
-codesign -d --verbose=4 \
-  /private/tmp/deskboard-phase3b-release-derived/Build/Products/Release/DeskboardAppleBridge.app
+ditto \
+  /private/tmp/deskboard-phase3b-signed-release/Build/Products/Release/DeskboardAppleBridge.app \
+  "$HOME/Applications/DeskboardAppleBridge.app"
 
-codesign -d --entitlements :- \
-  /private/tmp/deskboard-phase3b-release-derived/Build/Products/Release/DeskboardAppleBridge.app
+codesign --verify --deep --strict --verbose=4 \
+  "$HOME/Applications/DeskboardAppleBridge.app"
+
+codesign --display --verbose=4 \
+  "$HOME/Applications/DeskboardAppleBridge.app"
+
+codesign --display --requirements - \
+  "$HOME/Applications/DeskboardAppleBridge.app"
+
+codesign --display --entitlements :- \
+  "$HOME/Applications/DeskboardAppleBridge.app"
 ```
 
-Record only the `runtime` signature flag and the entitlement names/Boolean values listed above. Do not publish hashes, identities, paths containing private names, or unrelated signing metadata.
+Repeat the signed Release build from the same branch and compare its designated requirement locally before replacing the installed bundle. Record only signature validity, Apple Development authority presence, designated-requirement stability, the `runtime` flag, expected bundle identity, required entitlement names/Boolean values, forbidden entitlement absence, and permission-decision persistence. Do not publish the requirement string, signer, Team ID, certificate hash, provisioning profile, or unrelated signing metadata.
 
 Finally verify repository integrity:
 

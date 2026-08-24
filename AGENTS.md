@@ -63,6 +63,7 @@ The exact native directory is an implementation choice. Do not convert the Phase
 
 - create one sandboxed, hardened macOS Bridge target with outgoing network access and EventKit/Calendar entitlement;
 - retain separate intentional Calendar and Reminders permissions and source selections;
+- expose content-free before/result/after permission-request outcomes and distinguish system errors from completed requests with no decision;
 - convert selected EventKit records directly into the accepted v1 fields;
 - create one strict operational envelope containing `sourceRevision` and one v1 snapshot;
 - add one authenticated Core ingestion route that applies through the accepted Phase 3A mirror;
@@ -199,6 +200,10 @@ The production Bridge target must prove:
 - token access through a Keychain-backed credential boundary;
 - synthetic tests use in-memory credential and state fakes.
 
+Manual TCC acceptance additionally requires an Apple Development-signed Release product installed and launched only from `~/Applications/DeskboardAppleBridge.app`. Do not commit a development team, signer, certificate, provisioning profile, or Team ID. Do not create a self-signed certificate, local certificate authority, custom signing workflow, Developer ID distribution, or notarization path. The production application target must not force ad hoc signing. An explicit command-line ad hoc override remains acceptable only for automated structural builds and synthetic tests, never as permission or designated-requirement evidence.
+
+Changing signer identity may make prior sandbox or Keychain state unavailable. Inspect only content-free pending/status counts before any reset. Never silently copy or reinterpret old state. An intentional reset requires owner awareness, a new opaque Bridge ID, Core reconfiguration, and a fresh revision sequence under the new identity.
+
 The local UI may show source titles on the owner’s Mac. Automated logs, screenshots, PRs, and reports must use masked labels, counts, and result kinds only.
 
 ## Engineering Guardrails
@@ -242,6 +247,8 @@ Phase 3B is not complete without all proofs in issue #15, including:
 - loopback URL enforcement and strict response parsing;
 - built entitlement inspection and absence of EventKit writes;
 - complete existing Node and native gates;
+- explicit permission-result and Calendar/Reminders independence tests;
+- stable Apple Development signature, installed-path permission decisions, and designated-requirement persistence across two builds;
 - content-free manual local Calendar and Reminder proof.
 
 Tests must not require the user’s real EventKit store unless explicitly marked as a private manual acceptance step. No private values may enter test output or Git.
