@@ -1,36 +1,44 @@
 import { buildApp } from "./app.js";
 import { readDeskboardRuntimeConfiguration } from "./board-configuration.js";
-
-const DEFAULT_PORT = 3001;
-
-function readPort(value: string | undefined): number {
-  if (value === undefined) {
-    return DEFAULT_PORT;
-  }
-
-  const port = Number(value);
-  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
-    throw new Error("PORT must be an integer between 1 and 65535.");
-  }
-
-  return port;
-}
-
-const runtime = readDeskboardRuntimeConfiguration(process.env);
-const app = buildApp({
-  logger: true,
-  board: runtime.board,
-  ...(runtime.appleSourceIngestion
-    ? { appleSourceIngestion: runtime.appleSourceIngestion }
-    : {}),
-});
+import { readServerListenConfiguration } from "./server-configuration.js";
 
 try {
-  await app.listen({
-    host: "127.0.0.1",
-    port: readPort(process.env.PORT),
+  const listen = readServerListenConfiguration(process.env);
+  const runtime = readDeskboardRuntimeConfiguration(process.env);
+  const app = buildApp({
+    logger: false,
+    board: runtime.board,
+    ...(runtime.appleSourceIngestion
+      ? { appleSourceIngestion: runtime.appleSourceIngestion }
+      : {}),
   });
-} catch (error) {
-  app.log.error(error, "Deskboard API could not start");
+
+  let isClosing = false;
+  const close = async (): Promise<void> => {
+    if (isClosing) {
+      return;
+    }
+    isClosing = true;
+    try {
+      await app.close();
+    } catch {
+      process.stderr.write("Deskboard API could not close cleanly.\n");
+      process.exitCode = 1;
+    }
+  };
+  const requestClose = (): void => {
+    void close();
+  };
+  process.once("SIGINT", requestClose);
+  process.once("SIGTERM", requestClose);
+
+  try {
+    await app.listen(listen);
+  } catch {
+    await close();
+    throw new Error("SERVER_START_FAILED");
+  }
+} catch {
+  process.stderr.write("Deskboard API could not start.\n");
   process.exitCode = 1;
 }
