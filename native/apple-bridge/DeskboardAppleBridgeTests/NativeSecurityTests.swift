@@ -38,6 +38,7 @@ final class NativeSecurityTests: XCTestCase {
         XCTAssertTrue(project.contains("INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription"))
         XCTAssertTrue(project.contains("INFOPLIST_KEY_NSRemindersFullAccessUsageDescription"))
         XCTAssertFalse(project.contains("DEVELOPMENT_TEAM"))
+        XCTAssertFalse(project.contains("CODE_SIGN_IDENTITY = \"-\";"))
         XCTAssertFalse(project.contains("com.apple.security.network.server"))
         XCTAssertFalse(project.contains("com.apple.security.files.user-selected"))
         XCTAssertFalse(project.contains("com.apple.security.files.downloads"))
