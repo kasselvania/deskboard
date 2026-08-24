@@ -32,13 +32,26 @@ final class NativeSecurityTests: XCTestCase {
         )
         XCTAssertTrue(project.contains("ENABLE_APP_SANDBOX = YES;"))
         XCTAssertTrue(project.contains("ENABLE_HARDENED_RUNTIME = YES;"))
+        XCTAssertTrue(project.contains("CODE_SIGN_STYLE = Automatic;"))
         XCTAssertTrue(project.contains("--options runtime"))
         XCTAssertTrue(project.contains("CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;"))
         XCTAssertTrue(project.contains("INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription"))
         XCTAssertTrue(project.contains("INFOPLIST_KEY_NSRemindersFullAccessUsageDescription"))
+        XCTAssertFalse(project.contains("DEVELOPMENT_TEAM"))
         XCTAssertFalse(project.contains("com.apple.security.network.server"))
         XCTAssertFalse(project.contains("com.apple.security.files.user-selected"))
         XCTAssertFalse(project.contains("com.apple.security.files.downloads"))
+
+        for identifier in [
+            "E40000000000000000000003",
+            "E40000000000000000000004",
+        ] {
+            let block = try applicationBuildConfiguration(
+                identifier: identifier,
+                project: project
+            )
+            XCTAssertFalse(block.contains("CODE_SIGN_IDENTITY"))
+        }
     }
 
     func testProductionSourcesHaveNoProbeCommandOrPrivateExportPath() throws {
@@ -67,5 +80,19 @@ final class NativeSecurityTests: XCTestCase {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
+    }
+
+    private func applicationBuildConfiguration(
+        identifier: String,
+        project: String
+    ) throws -> Substring {
+        let start = try XCTUnwrap(project.range(of: "\t\t\(identifier) /*"))
+        let end = try XCTUnwrap(
+            project.range(
+                of: "\n\t\t};",
+                range: start.lowerBound ..< project.endIndex
+            )
+        )
+        return project[start.lowerBound ..< end.upperBound]
     }
 }

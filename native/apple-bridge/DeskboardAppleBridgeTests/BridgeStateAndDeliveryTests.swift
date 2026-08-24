@@ -26,6 +26,9 @@ private final class MemoryStateStore: BridgeStatePersisting {
 private final class SyntheticSourceReader: AppleSourceReading {
     var reminderPermission: BridgePermissionState = .granted
     var calendarPermission: BridgePermissionState = .granted
+    var permissionRequestResults: [
+        BridgeSourceEntity: BridgePermissionRequestResult
+    ] = [:]
     var reminderRead: ReminderSourceRead
     var calendarRead: CalendarSourceRead
     var reminderReadCount = 0
@@ -53,8 +56,23 @@ private final class SyntheticSourceReader: AppleSourceReading {
         entity == .reminder ? reminderPermission : calendarPermission
     }
 
-    func requestPermission(for entity: BridgeSourceEntity) async -> BridgePermissionState {
-        permissionState(for: entity)
+    func requestPermission(
+        for entity: BridgeSourceEntity
+    ) async -> BridgePermissionRequestResult {
+        let current = permissionState(for: entity)
+        let result = permissionRequestResults[entity] ?? .completed(
+            entity: entity,
+            stateBefore: current,
+            returnedGranted: current == .granted,
+            stateAfter: current
+        )
+        switch entity {
+        case .calendar:
+            calendarPermission = result.stateAfter
+        case .reminder:
+            reminderPermission = result.stateAfter
+        }
+        return result
     }
 
     func availableSources(for entity: BridgeSourceEntity) -> [BridgeSourceDescriptor] {
@@ -128,9 +146,147 @@ private final class QueueDeliveryClient: AppleSourceDelivering {
     }
 }
 
+private final class SyntheticCredentialStore: BridgeCredentialStore {
+    func readToken() throws -> String? { nil }
+    func storeToken(_ token: String) throws {}
+}
+
+private final class UnusedHTTPTransport: AppleSourceHTTPTransport {
+    enum Failure: Error { case unexpectedUse }
+
+    func upload(_ request: AppleSourceUploadRequest) async throws -> AppleSourceUploadResponse {
+        throw Failure.unexpectedUse
+    }
+}
+
 @MainActor
 final class BridgeStateAndDeliveryTests: XCTestCase {
     private let now = SyntheticSourceReader.date("2026-08-23T18:00:00Z")
+
+    func testCalendarPermissionGrantCapturesBeforeBooleanAndAfterState() {
+        let result = BridgePermissionRequestResult.completed(
+            entity: .calendar,
+            stateBefore: .notDetermined,
+            returnedGranted: true,
+            stateAfter: .granted
+        )
+
+        XCTAssertEqual(result.entity, .calendar)
+        XCTAssertEqual(result.stateBefore, .notDetermined)
+        XCTAssertEqual(result.returnedGranted, true)
+        XCTAssertEqual(result.stateAfter, .granted)
+        XCTAssertEqual(result.outcome, .granted)
+    }
+
+    func testRemindersPermissionGrantIsClassifiedIndependently() {
+        let result = BridgePermissionRequestResult.completed(
+            entity: .reminder,
+            stateBefore: .notDetermined,
+            returnedGranted: true,
+            stateAfter: .granted
+        )
+
+        XCTAssertEqual(result.entity, .reminder)
+        XCTAssertEqual(result.outcome, .granted)
+    }
+
+    func testPermissionCompletionClassifiesDeniedRestrictedAndUnavailable() {
+        let cases: [
+            (BridgePermissionState, BridgePermissionRequestOutcome)
+        ] = [
+            (.denied, .denied),
+            (.restricted, .restricted),
+            (.unavailable, .unavailable),
+        ]
+
+        for (stateAfter, expectedOutcome) in cases {
+            let result = BridgePermissionRequestResult.completed(
+                entity: .calendar,
+                stateBefore: .notDetermined,
+                returnedGranted: false,
+                stateAfter: stateAfter
+            )
+            XCTAssertEqual(result.returnedGranted, false)
+            XCTAssertEqual(result.outcome, expectedOutcome)
+        }
+    }
+
+    func testThrownPermissionRequestRemainsDistinctFromAuthorizationState() {
+        let result = BridgePermissionRequestResult.systemRequestError(
+            entity: .calendar,
+            stateBefore: .notDetermined,
+            stateAfter: .notDetermined
+        )
+
+        XCTAssertNil(result.returnedGranted)
+        XCTAssertEqual(result.stateAfter, .notDetermined)
+        XCTAssertEqual(result.outcome, .systemRequestError)
+    }
+
+    func testCompletedPermissionRequestWithoutDecisionIsExplicit() {
+        let result = BridgePermissionRequestResult.completed(
+            entity: .calendar,
+            stateBefore: .notDetermined,
+            returnedGranted: false,
+            stateAfter: .notDetermined
+        )
+
+        XCTAssertEqual(result.returnedGranted, false)
+        XCTAssertEqual(result.outcome, .noSystemDecision)
+    }
+
+    func testCalendarNoDecisionLeavesRemindersUnchangedAndShowsSafeNotice() async {
+        let reader = SyntheticSourceReader()
+        reader.calendarPermission = .notDetermined
+        reader.reminderPermission = .granted
+        reader.permissionRequestResults[.calendar] = .completed(
+            entity: .calendar,
+            stateBefore: .notDetermined,
+            returnedGranted: false,
+            stateAfter: .notDetermined
+        )
+        let model = makeViewModel(reader: reader)
+
+        await model.requestPermission(for: .calendar)
+
+        XCTAssertEqual(model.calendarPermission, .notDetermined)
+        XCTAssertEqual(model.reminderPermission, .granted)
+        XCTAssertEqual(
+            model.calendarPermissionRequestResult?.outcome,
+            .noSystemDecision
+        )
+        XCTAssertNil(model.reminderPermissionRequestResult)
+        XCTAssertEqual(
+            model.notice,
+            "Calendar access request did not produce a system decision. Verify signing and installation, then retry."
+        )
+    }
+
+    func testRemindersSystemErrorLeavesCalendarUnchangedAndShowsSafeNotice() async {
+        let reader = SyntheticSourceReader()
+        reader.calendarPermission = .granted
+        reader.reminderPermission = .notDetermined
+        reader.permissionRequestResults[.reminder] = .systemRequestError(
+            entity: .reminder,
+            stateBefore: .notDetermined,
+            stateAfter: .notDetermined
+        )
+        let model = makeViewModel(reader: reader)
+
+        await model.requestPermission(for: .reminder)
+
+        XCTAssertEqual(model.calendarPermission, .granted)
+        XCTAssertEqual(model.reminderPermission, .notDetermined)
+        XCTAssertNil(model.calendarPermissionRequestResult)
+        XCTAssertEqual(
+            model.reminderPermissionRequestResult?.outcome,
+            .systemRequestError
+        )
+        XCTAssertEqual(
+            model.notice,
+            "Reminders access request could not be completed. Verify signing and installation, then retry."
+        )
+    }
 
     func testFirstDeliveryUsesRevisionOneAndAcknowledgesExactlyOnce() async throws {
         let store = MemoryStateStore(configuredState())
@@ -402,6 +558,17 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
             deliveryClient: delivery,
             clock: { self.now },
             windowTimeZone: { TimeZone(identifier: "Etc/UTC")! }
+        )
+    }
+
+    private func makeViewModel(reader: AppleSourceReading) -> BridgeViewModel {
+        BridgeViewModel(
+            stateStore: MemoryStateStore(
+                BridgePersistentState.fresh(bridgeId: "synthetic-bridge")
+            ),
+            sourceReader: reader,
+            credentialStore: SyntheticCredentialStore(),
+            transport: UnusedHTTPTransport()
         )
     }
 }

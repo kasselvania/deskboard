@@ -80,7 +80,9 @@ struct ContentView: View {
         Section(title) {
             LabeledContent("Permission", value: permission.rawValue)
             Button("Request \(title) Access") {
-                model.requestPermission(for: entity)
+                Task {
+                    await model.requestPermission(for: entity)
+                }
             }
             if permission == .granted {
                 if sources.isEmpty {

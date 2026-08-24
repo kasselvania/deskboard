@@ -20,6 +20,10 @@ final class BridgeViewModel: ObservableObject {
     @Published private(set) var reminderSources: [BridgeSourceDescriptor] = []
     @Published private(set) var selectedCalendarSourceIds: Set<String> = []
     @Published private(set) var selectedReminderSourceIds: Set<String> = []
+    @Published private(set) var calendarPermissionRequestResult:
+        BridgePermissionRequestResult?
+    @Published private(set) var reminderPermissionRequestResult:
+        BridgePermissionRequestResult?
     @Published private(set) var statusRows: [BridgeStatusRow] = []
     @Published private(set) var bridgeId = ""
     @Published private(set) var isSyncing = false
@@ -73,11 +77,16 @@ final class BridgeViewModel: ObservableObject {
         }
     }
 
-    func requestPermission(for entity: BridgeSourceEntity) {
-        Task {
-            _ = await sourceReader.requestPermission(for: entity)
-            refresh()
+    func requestPermission(for entity: BridgeSourceEntity) async {
+        let result = await sourceReader.requestPermission(for: entity)
+        switch entity {
+        case .calendar:
+            calendarPermissionRequestResult = result
+        case .reminder:
+            reminderPermissionRequestResult = result
         }
+        refresh()
+        notice = permissionNotice(for: result)
     }
 
     func setSelected(
@@ -169,6 +178,26 @@ final class BridgeViewModel: ObservableObject {
                 lastAcknowledgedAt: delivery.lastAcknowledgedAt,
                 hasPendingEnvelope: delivery.pending != nil
             )
+        }
+    }
+
+    private func permissionNotice(
+        for result: BridgePermissionRequestResult
+    ) -> String {
+        let entity = result.entity == .calendar ? "Calendar" : "Reminders"
+        switch result.outcome {
+        case .granted:
+            return "\(entity) access granted."
+        case .denied:
+            return "\(entity) access denied."
+        case .restricted:
+            return "\(entity) access is restricted."
+        case .unavailable:
+            return "\(entity) full access is unavailable."
+        case .systemRequestError:
+            return "\(entity) access request could not be completed. Verify signing and installation, then retry."
+        case .noSystemDecision:
+            return "\(entity) access request did not produce a system decision. Verify signing and installation, then retry."
         }
     }
 }

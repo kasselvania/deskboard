@@ -9,6 +9,64 @@ enum BridgePermissionState: String, Codable, CaseIterable {
     case unavailable
 }
 
+enum BridgePermissionRequestOutcome: String, Equatable {
+    case granted
+    case denied
+    case restricted
+    case unavailable
+    case systemRequestError
+    case noSystemDecision
+}
+
+struct BridgePermissionRequestResult: Equatable {
+    let entity: BridgeSourceEntity
+    let stateBefore: BridgePermissionState
+    let stateAfter: BridgePermissionState
+    let returnedGranted: Bool?
+    let outcome: BridgePermissionRequestOutcome
+
+    static func completed(
+        entity: BridgeSourceEntity,
+        stateBefore: BridgePermissionState,
+        returnedGranted: Bool,
+        stateAfter: BridgePermissionState
+    ) -> BridgePermissionRequestResult {
+        BridgePermissionRequestResult(
+            entity: entity,
+            stateBefore: stateBefore,
+            stateAfter: stateAfter,
+            returnedGranted: returnedGranted,
+            outcome: completedOutcome(for: stateAfter)
+        )
+    }
+
+    static func systemRequestError(
+        entity: BridgeSourceEntity,
+        stateBefore: BridgePermissionState,
+        stateAfter: BridgePermissionState
+    ) -> BridgePermissionRequestResult {
+        BridgePermissionRequestResult(
+            entity: entity,
+            stateBefore: stateBefore,
+            stateAfter: stateAfter,
+            returnedGranted: nil,
+            outcome: .systemRequestError
+        )
+    }
+
+    private static func completedOutcome(
+        for state: BridgePermissionState
+    ) -> BridgePermissionRequestOutcome {
+        switch state {
+        case .granted: .granted
+        case .denied: .denied
+        case .restricted: .restricted
+        case .unavailable: .unavailable
+        case .notDetermined: .noSystemDecision
+        }
+    }
+}
+
 struct BridgeSourceDescriptor: Equatable {
     let entityType: BridgeSourceEntity
     let sourceContainerId: String
@@ -33,7 +91,9 @@ enum EventKitBridgeReaderError: Error, LocalizedError {
 
 protocol AppleSourceReading: AnyObject {
     func permissionState(for entity: BridgeSourceEntity) -> BridgePermissionState
-    func requestPermission(for entity: BridgeSourceEntity) async -> BridgePermissionState
+    func requestPermission(
+        for entity: BridgeSourceEntity
+    ) async -> BridgePermissionRequestResult
     func availableSources(for entity: BridgeSourceEntity) -> [BridgeSourceDescriptor]
     func readReminderSource(sourceContainerId: String) async throws -> ReminderSourceRead
     func readCalendarSource(
@@ -62,17 +122,30 @@ final class EventKitBridgeReader: AppleSourceReading {
         }
     }
 
-    func requestPermission(for entity: BridgeSourceEntity) async -> BridgePermissionState {
+    func requestPermission(
+        for entity: BridgeSourceEntity
+    ) async -> BridgePermissionRequestResult {
+        let stateBefore = permissionState(for: entity)
         do {
+            let returnedGranted: Bool
             if entity == .calendar {
-                _ = try await store.requestFullAccessToEvents()
+                returnedGranted = try await store.requestFullAccessToEvents()
             } else {
-                _ = try await store.requestFullAccessToReminders()
+                returnedGranted = try await store.requestFullAccessToReminders()
             }
+            return .completed(
+                entity: entity,
+                stateBefore: stateBefore,
+                returnedGranted: returnedGranted,
+                stateAfter: permissionState(for: entity)
+            )
         } catch {
-            return permissionState(for: entity)
+            return .systemRequestError(
+                entity: entity,
+                stateBefore: stateBefore,
+                stateAfter: permissionState(for: entity)
+            )
         }
-        return permissionState(for: entity)
     }
 
     func availableSources(for entity: BridgeSourceEntity) -> [BridgeSourceDescriptor] {
