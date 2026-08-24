@@ -1,473 +1,372 @@
 # Coding Agent Instructions
 
-This repository is intentionally small and staged. Coding agents are expected to complete the requested slice, prove it, document it, and stop.
+Deskboard is intentionally staged. Coding agents must complete the requested slice, prove it, document it, and stop.
 
-Before changing code or configuration, read:
+## Read before changing anything
 
 1. `README.md`
 2. `MANIFESTO.md`
 3. `ARCHITECTURE.md`
 4. `ROADMAP.md`
-5. `docs/apple-source-mapping-v0.1.md`
-6. `docs/apple-eventkit-discovery.md`
-7. `docs/apple-source-contract-v1.md`
-8. `docs/apple-source-mirror.md`
-9. `docs/apple-bridge-manual-delivery.md`
-10. `CONTRIBUTING.md`
-11. `SECURITY.md`
-12. the active GitHub issue and all review context
+5. `docs/apple-eventkit-discovery.md`
+6. `docs/apple-source-contract-v1.md`
+7. `docs/apple-source-mirror.md`
+8. `docs/apple-bridge-manual-delivery.md`
+9. `docs/apple-bridge-status-v1.md`
+10. `docs/mirror-backed-board.md`
+11. `CONTRIBUTING.md`
+12. `SECURITY.md`
+13. the active GitHub issue and all review comments
 
-If a task conflicts with those documents, pause and explain the conflict instead of silently expanding or redesigning the project. For active implementation details, the current GitHub issue is authoritative over older status wording in long-lived architecture prose.
+The active issue is authoritative for the current implementation slice. If the request conflicts with accepted contracts or guardrails, stop and explain the conflict rather than silently expanding the project.
 
-## Prime Directive
+## Prime directive
 
 > Build the smallest complete slice that proves the stated product or architectural assumption, then stop.
 
-A complete slice includes working behavior, tests, error states, documentation, and reproducible commands. It does not include speculative scaffolding for later phases.
+A complete slice includes behavior, tests, failure states, privacy evidence, documentation, and reproducible commands. It does not include speculative scaffolding for later work.
 
-## Current Phase
+## Accepted phases
 
-Phase 1 — Fixture-Backed Board — is accepted and merged.
+- Phase 1 fixture Board — PR #3
+- Phase 2A EventKit evidence — PR #7
+- Phase 2B Apple source contract v1 — PR #11
+- Phase 3A atomic Core mirror — PR #14
+- Phase 3B signed authenticated manual Bridge — PR #18
+- Phase 3C truthful local mirror-backed Board — PR #21
 
-Phase 2A — EventKit Discovery Evidence — is accepted and merged in PR #7. Its probe, empirical findings, caveats, and twelve owner-approved sanitized specimens remain evidence inputs.
+These are accepted infrastructure. Do not redesign them opportunistically.
 
-Phase 2B — Apple Source Contract and Reconciliation Semantics — is accepted and merged in PR #11. `AppleReminderSourceSnapshotV1` and `AppleCalendarSourceSnapshotV1` are strict accepted boundaries.
+## Current phase
 
-Phase 3A — Atomic Core Apple Source Mirror — is accepted and merged in PR #14. Its migrations, transactional scope replacement, revision/digest behavior, truncation rules, and rollback semantics are accepted infrastructure.
+The active target is **Phase 3D — Private Homelab Deployment and Manual Remote Board**, defined by issue #22.
 
-Phase 3B — Authenticated Manual Bridge Delivery — is accepted and merged in PR #18. Its signed sandboxed Bridge, EventKit converter, one authenticated source-ingestion route, Keychain credential boundary, source-scoped revisions, exact pending-envelope retry, independent permissions, and manual loopback proof are accepted infrastructure.
+The question is:
 
-The current implementation target is **Phase 3C — Truthful Local Mirror-Backed Board** from issue #19.
+> Can the accepted manual real-data Board run privately from the Ubuntu/CasaOS homelab and serve the iPad and Steam Deck through one Tailscale HTTPS origin without changing source authority, retry identity, status honesty, or the Board contract?
 
-The question for Phase 3C is:
+Phase 3D is a deployment and manual remote-use slice. It is not background operation, backup/restore automation, source administration, or an Apple write path.
 
-> Can Core compose the existing calm Board from the Apple mirror on the same Mac while accurately representing selected, stale, truncated, retrying, missing, and unavailable sources?
+## Allowed Phase 3D shape
 
-This is a same-Mac, manually synchronized, read-only Board-composition slice. It is not deployment, background operation, source administration, or an Apple write path.
-
-The active feature branch implements the bounded status, outbox, Core route/storage, and mirror-backed composer. The content-free private owner gate is complete. Phase 3C remains active until review is complete; this branch is not an accepted basis for Phase 3D.
-
-## Allowed Phase 3C Shape
-
-Phase 3C may add only what issue #19 requires, approximately:
+Approximately:
 
 ```text
-packages/contracts/                         strict content-free Bridge status contract
-fixtures/apple-bridge-status/               synthetic cross-language status fixtures
-apps/api/src/apple-bridge-status/            storage, apply service, authenticated route
-apps/api/src/mirror-backed-board/            mirror/status-backed Board composer
-apps/api/test/                               status and Board integration proofs
-native/apple-bridge/                         status conversion and crash-safe status delivery
-docs/apple-bridge-status-v1.md               operational status semantics
-docs/mirror-backed-board.md                  composition and freshness rules
+deploy/                              container and private-proxy configuration
+docs/private-homelab-deployment.md   private topology and operations
+native/apple-bridge/                 narrow private-origin policy update
+apps/api/                            only deployment compatibility corrections
+apps/web/                            existing production build, no new product feature
 ```
 
-The production web client and `BoardSnapshot` v1 contract should remain unchanged. Fixture mode remains the default.
+Ordinary implementation choices inside this boundary are allowed. Do not add a generic platform, scheduler, deployment framework, or account system.
 
-### Phase 3C permitted behavior
+## Accepted source authority
 
-- define one strict, separately versioned, content-free Bridge status snapshot;
-- represent independent Calendar and Reminders permission categories;
-- represent the exact selected source-coordinate roster;
-- represent content-free per-source delivery health, acknowledged revision, optional pending revision, and safe timestamps;
-- validate the same synthetic status fixtures in Swift and TypeScript;
-- persist and retry one exact pending status envelope independently of source pending envelopes;
-- add exactly one authenticated loopback status-ingestion route using the accepted Phase 3B token and Bridge binding;
-- store accepted status revision/digest/document transactionally;
-- enable an explicitly configured mirror-backed Board mode;
-- require an explicit IANA Board time zone;
-- derive honest entity freshness from status plus matching mirror scopes;
-- compose selected Reminder candidates into `Today`;
-- compose selected Calendar candidates into `Next`;
-- preserve existing capacity limits and calm reasons;
-- derive opaque client IDs with the Node standard library;
-- retain last-good facts without calling them fresh;
-- update documentation after behavior exists.
+### Apple source contract
 
-### Phase 3C forbidden behavior
+`AppleReminderSourceSnapshotV1` and `AppleCalendarSourceSnapshotV1` remain unchanged.
 
-Do not add:
-
-- LAN or public listening;
-- Tailscale, TLS termination, reverse proxy, Docker, CasaOS, or homelab deployment;
-- background Bridge scheduling, daemon, launch item, menu-bar agent, watcher, or notification;
-- backup or restore automation;
-- changes to Apple source contract v1;
-- changes to Phase 3A source-replacement authority;
-- Apple Calendar or Reminder writes;
-- Reminder completion;
-- source-management UI in the Board;
-- raw mirror, status, source, or roster read routes;
-- web-client changes unless a failing accepted contract/state proves one narrow compatibility correction;
-- Notes, metadata parsing, Home Assistant, Open Loops, Projects, sessions, timers, ranking, or AI;
-- automatic stale/conflict recovery;
-- generic adapters, buses, schedulers, repositories, auth systems, or persistence frameworks;
-- real personal data in agent-visible tools or repository artifacts.
-
-Deferred means absent, not partially implemented.
-
-## Product Guardrails
-
-- Apple Calendar and Reminders remain authoritative for source facts.
-- Deskboard replicates facts, not authority.
-- Calendar and Reminders remain read-only.
-- The Board remains a curated field of attention, not a backlog.
-- Ordinary incomplete Reminders may become candidate Tasks; Calendar records may become candidate Commitments.
-- Recurrence remains a source scheduling fact, not an Open Loop classification.
+- Apple Calendar and Reminders own source facts.
+- A Reminder snapshot is authoritative only for its exact Bridge/list scope.
+- A Calendar snapshot is authoritative only for its exact Bridge/container/window overlap scope.
+- Only strict, semantically valid, non-truncated snapshots authorize absence.
+- Complete empty snapshots are authoritative only inside their declared scopes.
+- Ordering-coordinate collisions invalidate a candidate.
 - Date-only, local-time, timezone-qualified, and all-day meanings remain distinct.
-- Source health changes freshness and eligibility; it must never fabricate deletion.
-- One blocked selected source must not be silently ignored so the entity can appear fresh.
-- Reasons must be deterministic, concise, and nonjudgmental.
-- Apple priority, AI scores, shame language, and opaque attention ranking remain absent.
-
-## Accepted Boundaries
-
-### Source contract
-
-Do not add, remove, rename, or reinterpret a v1 source-contract field.
-
-- Reminder scope is one Bridge + one selected Reminder list + every accessible record in that list.
-- Calendar scope is one Bridge + one selected Calendar + records overlapping the exact declared window.
-- Only a strict, semantically valid, non-truncated snapshot authorizes absence.
-- Complete empty snapshots are authoritative only inside their exact source scopes.
-- Ordering-coordinate collisions invalidate the source candidate.
 
 ### Core mirror
 
-Do not duplicate or weaken Phase 3A behavior.
+Phase 3A behavior is immutable in this slice:
 
-- source revision scope is Bridge + entity + container;
+- revision scope is Bridge + entity + source container;
 - same revision/same digest is idempotent;
 - same revision/different digest is conflict;
 - lower revision is stale;
-- truncated or invalid source input does not mutate or advance the accepted source scope;
+- invalid and truncated candidates do not mutate or advance state;
 - Reminder replacement is whole-scope;
 - Calendar replacement is overlap-window only;
-- accepted destructive work commits atomically;
-- out-of-window Calendar rows may remain stored but are not current-window candidates.
+- destructive work and scope metadata commit atomically;
+- retained out-of-window Calendar rows are not current-window candidates.
 
-### Manual Bridge delivery
+### Bridge status and Board honesty
 
-Do not duplicate or weaken Phase 3B behavior.
+Phase 3C behavior is immutable in this slice:
 
-- the production Bridge remains sandboxed, signed, outbound-only, and read-only;
-- source selections remain separate and explicit;
-- the bearer token remains in Keychain and only in the Authorization header;
-- Core remains loopback-only in this slice;
-- exact source pending envelopes survive uncertain delivery;
-- only `applied` and `unchangedDuplicate` acknowledge a source revision;
-- source status/result surfaces remain content-free;
-- no EventKit save or remove call may appear.
+- the latest accepted selected-source roster controls Board eligibility;
+- deselection never deletes mirror rows;
+- status and source pending envelopes remain independent and crash-safe;
+- blocked, retrying, missing, mismatched, unavailable, or old selected sources cannot appear fresh;
+- last-good selected facts may remain visible with stale or unavailable freshness;
+- fixture mode remains the default outside complete mirror configuration;
+- `BoardSnapshot` v1 and the web client remain unchanged;
+- the Board exposes no raw source provenance.
 
-## Bridge Status Contract Guardrails
+## Phase 3D topology
 
-The source mirror cannot prove current source selection or health. Phase 3C therefore adds one operational status document rather than inferring state from old rows.
-
-### Required meaning
-
-A status snapshot must carry only:
-
-- literal schema version;
-- opaque Bridge ID;
-- positive safe-integer status revision;
-- capture instant;
-- Calendar permission category;
-- Reminders permission category;
-- exact selected source-coordinate roster;
-- one content-free status per selected coordinate;
-- nonnegative acknowledged source revision;
-- optional pending source revision;
-- optional last-attempted and last-acknowledged instants.
-
-Do not include:
-
-- source titles;
-- record titles;
-- record counts;
-- source temporal values;
-- pending source envelope bytes;
-- token material;
-- account or signer data;
-- EventKit payloads.
-
-### Status semantics
-
-- coordinates must be strictly ordered and unique;
-- pending revision, when present, equals acknowledged revision plus one;
-- status/pending combinations must be coherent;
-- selected roster is authoritative only for Board selection, not source-record absence;
-- deselection removes a source from Board consideration but does not delete its mirror rows;
-- status contract changes require a new version and new shared fixtures.
-
-### Crash-safe status delivery
-
-Before sending new status content:
-
-1. derive the next status revision;
-2. build and strictly validate the complete status envelope;
-3. atomically persist the exact encoded envelope;
-4. send those persisted bytes.
-
-After timeout, crash, relaunch, malformed response, or uncertain delivery, resend the byte-equivalent status envelope at the same status revision.
-
-Only applied/idempotent duplicate acknowledgement clears pending status. Invalid, stale, conflict, or transport failure preserves it. Status delivery must not mutate, discard, or reorder pending source envelopes.
-
-## Core Status Route and Storage Guardrails
-
-Add exactly one additional route, for example:
+The accepted Phase 3D target is:
 
 ```text
+signed macOS Bridge
+        │ explicit Sync Now
+        │ authenticated HTTPS over Tailscale
+        ▼
+Tailscale Serve on the homelab host
+        │ loopback proxy target
+        ▼
+private web/proxy container
+        │ private container network
+        ├── static production PWA
+        └── Deskboard Core API
+                │
+                ▼
+        private persistent SQLite volume
+```
+
+Rules:
+
+- Tailscale Serve is the sole remote ingress.
+- No Funnel or public ingress.
+- The host-facing deployment port binds only to loopback.
+- The API container port is not published to the host.
+- The API may listen on the private container network.
+- Apple credentials never leave the Mac.
+- The bearer token remains the accepted one-Bridge authentication boundary.
+- No second auth system, account service, TLS authority, VPN, or public cloud dependency.
+
+## Container and deployment guardrails
+
+Phase 3D may add a small reproducible Compose-based deployment.
+
+Requirements:
+
+- use a Node 24 runtime compatible with the lockfile and `node:sqlite`;
+- install from `package-lock.json` with `npm ci`;
+- build the existing API and web workspaces;
+- run production builds, not Vite development servers;
+- run non-root where practical;
+- persist the mirror/status SQLite database in one private host volume;
+- include content-free health checks;
+- close gracefully and preserve the database;
+- use explicit runtime configuration for Bridge ID, token, database path, Board mode, and Board time zone;
+- keep secrets out of image layers, build arguments, compose YAML, committed environment files, logs, browser responses, and image metadata;
+- provide only a publish-safe `.env.example` with placeholders;
+- do not commit CasaOS exports containing private values.
+
+A small API plus static web/private-proxy deployment is acceptable. Do not add Kubernetes, an ORM, a generic migration service, or a deployment platform abstraction.
+
+## Private proxy rules
+
+The deployed boundary may proxy only the accepted routes:
+
+```text
+GET  /health
+GET  /v1/board
+POST /v1/apple-source-snapshots
 POST /v1/apple-bridge-status
 ```
 
 Requirements:
 
-- reuse the existing Phase 3B bearer token and expected Bridge ID;
-- authenticate before body parsing;
-- loopback server topology unchanged;
-- strict finite body limit;
-- strict document and positive safe-integer revision;
-- authenticated Bridge-ID binding;
-- canonical digest and status idempotency outside the status document;
-- newer applies, equal/equal duplicates, equal/different conflicts, lower stale;
-- invalid input does not mutate;
-- metadata and document commit in one transaction;
-- persisted JSON comes only from parsed values and is strictly revalidated on read;
-- no status read route for the web client;
-- no second authentication system or token.
+- `/board` works directly and after refresh;
+- `GET /v1/board` retains `Cache-Control: no-store`;
+- hashed static assets may use bounded immutable caching;
+- request-body limits are compatible with accepted Core limits;
+- no request or response body logging;
+- no token logging;
+- no raw mirror, source, roster, or status read route;
+- no directory listing or arbitrary file serving;
+- fixed content-free errors only.
 
-A source-controlled status migration may extend the private Core database, but it must not alter accepted source tables or replacement semantics.
+## Tailscale guardrails
 
-## Mirror-Backed Board Configuration
+Use the existing Tailscale installation on the homelab host.
 
-Fixture mode remains the default.
+- Discover the installed CLI’s current supported `tailscale serve` behavior locally.
+- Do not commit the real hostname, tailnet name, device name, certificate, IP, or Serve state.
+- Use placeholders in documentation.
+- Do not enable Funnel.
+- Prove the service is unreachable outside the tailnet and reachable from authenticated tailnet devices.
+- Do not create a second certificate authority or manually manage TLS certificates.
 
-Mirror-backed mode must require complete explicit configuration, including:
+## Bridge destination policy
 
-- a mode selector;
-- one valid IANA Board time zone;
-- the same private Core resources used for ingestion/status/composition.
+Preserve numeric-loopback HTTP origins for accepted local development and tests.
 
-Do not infer Board time-zone meaning from the server process, because a later homelab process may run in UTC.
+Phase 3D may add one narrow remote origin class:
 
-Partial or invalid configuration fails startup with a fixed content-free error. Do not commit the owner’s time zone or local environment values.
+- `https` only;
+- exact origin, no user info, query, fragment, or preconfigured path;
+- default HTTPS port unless a demonstrated Tailscale requirement says otherwise;
+- hostname must be a valid `.ts.net` name;
+- normal system TLS validation;
+- redirects rejected;
+- raw LAN IPs, raw tailnet IPs, arbitrary public hosts, ordinary DNS hosts, and remote plain HTTP rejected.
 
-`GET /v1/board` continues returning the accepted `BoardSnapshot` v1. Do not expose source coordinates, mirror rows, status documents, or roster details to the web client.
+The Bridge continues to append only:
 
-## Freshness and Selection Guardrails
+```text
+/v1/apple-source-snapshots
+/v1/apple-bridge-status
+```
 
-Compose only from coordinates in the latest accepted selected roster.
+Changing the destination must not change Bridge ID, Keychain credential, selections, TCC grants, source revisions, status revisions, or exact pending envelope bytes.
 
-### Fresh
+Do not add certificate pinning, custom trust roots, proxy credentials, OAuth, or a general destination framework.
 
-An entity is fresh only when:
+## Manual synchronization only
 
-- permission is granted;
-- at least one source is selected;
-- every selected source has a nonblocked acknowledged status;
-- every selected source has a matching accepted mirror scope at that acknowledged revision;
-- Bridge status and relevant acknowledgements are within the fixed documented freshness interval.
+Phase 3D retains one explicit **Sync Now** action.
 
-### Stale
+Do not add:
 
-An entity is stale when selected sources exist and last-good facts may remain usable, but any selected source is blocked, retry-pending, missing, revision-mismatched, or older than the freshness interval.
+- a timer;
+- daemon;
+- launch item;
+- menu-bar agent;
+- watcher;
+- notification;
+- background task;
+- automatic retry loop beyond the existing explicit next attempt.
 
-### Unavailable
+Required remote proof:
 
-An entity is unavailable when permission is not granted or no source is selected.
+- existing identity and revision streams continue at the private origin;
+- source and status deliveries apply or duplicate idempotently;
+- one controlled source change produces a newer accepted revision;
+- unreachable transport preserves exact pending source/status bytes;
+- restored reachability retries byte-equivalent bytes without rereading under the uncertain revision;
+- source freshness and Board honesty remain unchanged.
 
-Stale or unavailable entities may retain last-good selected-source items when available, but freshness must remain honest. Never convert operational failure into source deletion.
+## Device acceptance
 
-Use the oldest relevant successful selected-source acknowledgement for `updatedAt`. Use `null` when no selected source has accepted data.
+The iPad and Steam Deck must privately load the same deployed Board.
 
-## Reminder → Today Guardrails
+Agent-visible evidence is limited to:
 
-Version-one eligibility:
+- device class;
+- private origin reachable yes/no;
+- Board schema valid yes/no;
+- Board version agreement yes/no;
+- vertical overflow yes/no;
+- Calendar and Reminders freshness categories;
+- recognizable yes/no;
+- calm yes/no;
+- no private content shared yes/no.
 
-- selected source coordinates only;
-- incomplete Reminder only;
-- nonempty source title only;
-- due temporal is preferred;
-- start temporal may supply eligibility only when due is absent;
-- effective Board-local date is today or earlier;
-- future and undated Reminders remain mirrored but do not enter `Today`;
-- Apple priority is not used;
-- no recurrence, project, metadata, or AI inference.
+Do not request or inspect real Board screenshots, accessibility trees, OCR, DOM dumps, API bodies, remote-debug output, source-selection UI, mirror rows, or pending envelopes.
 
-Document and test one deterministic order that favors actionable today work over old backlog. Baseline:
+The owner may inspect the real Board privately.
 
-1. timed values due today, earliest first;
-2. date-only values due today;
-3. overdue values, most recently due first;
-4. scoped provenance only as deterministic tie-breaking.
+## Privacy and security
 
-Apply the existing three-item cap after ordering.
+Never commit, report, or transmit:
 
-Reasons may include:
-
-- `due today`;
-- `due at 3:00 PM`;
-- `overdue from yesterday`;
-- `overdue 3 days`;
-- `available today` when start supplied eligibility.
-
-Do not expose raw provenance in client IDs. Derive stable opaque IDs from scoped provenance using the Node standard library.
-
-## Calendar → Next Guardrails
-
-Version-one eligibility:
-
-- selected Calendar coordinates only;
-- accepted rows overlapping the latest accepted source window;
-- canceled records excluded;
-- ongoing and future ranges whose end is after `now`;
-- nonempty source title only;
-- no participant, location, URL, availability, note, or recurrence-grammar use.
-
-Sort by interpreted start, interpreted end, then accepted provenance order. Apply the existing two-item cap after ordering.
-
-Render against the configured Board time zone. All-day values remain civil date ranges. Timed Board values may be display projections because exact instants remain in the source mirror.
-
-Reasons/labels may include:
-
-- `happening now`;
-- `in 45 minutes`;
-- `later today`;
-- `tomorrow`;
-- `all day`;
-- `continues today`.
-
-## Board Contract Guardrails
-
-Keep `BoardSnapshot` v1 unchanged.
-
-- at most three Today items;
-- at most two Next items;
-- existing Sideways prompt behavior unchanged;
-- generated time comes from the injected clock;
-- stable Board version derives from semantic Board content and freshness, not raw private identifiers;
-- final output is validated through `boardSnapshotSchema` before serving;
-- existing loading, empty, stale, unavailable, saved, and unreachable client behavior remains valid;
-- no source-management UI or new route appears.
-
-## Privacy and Evidence
-
-Never commit, report, or transmit to an agent:
-
+- real Calendar or Reminder content;
 - real Board titles or text;
-- real Calendar or Reminder records;
 - source/list/calendar/account names;
-- EventKit, source, or record identifiers;
-- source temporal payloads;
-- bearer tokens or Keychain values;
+- EventKit, source, record, Bridge, or status identifiers;
+- source temporal values;
+- bearer tokens, Keychain values, `.env` files, or certificates;
+- Tailscale hostname, tailnet, device name, keys, IPs, or Serve configuration;
+- production databases, dumps, journals, backups, or host paths;
 - pending source or status envelopes;
-- production databases or rows;
-- accessibility trees;
-- DOM dumps;
-- API request/response bodies containing real source data;
-- screenshots of a real-data Board or source-selection surface;
-- certificates, provisioning profiles, Team IDs, or signer details.
+- screenshots, accessibility trees, OCR, DOM dumps, request bodies, or response bodies containing real data.
 
-The owner may inspect the real Board privately. Agent-visible acceptance proof must use purpose-built content-free surfaces and report only:
+Fixtures and automated deployment tests use synthetic values only.
 
-- schema success/failure;
-- entity item counts;
-- freshness categories;
-- permission categories;
-- result kinds;
-- revisions;
-- masked source ordinals;
-- safe timestamps.
+Logs must remain content-free. Do not enable proxy or application logging that records request headers, query strings, bodies, Board responses, source coordinates, or tokens.
 
-The Phase 3B accessibility-inspection incident did not enter Git, but it establishes a hard process rule: do not use screenshot, accessibility, OCR, DOM, or general UI inspection on real-data surfaces as agent evidence.
+## Explicit non-goals
 
-## Engineering Guardrails
+Do not add in Phase 3D:
 
-### Dependencies
+- public ingress or Funnel;
+- arbitrary LAN/public Bridge destinations;
+- background scheduling or automatic delivery;
+- backup/restore automation;
+- source-management UI;
+- Board contract changes;
+- web-client product changes;
+- Apple source or Bridge status contract changes without architecture review;
+- Apple writes or Reminder completion;
+- automatic stale/conflict recovery;
+- Notes or metadata parsing;
+- Home Assistant;
+- Open Loops;
+- Projects;
+- sessions;
+- timers;
+- ranking;
+- AI;
+- Kubernetes or a generic deployment/auth/persistence framework.
 
-Prefer existing Zod, Fastify, Node 24 standard library, Apple frameworks, and current project tooling. Stop before adding a package, Swift package, time-zone library, ORM, generic scheduler, UI framework, or persistence abstraction.
+## Testing requirements
 
-### Resource lifecycle
+Phase 3D is not complete without:
 
-In mirror-backed mode, ingestion, status storage, and Board composition must share Core-owned resources safely and close them deterministically. Do not open duplicate writable mirror/status subsystems merely to avoid a small lifecycle refactor.
+- every accepted Node, browser, Bridge, probe, source/status, mirror, and Board test remaining green;
+- clean production image builds from the lockfile;
+- container health proof;
+- API not host-published;
+- web/private proxy bound only to host loopback;
+- direct `/board` and refresh behavior;
+- proxy limits compatible with both ingestion routes;
+- synthetic source/status idempotency through the proxy;
+- database persistence through restart/recreate;
+- migration proof against a synthetic existing Phase 3C database;
+- no secret in image history or configuration;
+- no database in an image layer;
+- graceful shutdown/reopen;
+- strict Bridge origin-policy tests;
+- signed Bridge build and entitlement proof;
+- content-free manual remote sync and device acceptance.
 
-### Logging and errors
+Do not alter GitHub Actions to hide the account-level administrative non-start.
 
-Use fixed content-free errors and safe operational metadata. Never log source titles, identifiers, temporal values, Board content, request bodies, status documents, or pending envelopes.
-
-### Testing
-
-Phase 3C is not complete without all proofs in issue #19, including:
-
-- exact shared valid/invalid status fixture inventories in Swift and TypeScript;
-- strict status key and semantic rejection;
-- exact roster ordering and uniqueness;
-- status revision/digest duplicate, stale, and conflict behavior;
-- exact pending-status retry across timeout/relaunch;
-- source pending envelopes unchanged by status delivery;
-- truthful fresh/stale/unavailable derivation;
-- deselected source exclusion without mirror deletion;
-- truncated/retry/missing selected-source stale behavior;
-- Reminder eligibility, ordering, reasons, and three-item cap;
-- Calendar eligibility, ordering, reasons, time-zone projection, and two-item cap;
-- opaque client IDs;
-- final Board runtime validation;
-- fixture mode, `/health`, existing source ingestion, mirror, Bridge, probe, and web tests remain green.
-
-Tests use synthetic fixtures only. Private manual acceptance is owner-visible and agent-content-free.
-
-## Git Safety
+## Git safety
 
 - Begin from current accepted `main`.
-- Work on a new Phase 3C feature branch.
-- Do not force-push or rewrite shared history.
-- Do not modify the twelve approved Phase 2A specimen bytes.
-- Do not change Phase 2B source-contract files or fixture inventories.
-- Do not weaken Phase 3A mirror semantics.
-- Do not weaken Phase 3B authentication, source pending delivery, signing, sandbox, or permission behavior.
-- Do not change the Board contract or web client without a proved compatibility need.
+- Work on a new Phase 3D feature branch.
+- Do not force-push or rewrite accepted history.
+- Do not modify approved Phase 2A evidence bytes.
+- Do not change accepted Phase 2B, 3A, 3B, or 3C contracts and semantics without stopping for review.
+- Do not commit secrets, databases, hostnames, or local deployment state.
 - Keep commits coherent and follow `CONTRIBUTING.md`.
-- Do not mix deployment, background scheduling, backup, Apple writes, dependency upgrades, or unrelated formatting into Phase 3C.
+- Open a draft PR linked with `Closes #22` and stop for review.
 
-## Decision Policy
+## Decision policy
 
-Agents may make ordinary decisions inside Phase 3C about narrow file names, status field names consistent with issue #19, migration numbering, fixed freshness duration, deterministic reason wording, and focused synthetic test organization.
+Agents may choose narrow file names, container layout, private proxy configuration, internal container ports, health-check structure, and test organization within issue #22.
 
-Stop and ask before:
+Stop before:
 
-- changing source authority, identity, revision, retry, or replacement semantics;
-- changing `BoardSnapshot` v1;
-- adding a dependency or generic framework;
-- exposing a raw read/status route;
-- allowing non-loopback transport;
-- adding deployment or background behavior;
-- adding an Apple write;
-- adding undated/future Reminder behavior beyond issue #19;
-- adding AI or opaque ranking;
-- deleting last-good data because status is missing;
-- exposing real data outside the local owner-only interface;
-- weakening privacy, fixture, freshness, or acceptance proofs;
-- beginning Phase 3D or later work.
+- changing source authority or contract versions;
+- changing Board eligibility, capacity, freshness, or client behavior;
+- adding a dependency not required by issue #22;
+- exposing the API directly;
+- enabling public ingress;
+- accepting arbitrary remote Bridge origins;
+- adding background operation or backup automation;
+- resetting Bridge identity, Keychain, TCC, revisions, or pending state;
+- exposing private data;
+- beginning Phase 3E or Apple write work.
 
-## Completion Report
+## Completion report
 
-At the end of Phase 3C, report:
+Report only content-free facts:
 
-1. strict Bridge status document shape and fixture inventories;
-2. status revision, digest, storage, and exact retry behavior;
-3. authenticated status route and lifecycle integration;
-4. explicit mirror-backed configuration and Board time zone;
-5. selection roster and fresh/stale/unavailable semantics;
-6. Reminder eligibility, order, reasons, and capacity;
-7. Calendar eligibility, order, reasons, and capacity;
-8. opaque client-ID and Board-version behavior;
-9. exact Node, Bridge, probe, browser, and build results;
-10. accepted Phase 2A/2B/3A/3B integrity;
-11. content-free private local acceptance result;
-12. files changed, dependencies, and deliberate deviations;
-13. everything deferred to Phase 3D;
-14. branch, commits, push, draft PR, and clean-working-tree state.
+1. container and proxy topology;
+2. runtime configuration and secret-injection boundary;
+3. persistent database and migration/restart behavior;
+4. Tailscale Serve boundary without real host/tailnet values;
+5. Bridge origin policy and identity/revision preservation;
+6. remote source/status retry proof;
+7. iPad and Steam Deck acceptance summary;
+8. exact automated and native validation results;
+9. accepted earlier-phase integrity;
+10. files, commits, dependencies, and deliberate deviations;
+11. everything deferred to Phase 3E;
+12. branch, push, draft PR, and clean-working-tree state.
 
-Never include real Board, Calendar, Reminder, source, account, participant, location, note, identifier, token, pending-envelope, database, accessibility, DOM, screenshot, signer, or Team ID values in the report.
-
-Do not claim completion while required gates are failing, source/status honesty is ambiguous, private data has entered agent-visible tooling, fixture mode is broken, accepted boundaries changed, or later-phase work has begun.
+Never include real source content, Board content, credentials, identifiers, private host information, database rows, pending bytes, screenshots, accessibility output, DOM output, signer data, or Team IDs.
