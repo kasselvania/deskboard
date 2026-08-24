@@ -127,6 +127,24 @@ export const APPLE_SOURCE_MIRROR_MIGRATIONS = [
         );
     `,
   },
+  {
+    version: 2,
+    name: "bridge_status_snapshot_v1",
+    sql: `
+      CREATE TABLE apple_bridge_status_snapshots (
+        bridge_id TEXT PRIMARY KEY CHECK (length(bridge_id) > 0),
+        accepted_status_revision INTEGER NOT NULL
+          CHECK (accepted_status_revision > 0),
+        normalized_digest TEXT NOT NULL CHECK (
+          length(normalized_digest) = 64
+          AND normalized_digest NOT GLOB '*[^0-9a-f]*'
+        ),
+        captured_at TEXT NOT NULL CHECK (length(captured_at) > 0),
+        core_received_at TEXT NOT NULL CHECK (length(core_received_at) > 0),
+        document_json TEXT NOT NULL CHECK (json_valid(document_json))
+      ) STRICT;
+    `,
+  },
 ] as const satisfies readonly AppleSourceMirrorMigration[];
 
 const migrationLedgerSql = `

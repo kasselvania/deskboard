@@ -146,6 +146,42 @@ private final class QueueDeliveryClient: AppleSourceDelivering {
     }
 }
 
+private final class QueueStatusDeliveryClient: AppleBridgeStatusDelivering {
+    enum Failure: Error { case uncertain }
+
+    var outcomes: [Result<AppleBridgeStatusApplyResponse, Error>]
+    var envelopes: [Data] = []
+
+    init(_ outcomes: [Result<AppleBridgeStatusApplyResponse, Error>]) {
+        self.outcomes = outcomes
+    }
+
+    func deliverStatus(
+        envelopeData: Data,
+        endpoint: LoopbackIngestionEndpoint
+    ) async throws -> AppleBridgeStatusApplyResponse {
+        envelopes.append(envelopeData)
+        guard !outcomes.isEmpty else { throw Failure.uncertain }
+        return try outcomes.removeFirst().get()
+    }
+}
+
+private final class AcknowledgingStatusDeliveryClient: AppleBridgeStatusDelivering {
+    var envelopes: [Data] = []
+
+    func deliverStatus(
+        envelopeData: Data,
+        endpoint: LoopbackIngestionEndpoint
+    ) async throws -> AppleBridgeStatusApplyResponse {
+        envelopes.append(envelopeData)
+        let snapshot = try AppleBridgeStatusEnvelopeCodec.decode(envelopeData)
+        return AppleBridgeStatusApplyResponse(
+            kind: .applied,
+            statusRevision: snapshot.statusRevision
+        )
+    }
+}
+
 private final class SyntheticCredentialStore: BridgeCredentialStore {
     func readToken() throws -> String? { nil }
     func storeToken(_ token: String) throws {}
@@ -352,6 +388,248 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
         XCTAssertEqual(updated.deliveries.first?.acknowledgedRevision, 2)
     }
 
+    func testStatusTimeoutAndRelaunchRetryExactBytesBeforeFurtherSourceRead() async throws {
+        let store = MemoryStateStore(configuredState())
+        let reader = SyntheticSourceReader()
+        let firstStatus = QueueStatusDeliveryClient([
+            .failure(QueueStatusDeliveryClient.Failure.uncertain),
+        ])
+        let first = makeCoordinator(
+            store: store,
+            reader: reader,
+            delivery: QueueDeliveryClient([
+                .success(response(.applied, revision: 1)),
+            ]),
+            statusDelivery: firstStatus
+        )
+
+        let timedOut = try await first.syncNow()
+        let pendingStatus = try XCTUnwrap(timedOut.pendingStatus)
+        XCTAssertEqual(pendingStatus.statusRevision, 1)
+        XCTAssertEqual(timedOut.acknowledgedStatusRevision, 0)
+        XCTAssertEqual(reader.reminderReadCount, 1)
+
+        reader.reminderRead = ReminderSourceRead(
+            sourceContainerId: "synthetic-reminder-source",
+            allowsContentModifications: true,
+            records: [SyntheticSourceReader.reminderRecord(title: "Synthetic changed")]
+        )
+        let retryStatus = QueueStatusDeliveryClient([
+            .success(
+                AppleBridgeStatusApplyResponse(
+                    kind: .unchangedDuplicate,
+                    statusRevision: 1
+                )
+            ),
+            .success(
+                AppleBridgeStatusApplyResponse(
+                    kind: .applied,
+                    statusRevision: 2
+                )
+            ),
+        ])
+        let relaunched = makeCoordinator(
+            store: store,
+            reader: reader,
+            delivery: QueueDeliveryClient([
+                .success(response(.applied, revision: 2)),
+            ]),
+            statusDelivery: retryStatus
+        )
+
+        let completed = try await relaunched.syncNow()
+
+        XCTAssertEqual(retryStatus.envelopes.first, pendingStatus.encodedEnvelope)
+        XCTAssertEqual(
+            try AppleBridgeStatusEnvelopeCodec.decode(
+                XCTUnwrap(retryStatus.envelopes.first)
+            ).statusRevision,
+            1
+        )
+        XCTAssertEqual(
+            try AppleBridgeStatusEnvelopeCodec.decode(
+                XCTUnwrap(retryStatus.envelopes.last)
+            ).statusRevision,
+            2
+        )
+        XCTAssertEqual(reader.reminderReadCount, 2)
+        XCTAssertEqual(completed.acknowledgedStatusRevision, 2)
+        XCTAssertNil(completed.pendingStatus)
+    }
+
+    func testUnresolvedStatusRetryLeavesSourcePendingBytesUntouched() async throws {
+        var state = try stateWithPending()
+        let originalSourcePending = try XCTUnwrap(state.deliveries.first?.pending)
+        let statusBytes = try statusEnvelopeData(for: state, revision: 1)
+        state.pendingStatus = BridgePendingStatusEnvelope(
+            statusRevision: 1,
+            encodedEnvelope: statusBytes
+        )
+        state.statusDeliveryResult = .retryPending
+        let store = MemoryStateStore(state)
+        let reader = SyntheticSourceReader()
+        let sourceDelivery = QueueDeliveryClient([
+            .success(response(.applied, revision: 1)),
+        ])
+        let statusDelivery = QueueStatusDeliveryClient([
+            .failure(QueueStatusDeliveryClient.Failure.uncertain),
+        ])
+
+        let result = try await makeCoordinator(
+            store: store,
+            reader: reader,
+            delivery: sourceDelivery,
+            statusDelivery: statusDelivery
+        ).syncNow()
+
+        XCTAssertEqual(statusDelivery.envelopes, [statusBytes])
+        XCTAssertTrue(sourceDelivery.envelopes.isEmpty)
+        XCTAssertEqual(reader.reminderReadCount, 0)
+        XCTAssertEqual(
+            result.deliveries.first?.pending?.encodedEnvelope,
+            originalSourcePending.encodedEnvelope
+        )
+        XCTAssertEqual(result.deliveries.first?.pending?.sourceRevision, 1)
+        XCTAssertEqual(result.pendingStatus?.encodedEnvelope, statusBytes)
+    }
+
+    func testRejectedStatusResultsPreserveExactPendingStatusEnvelope() async throws {
+        let cases: [(
+            AppleBridgeStatusApplyResponse,
+            BridgeStatusDeliveryResult
+        )] = [
+            (
+                AppleBridgeStatusApplyResponse(
+                    kind: .rejectedInvalid,
+                    statusRevision: nil
+                ),
+                .blockedInvalid
+            ),
+            (
+                AppleBridgeStatusApplyResponse(
+                    kind: .rejectedStale,
+                    statusRevision: 1
+                ),
+                .operatorActionStale
+            ),
+            (
+                AppleBridgeStatusApplyResponse(
+                    kind: .rejectedRevisionConflict,
+                    statusRevision: 1
+                ),
+                .operatorActionConflict
+            ),
+        ]
+
+        for (response, expectedResult) in cases {
+            let state = try stateWithPendingStatusOnly()
+            let original = try XCTUnwrap(state.pendingStatus)
+            let store = MemoryStateStore(state)
+            let result = try await makeCoordinator(
+                store: store,
+                reader: SyntheticSourceReader(),
+                delivery: QueueDeliveryClient([]),
+                statusDelivery: QueueStatusDeliveryClient([.success(response)])
+            ).syncNow()
+
+            XCTAssertEqual(result.pendingStatus, original)
+            XCTAssertEqual(result.acknowledgedStatusRevision, 0)
+            XCTAssertEqual(result.statusDeliveryResult, expectedResult)
+        }
+    }
+
+    func testOnlySuccessfulStatusResultsAcknowledgeAndClearPending() async throws {
+        for kind in [
+            AppleBridgeStatusApplyResultKind.applied,
+            .unchangedDuplicate,
+        ] {
+            let state = try stateWithPendingStatusOnly()
+            let store = MemoryStateStore(state)
+            _ = try await makeCoordinator(
+                store: store,
+                reader: SyntheticSourceReader(),
+                delivery: QueueDeliveryClient([]),
+                statusDelivery: QueueStatusDeliveryClient([
+                    .success(
+                        AppleBridgeStatusApplyResponse(
+                            kind: kind,
+                            statusRevision: 1
+                        )
+                    ),
+                    .failure(QueueStatusDeliveryClient.Failure.uncertain),
+                ])
+            ).syncNow()
+
+            XCTAssertTrue(
+                store.savedStates.contains(where: {
+                    $0.acknowledgedStatusRevision == 1
+                        && $0.pendingStatus == nil
+                        && $0.statusDeliveryResult.rawValue == kind.rawValue
+                })
+            )
+            XCTAssertEqual(store.state.pendingStatus?.statusRevision, 2)
+        }
+    }
+
+    func testDeselectionChangesNextStatusRosterWithoutDiscardingDeliveryState() async throws {
+        let store = MemoryStateStore(configuredState())
+        let reader = SyntheticSourceReader()
+        let statusDelivery = AcknowledgingStatusDeliveryClient()
+
+        _ = try await makeCoordinator(
+            store: store,
+            reader: reader,
+            delivery: QueueDeliveryClient([
+                .success(response(.applied, revision: 1)),
+            ]),
+            statusDelivery: statusDelivery
+        ).syncNow()
+        var deselected = store.state
+        deselected.setSelections([], for: .reminder)
+        try store.save(deselected)
+
+        let completed = try await makeCoordinator(
+            store: store,
+            reader: reader,
+            delivery: QueueDeliveryClient([]),
+            statusDelivery: statusDelivery
+        ).syncNow()
+
+        let finalStatus = try AppleBridgeStatusEnvelopeCodec.decode(
+            XCTUnwrap(statusDelivery.envelopes.last)
+        )
+        XCTAssertTrue(finalStatus.selectedSources.isEmpty)
+        XCTAssertEqual(completed.deliveries.count, 1)
+        XCTAssertEqual(completed.deliveries.first?.acknowledgedRevision, 1)
+        XCTAssertEqual(reader.reminderReadCount, 1)
+    }
+
+    func testPhaseThreeBStateDecodesWithEmptyStatusOutboxDefaults() throws {
+        let state = configuredState()
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let encoded = try encoder.encode(state)
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any]
+        )
+        object.removeValue(forKey: "acknowledgedStatusRevision")
+        object.removeValue(forKey: "pendingStatus")
+        object.removeValue(forKey: "statusDeliveryResult")
+        let priorVersionBytes = try JSONSerialization.data(withJSONObject: object)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let decoded = try decoder.decode(
+            BridgePersistentState.self,
+            from: priorVersionBytes
+        )
+
+        XCTAssertEqual(decoded.acknowledgedStatusRevision, 0)
+        XCTAssertNil(decoded.pendingStatus)
+        XCTAssertEqual(decoded.statusDeliveryResult, .idle)
+        XCTAssertNoThrow(try decoded.validate())
+    }
+
     func testAllApplyResultTransitionsPreserveOrClearPendingExactly() async throws {
         let cases: [(
             AppleSourceApplyResponse,
@@ -536,6 +814,62 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
         return state
     }
 
+    private func statusEnvelopeData(
+        for state: BridgePersistentState,
+        revision: Int
+    ) throws -> Data {
+        let delivery = try XCTUnwrap(state.deliveries.first)
+        let instant = "2026-08-23T18:00:00.000Z"
+        return try AppleBridgeStatusEnvelopeCodec.encode(
+            AppleBridgeStatusSnapshotV1(
+                schemaVersion: 1,
+                bridgeId: state.bridgeId,
+                statusRevision: revision,
+                capturedAt: instant,
+                permissions: AppleBridgeStatusPermissionsV1(
+                    calendar: .granted,
+                    reminders: .granted
+                ),
+                selectedSources: [
+                    AppleBridgeSelectedSourceStatusV1(
+                        entityType: delivery.coordinate.entityType,
+                        sourceContainerId: delivery.coordinate.sourceContainerId,
+                        status: .retryPending,
+                        acknowledgedSourceRevision: delivery.acknowledgedRevision,
+                        pendingSourceRevision: delivery.pending?.sourceRevision,
+                        lastAttemptedAt: instant,
+                        lastAcknowledgedAt: nil
+                    ),
+                ]
+            )
+        )
+    }
+
+    private func stateWithPendingStatusOnly() throws -> BridgePersistentState {
+        var state = BridgePersistentState.fresh(bridgeId: "synthetic-bridge")
+        state.coreOrigin = "http://127.0.0.1:3001"
+        let bytes = try AppleBridgeStatusEnvelopeCodec.encode(
+            AppleBridgeStatusSnapshotV1(
+                schemaVersion: 1,
+                bridgeId: state.bridgeId,
+                statusRevision: 1,
+                capturedAt: "2026-08-23T18:00:00.000Z",
+                permissions: AppleBridgeStatusPermissionsV1(
+                    calendar: .granted,
+                    reminders: .granted
+                ),
+                selectedSources: []
+            )
+        )
+        state.pendingStatus = BridgePendingStatusEnvelope(
+            statusRevision: 1,
+            encodedEnvelope: bytes
+        )
+        state.statusDeliveryResult = .retryPending
+        try state.validate()
+        return state
+    }
+
     private func response(
         _ kind: AppleSourceApplyResultKind,
         revision: Int
@@ -550,12 +884,14 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
     private func makeCoordinator(
         store: BridgeStatePersisting,
         reader: AppleSourceReading,
-        delivery: AppleSourceDelivering
+        delivery: AppleSourceDelivering,
+        statusDelivery: AppleBridgeStatusDelivering = AcknowledgingStatusDeliveryClient()
     ) -> ManualSyncCoordinator {
         ManualSyncCoordinator(
             stateStore: store,
             sourceReader: reader,
             deliveryClient: delivery,
+            statusDeliveryClient: statusDelivery,
             clock: { self.now },
             windowTimeZone: { TimeZone(identifier: "Etc/UTC")! }
         )

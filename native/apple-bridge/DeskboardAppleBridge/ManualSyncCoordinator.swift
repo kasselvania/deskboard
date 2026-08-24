@@ -19,6 +19,7 @@ final class ManualSyncCoordinator {
     private let stateStore: BridgeStatePersisting
     private let sourceReader: AppleSourceReading
     private let deliveryClient: AppleSourceDelivering
+    private let statusDeliveryClient: AppleBridgeStatusDelivering
     private let clock: () -> Date
     private let windowTimeZone: () -> TimeZone
     private(set) var isInProgress = false
@@ -27,12 +28,14 @@ final class ManualSyncCoordinator {
         stateStore: BridgeStatePersisting,
         sourceReader: AppleSourceReading,
         deliveryClient: AppleSourceDelivering,
+        statusDeliveryClient: AppleBridgeStatusDelivering,
         clock: @escaping () -> Date = Date.init,
         windowTimeZone: @escaping () -> TimeZone = { .current }
     ) {
         self.stateStore = stateStore
         self.sourceReader = sourceReader
         self.deliveryClient = deliveryClient
+        self.statusDeliveryClient = statusDeliveryClient
         self.clock = clock
         self.windowTimeZone = windowTimeZone
     }
@@ -47,6 +50,11 @@ final class ManualSyncCoordinator {
             throw ManualSyncError.configurationRequired
         }
         let endpoint = try LoopbackIngestionEndpoint(origin: origin)
+
+        try await attemptPendingStatus(endpoint: endpoint, state: &state)
+        guard state.pendingStatus == nil else {
+            return state
+        }
 
         let pendingCoordinates = state.deliveries
             .filter { $0.pending != nil }
@@ -154,7 +162,108 @@ final class ManualSyncCoordinator {
             }
         }
 
+        try persistFinalStatus(state: &state)
+        try await attemptPendingStatus(endpoint: endpoint, state: &state)
+
         return state
+    }
+
+    private func persistFinalStatus(
+        state: inout BridgePersistentState
+    ) throws {
+        guard
+            state.acknowledgedStatusRevision
+                < BridgeProductionLimits.maximumSafeSourceRevision
+        else {
+            throw ManualSyncError.revisionExhausted
+        }
+
+        let capturedAt = clock()
+        let selectedCoordinates = [
+            (BridgeSourceEntity.calendar, state.selectedCalendarSourceIds),
+            (BridgeSourceEntity.reminder, state.selectedReminderSourceIds),
+        ].flatMap { entity, sourceIds in
+            sourceIds.map {
+                BridgeSourceCoordinate(
+                    entityType: entity,
+                    sourceContainerId: $0
+                )
+            }
+        }.sorted(by: BridgeSourceCoordinate.ordered)
+
+        let selectedSources = selectedCoordinates.map { coordinate in
+            let delivery = state.deliveryState(for: coordinate)
+            return AppleBridgeSelectedSourceStatusV1(
+                entityType: coordinate.entityType,
+                sourceContainerId: coordinate.sourceContainerId,
+                status: delivery.status,
+                acknowledgedSourceRevision: delivery.acknowledgedRevision,
+                pendingSourceRevision: delivery.pending?.sourceRevision,
+                lastAttemptedAt: delivery.lastAttemptedAt.map(Self.instant),
+                lastAcknowledgedAt: delivery.lastAcknowledgedAt.map(Self.instant)
+            )
+        }
+        let revision = state.acknowledgedStatusRevision + 1
+        let snapshot = AppleBridgeStatusSnapshotV1(
+            schemaVersion: 1,
+            bridgeId: state.bridgeId,
+            statusRevision: revision,
+            capturedAt: Self.instant(capturedAt),
+            permissions: AppleBridgeStatusPermissionsV1(
+                calendar: sourceReader.permissionState(for: .calendar),
+                reminders: sourceReader.permissionState(for: .reminder)
+            ),
+            selectedSources: selectedSources
+        )
+        let encoded = try AppleBridgeStatusEnvelopeCodec.encode(snapshot)
+        state.pendingStatus = BridgePendingStatusEnvelope(
+            statusRevision: revision,
+            encodedEnvelope: encoded
+        )
+        state.statusDeliveryResult = .retryPending
+        try stateStore.save(state)
+    }
+
+    private func attemptPendingStatus(
+        endpoint: LoopbackIngestionEndpoint,
+        state: inout BridgePersistentState
+    ) async throws {
+        guard let pending = state.pendingStatus else { return }
+
+        let response: AppleBridgeStatusApplyResponse
+        do {
+            response = try await statusDeliveryClient.deliverStatus(
+                envelopeData: pending.encodedEnvelope,
+                endpoint: endpoint
+            )
+        } catch {
+            state.statusDeliveryResult = .retryPending
+            try stateStore.save(state)
+            return
+        }
+
+        switch response.kind {
+        case .applied, .unchangedDuplicate:
+            state.acknowledgedStatusRevision = pending.statusRevision
+            state.pendingStatus = nil
+            state.statusDeliveryResult = response.kind == .applied
+                ? .applied
+                : .unchangedDuplicate
+        case .rejectedInvalid:
+            state.statusDeliveryResult = .blockedInvalid
+        case .rejectedStale:
+            state.statusDeliveryResult = .operatorActionStale
+        case .rejectedRevisionConflict:
+            state.statusDeliveryResult = .operatorActionConflict
+        }
+        try stateStore.save(state)
+    }
+
+    private static func instant(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.string(from: date)
     }
 
     private func attemptPending(

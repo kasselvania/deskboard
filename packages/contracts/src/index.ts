@@ -12,6 +12,7 @@ export {
   isLocalDateTime,
 } from "./temporal-validation.js";
 export * from "./apple-source-contract.js";
+export * from "./apple-bridge-status.js";
 
 // These limits keep the wire document display-ready. Titles and labels stay
 // compact enough for the reference Board, while reasons and the prompt retain

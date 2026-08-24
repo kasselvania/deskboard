@@ -475,6 +475,7 @@ describe("atomic Apple source mirror", () => {
         )
         .all();
       expect(strictTables).toEqual([
+        { name: "apple_bridge_status_snapshots", strict: 1 },
         { name: "apple_calendar_records", strict: 1 },
         { name: "apple_reminder_records", strict: 1 },
         { name: "apple_source_mirror_migrations", strict: 1 },

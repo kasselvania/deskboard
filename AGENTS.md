@@ -45,6 +45,8 @@ The question for Phase 3C is:
 
 This is a same-Mac, manually synchronized, read-only Board-composition slice. It is not deployment, background operation, source administration, or an Apple write path.
 
+The active feature branch implements the bounded status, outbox, Core route/storage, and mirror-backed composer. The content-free private owner gate is complete. Phase 3C remains active until review is complete; this branch is not an accepted basis for Phase 3D.
+
 ## Allowed Phase 3C Shape
 
 Phase 3C may add only what issue #19 requires, approximately:
@@ -53,7 +55,7 @@ Phase 3C may add only what issue #19 requires, approximately:
 packages/contracts/                         strict content-free Bridge status contract
 fixtures/apple-bridge-status/               synthetic cross-language status fixtures
 apps/api/src/apple-bridge-status/            storage, apply service, authenticated route
-apps/api/src/board-composition/              mirror/status-backed Board composer
+apps/api/src/mirror-backed-board/            mirror/status-backed Board composer
 apps/api/test/                               status and Board integration proofs
 native/apple-bridge/                         status conversion and crash-safe status delivery
 docs/apple-bridge-status-v1.md               operational status semantics

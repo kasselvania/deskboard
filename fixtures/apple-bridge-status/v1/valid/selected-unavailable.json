@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "bridgeId": "synthetic-bridge-unavailable",
+  "statusRevision": 4,
+  "capturedAt": "2026-08-24T18:00:00Z",
+  "permissions": {
+    "calendar": "granted",
+    "reminders": "denied"
+  },
+  "selectedSources": [
+    {
+      "entityType": "calendar",
+      "sourceContainerId": "synthetic-calendar-a",
+      "status": "sourceUnavailable",
+      "acknowledgedSourceRevision": 1,
+      "lastAttemptedAt": "2026-08-24T17:30:00Z",
+      "lastAcknowledgedAt": "2026-08-24T17:30:01Z"
+    },
+    {
+      "entityType": "calendar",
+      "sourceContainerId": "synthetic-calendar-β",
+      "status": "idle",
+      "acknowledgedSourceRevision": 0
+    },
+    {
+      "entityType": "reminder",
+      "sourceContainerId": "synthetic-reminder-a",
+      "status": "permissionUnavailable",
+      "acknowledgedSourceRevision": 0
+    }
+  ]
+}

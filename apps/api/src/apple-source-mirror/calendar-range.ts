@@ -109,7 +109,7 @@ function sameParts(
   );
 }
 
-function unambiguousLocalDateTimeToEpochMilliseconds(
+export function interpretLocalDateTimeInTimeZone(
   value: string,
   timeZone: string,
 ): number | undefined {
@@ -162,11 +162,11 @@ export function interpretAppleCalendarRecordRange(
     record.temporal.kind === "allDayRange"
       ? `${record.temporal.endDate}T00:00:00`
       : record.temporal.endLocalDateTime;
-  const startMs = unambiguousLocalDateTimeToEpochMilliseconds(
+  const startMs = interpretLocalDateTimeInTimeZone(
     startValue,
     windowTimeZone,
   );
-  const endMs = unambiguousLocalDateTimeToEpochMilliseconds(
+  const endMs = interpretLocalDateTimeInTimeZone(
     endValue,
     windowTimeZone,
   );

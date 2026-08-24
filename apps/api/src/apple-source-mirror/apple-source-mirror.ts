@@ -14,6 +14,10 @@ import {
   type AppleSourceSnapshotV1,
 } from "@deskboard/contracts";
 
+import {
+  AppleBridgeStatusStore,
+  type AppleBridgeStatusApplyResult,
+} from "../apple-bridge-status/store.js";
 import { interpretAppleCalendarRecordRange } from "./calendar-range.js";
 import {
   AppleSourceMirrorMigrationError,
@@ -239,6 +243,7 @@ function parseCalendarRecordRow(
 
 export class AppleSourceMirror {
   readonly #database: DatabaseSync;
+  readonly #bridgeStatusStore: AppleBridgeStatusStore;
   readonly #clock: () => Date;
   readonly #testOnlyAfterDestructiveSql: (() => void) | undefined;
 
@@ -261,8 +266,10 @@ export class AppleSourceMirror {
       throw new AppleSourceMirrorMigrationError();
     }
 
+    const clock = options.clock ?? (() => new Date());
     this.#database = database;
-    this.#clock = options.clock ?? (() => new Date());
+    this.#clock = clock;
+    this.#bridgeStatusStore = new AppleBridgeStatusStore(database, clock);
     this.#testOnlyAfterDestructiveSql =
       options.testOnlyAfterDestructiveSql;
   }
@@ -309,6 +316,14 @@ export class AppleSourceMirror {
       input.sourceRevision,
       digest,
     );
+  }
+
+  applyBridgeStatus(input: unknown): AppleBridgeStatusApplyResult {
+    return this.#bridgeStatusStore.apply(input);
+  }
+
+  readBridgeStatus(bridgeId: string) {
+    return this.#bridgeStatusStore.read(bridgeId);
   }
 
   readSourceScopeSummary(

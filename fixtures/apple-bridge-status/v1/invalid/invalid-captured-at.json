@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "bridgeId": "synthetic-invalid",
+  "statusRevision": 1,
+  "capturedAt": "not-an-instant",
+  "permissions": { "calendar": "granted", "reminders": "granted" },
+  "selectedSources": []
+}

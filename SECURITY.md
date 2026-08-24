@@ -69,11 +69,15 @@ The accepted Phase 3B path is same-Mac and manual only:
 - Core and Bridge responses and status use content-free result kinds rather than source values.
 - A signer transition never silently reuses inaccessible private state. Any intentional state reset requires owner awareness, a new opaque Bridge ID, and Core reconfiguration before revision 1 begins under the new identity.
 
-## Phase 3C real-data Board controls
+## Implemented Phase 3C real-data Board controls
 
-The active Phase 3C slice may compose a local real-data Board only after Core has a strict content-free view of current Bridge selection and source health.
+The active Phase 3C branch composes a local real-data Board only after Core has a strict content-free view of current Bridge selection and source health. The content-free private owner gate is complete; acceptance still requires review.
 
 - A selected-source roster and content-free delivery status are operational facts, separate from source records.
+- One additional authenticated loopback status route reuses the Phase 3B token and Bridge binding; it has a finite body limit and no read counterpart.
+- The Bridge persists and retries exact pending status bytes independently of pending source bytes.
+- Core stores parsed status, revision, and digest transactionally in the existing private mirror database.
+- In mirror mode, source ingestion, status ingestion, and Board composition share one Core-owned resource and one close lifecycle.
 - A deselected source disappears from Board consideration but its mirror rows are not deleted merely because it is absent from the roster.
 - A blocked, truncated, retrying, missing, permission-denied, or stale source must not be silently ignored to make an entity appear fresh.
 - Last-good selected-source facts may remain displayable with stale or unavailable freshness; operational failure never fabricates source deletion.

@@ -48,6 +48,21 @@ struct BridgePendingEnvelope: Codable, Equatable {
     let encodedEnvelope: Data
 }
 
+struct BridgePendingStatusEnvelope: Codable, Equatable {
+    let statusRevision: Int
+    let encodedEnvelope: Data
+}
+
+enum BridgeStatusDeliveryResult: String, Codable, CaseIterable {
+    case idle
+    case applied
+    case unchangedDuplicate
+    case blockedInvalid
+    case operatorActionStale
+    case operatorActionConflict
+    case retryPending
+}
+
 struct BridgeSourceDeliveryState: Codable, Equatable {
     let coordinate: BridgeSourceCoordinate
     var acknowledgedRevision: Int
@@ -66,6 +81,74 @@ struct BridgePersistentState: Codable, Equatable {
     var selectedReminderSourceIds: [String]
     var coreOrigin: String?
     var deliveries: [BridgeSourceDeliveryState]
+    var acknowledgedStatusRevision: Int
+    var pendingStatus: BridgePendingStatusEnvelope?
+    var statusDeliveryResult: BridgeStatusDeliveryResult
+
+    private enum CodingKeys: String, CodingKey {
+        case version
+        case bridgeId
+        case selectedCalendarSourceIds
+        case selectedReminderSourceIds
+        case coreOrigin
+        case deliveries
+        case acknowledgedStatusRevision
+        case pendingStatus
+        case statusDeliveryResult
+    }
+
+    init(
+        version: Int,
+        bridgeId: String,
+        selectedCalendarSourceIds: [String],
+        selectedReminderSourceIds: [String],
+        coreOrigin: String?,
+        deliveries: [BridgeSourceDeliveryState],
+        acknowledgedStatusRevision: Int = 0,
+        pendingStatus: BridgePendingStatusEnvelope? = nil,
+        statusDeliveryResult: BridgeStatusDeliveryResult = .idle
+    ) {
+        self.version = version
+        self.bridgeId = bridgeId
+        self.selectedCalendarSourceIds = selectedCalendarSourceIds
+        self.selectedReminderSourceIds = selectedReminderSourceIds
+        self.coreOrigin = coreOrigin
+        self.deliveries = deliveries
+        self.acknowledgedStatusRevision = acknowledgedStatusRevision
+        self.pendingStatus = pendingStatus
+        self.statusDeliveryResult = statusDeliveryResult
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        version = try container.decode(Int.self, forKey: .version)
+        bridgeId = try container.decode(String.self, forKey: .bridgeId)
+        selectedCalendarSourceIds = try container.decode(
+            [String].self,
+            forKey: .selectedCalendarSourceIds
+        )
+        selectedReminderSourceIds = try container.decode(
+            [String].self,
+            forKey: .selectedReminderSourceIds
+        )
+        coreOrigin = try container.decodeIfPresent(String.self, forKey: .coreOrigin)
+        deliveries = try container.decode(
+            [BridgeSourceDeliveryState].self,
+            forKey: .deliveries
+        )
+        acknowledgedStatusRevision = try container.decodeIfPresent(
+            Int.self,
+            forKey: .acknowledgedStatusRevision
+        ) ?? 0
+        pendingStatus = try container.decodeIfPresent(
+            BridgePendingStatusEnvelope.self,
+            forKey: .pendingStatus
+        )
+        statusDeliveryResult = try container.decodeIfPresent(
+            BridgeStatusDeliveryResult.self,
+            forKey: .statusDeliveryResult
+        ) ?? .idle
+    }
 
     static func fresh(bridgeId: String = UUID().uuidString.lowercased()) -> BridgePersistentState {
         BridgePersistentState(
@@ -74,7 +157,10 @@ struct BridgePersistentState: Codable, Equatable {
             selectedCalendarSourceIds: [],
             selectedReminderSourceIds: [],
             coreOrigin: nil,
-            deliveries: []
+            deliveries: [],
+            acknowledgedStatusRevision: 0,
+            pendingStatus: nil,
+            statusDeliveryResult: .idle
         )
     }
 
@@ -135,6 +221,42 @@ struct BridgePersistentState: Codable, Equatable {
         }
         if let coreOrigin {
             _ = try LoopbackIngestionEndpoint(origin: coreOrigin)
+        }
+        guard
+            acknowledgedStatusRevision >= 0,
+            acknowledgedStatusRevision <= BridgeProductionLimits.maximumSafeSourceRevision
+        else {
+            throw BridgeStateError.invalid
+        }
+
+        let statusResultsRequiringPending: Set<BridgeStatusDeliveryResult> = [
+            .blockedInvalid,
+            .operatorActionStale,
+            .operatorActionConflict,
+            .retryPending,
+        ]
+        if let pendingStatus {
+            guard
+                statusResultsRequiringPending.contains(statusDeliveryResult),
+                pendingStatus.statusRevision == acknowledgedStatusRevision + 1,
+                pendingStatus.statusRevision
+                    <= BridgeProductionLimits.maximumSafeSourceRevision,
+                pendingStatus.encodedEnvelope.count
+                    <= BridgeProductionLimits.maximumEncodedStatusEnvelopeBytes
+            else {
+                throw BridgeStateError.invalid
+            }
+            let snapshot = try AppleBridgeStatusEnvelopeCodec.decode(
+                pendingStatus.encodedEnvelope
+            )
+            guard
+                snapshot.bridgeId == bridgeId,
+                snapshot.statusRevision == pendingStatus.statusRevision
+            else {
+                throw BridgeStateError.invalid
+            }
+        } else if statusResultsRequiringPending.contains(statusDeliveryResult) {
+            throw BridgeStateError.invalid
         }
 
         for delivery in deliveries {

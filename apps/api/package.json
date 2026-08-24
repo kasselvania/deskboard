@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "tsx watch --tsconfig tsconfig.json src/server.ts",
+    "acceptance:board": "node dist/content-free-board-acceptance.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js"

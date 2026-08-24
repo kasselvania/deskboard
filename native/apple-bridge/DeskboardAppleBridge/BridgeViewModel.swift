@@ -51,6 +51,10 @@ final class BridgeViewModel: ObservableObject {
             deliveryClient: AppleSourceDeliveryClient(
                 credentialStore: credentialStore,
                 transport: transport
+            ),
+            statusDeliveryClient: AppleBridgeStatusDeliveryClient(
+                credentialStore: credentialStore,
+                transport: transport
             )
         )
         refresh()
@@ -58,7 +62,11 @@ final class BridgeViewModel: ObservableObject {
 
     var selectedCalendarCount: Int { selectedCalendarSourceIds.count }
     var selectedReminderCount: Int { selectedReminderSourceIds.count }
-    var pendingCount: Int { statusRows.filter(\.hasPendingEnvelope).count }
+    @Published private(set) var hasPendingStatus = false
+
+    var pendingCount: Int {
+        statusRows.filter(\.hasPendingEnvelope).count + (hasPendingStatus ? 1 : 0)
+    }
 
     func refresh() {
         do {
@@ -72,6 +80,7 @@ final class BridgeViewModel: ObservableObject {
             calendarSources = sourceReader.availableSources(for: .calendar)
             reminderSources = sourceReader.availableSources(for: .reminder)
             statusRows = makeStatusRows(state.deliveries)
+            hasPendingStatus = state.pendingStatus != nil
         } catch {
             notice = "Bridge state requires operator action."
         }
@@ -145,7 +154,9 @@ final class BridgeViewModel: ObservableObject {
             do {
                 let state = try await coordinator.syncNow()
                 statusRows = makeStatusRows(state.deliveries)
-                notice = state.deliveries.contains(where: { $0.pending != nil })
+                hasPendingStatus = state.pendingStatus != nil
+                notice = state.pendingStatus != nil
+                    || state.deliveries.contains(where: { $0.pending != nil })
                     ? "A persisted delivery remains pending or blocked."
                     : "Manual synchronization finished."
                 refresh()

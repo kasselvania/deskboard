@@ -58,6 +58,11 @@ final class HTTPAndCredentialTests: XCTestCase {
             "http://127.0.0.1:3001/v1/apple-source-snapshots"
         )
         XCTAssertEqual(
+            try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+                .statusURL.absoluteString,
+            "http://127.0.0.1:3001/v1/apple-bridge-status"
+        )
+        XCTAssertEqual(
             try LoopbackIngestionEndpoint(origin: "http://[::1]:3001")
                 .ingestionURL.absoluteString,
             "http://[::1]:3001/v1/apple-source-snapshots"
@@ -128,6 +133,58 @@ final class HTTPAndCredentialTests: XCTestCase {
         XCTAssertEqual(backend.writes.count, 1)
         XCTAssertEqual(backend.reads.count, 2)
         XCTAssertThrowsError(try store.storeToken("invalid"))
+    }
+
+    func testStatusClientReusesCredentialAndPostsExactBytesToStatusRoute() async throws {
+        let body = try statusEnvelopeData()
+        let response = Data(
+            #"{"kind":"applied","statusRevision":1}"#.utf8
+        )
+        let credentials = MemoryCredentialStore(token: syntheticToken)
+        let transport = CapturingHTTPTransport(body: response)
+        let client = AppleBridgeStatusDeliveryClient(
+            credentialStore: credentials,
+            transport: transport
+        )
+
+        let result = try await client.deliverStatus(
+            envelopeData: body,
+            endpoint: try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+        )
+
+        XCTAssertEqual(result.kind, .applied)
+        let request = try XCTUnwrap(transport.requests.first)
+        XCTAssertEqual(request.url.absoluteString, "http://127.0.0.1:3001/v1/apple-bridge-status")
+        XCTAssertEqual(request.body, body)
+        XCTAssertEqual(request.authorizationHeader, "Bearer \(syntheticToken)")
+        XCTAssertFalse(String(decoding: request.body, as: UTF8.self).contains(syntheticToken))
+    }
+
+    func testStatusClientRejectsMalformedMismatchedAndUnexpectedResponses() async throws {
+        let body = try statusEnvelopeData()
+        let endpoint = try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+        let cases: [(Int, Data)] = [
+            (200, Data("not-json".utf8)),
+            (200, Data(#"{"kind":"applied","statusRevision":2}"#.utf8)),
+            (201, Data(#"{"kind":"applied","statusRevision":1}"#.utf8)),
+            (200, Data(#"{"kind":"applied","statusRevision":1,"extra":true}"#.utf8)),
+        ]
+
+        for (status, response) in cases {
+            let client = AppleBridgeStatusDeliveryClient(
+                credentialStore: MemoryCredentialStore(token: syntheticToken),
+                transport: CapturingHTTPTransport(statusCode: status, body: response)
+            )
+            do {
+                _ = try await client.deliverStatus(
+                    envelopeData: body,
+                    endpoint: endpoint
+                )
+                XCTFail("Expected strict status response rejection")
+            } catch let error as BridgeDeliveryError {
+                XCTAssertEqual(error, .invalidResponse)
+            }
+        }
     }
 
     func testStrictResponseParsingRejectsMalformedNonJSONAndUnexpectedStatus() async throws {
@@ -216,6 +273,22 @@ final class HTTPAndCredentialTests: XCTestCase {
         return try AppleSourceEnvelopeCodec.encodeWithinProductionLimit(
             sourceRevision: 1,
             snapshot: snapshot
+        )
+    }
+
+    private func statusEnvelopeData() throws -> Data {
+        try AppleBridgeStatusEnvelopeCodec.encode(
+            AppleBridgeStatusSnapshotV1(
+                schemaVersion: 1,
+                bridgeId: "synthetic-bridge",
+                statusRevision: 1,
+                capturedAt: "2026-08-23T18:00:00.000Z",
+                permissions: AppleBridgeStatusPermissionsV1(
+                    calendar: .granted,
+                    reminders: .granted
+                ),
+                selectedSources: []
+            )
         )
     }
 }
