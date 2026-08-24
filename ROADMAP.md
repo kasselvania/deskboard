@@ -22,19 +22,13 @@ This roadmap is intentionally conservative. The project should earn complexity t
 
 **Status:** accepted and complete.
 
-### Deliverables
+### Accepted result
 
 - product README and Manifesto;
 - architecture and data-ownership document;
 - phased roadmap;
-- coding-agent, contribution, privacy, and Git guardrails.
-
-### Exit criteria
-
-- a contributor can explain the first slice without inventing features;
-- Apple Calendar and Reminders are explicitly authoritative;
-- the initial Apple path is explicitly read-only;
-- no application framework is scaffolded prematurely.
+- coding-agent, contribution, privacy, and Git guardrails;
+- explicit read-only Apple starting posture.
 
 ---
 
@@ -44,31 +38,20 @@ This roadmap is intentionally conservative. The project should earn complexity t
 
 **Status:** accepted and merged in PR #3.
 
-### Scope
+### Accepted result
 
-- React/Vite web client;
-- Fastify API;
-- shared runtime-validated Board contracts;
+- React/Vite web client and Fastify API;
+- shared runtime-validated Board contract;
 - synthetic Board fixtures;
 - one `/board` route;
-- `GET /health` and `GET /v1/board` only;
-- loading, empty, stale, saved, and unreachable states;
-- deterministic capacity limits and browser proofs.
+- `GET /health` and `GET /v1/board`;
+- calm loading, empty, stale, saved, and unreachable states;
+- deterministic three-Task/two-Commitment capacity limits;
+- physical iPad and Steam Deck viewport proof.
 
-### Boundaries
+### Boundary retained
 
-- no Apple integration;
-- no database or authentication;
-- no write actions;
-- no deployment requirement;
-- no AI, generic dashboard framework, settings, or navigation.
-
-### Exit criteria
-
-- complete Node quality gate passes;
-- iPad landscape and Steam Deck layouts have no document-level vertical overflow;
-- physical iPad access over the local network is proved;
-- the Board remains small, calm, read-only, and fixture-backed.
+The production Board remains contract-driven. Later source work must not turn it into a raw backlog, source browser, or general dashboard.
 
 ---
 
@@ -78,32 +61,16 @@ This roadmap is intentionally conservative. The project should earn complexity t
 
 **Status:** accepted and merged in PR #7.
 
-### Scope
+### Accepted result
 
-- contained macOS Swift/SwiftUI discovery probe;
-- separate Calendar and Reminder permission states;
+- contained macOS discovery probe;
+- separate Calendar and Reminders permission states;
 - explicit empty-by-default source selection;
-- bounded local reads;
+- bounded deterministic reads;
 - destructive sanitization and ignored private exports;
 - empirical field inventory and honest `not tested` cases;
-- owner-approved synthetic EventKit specimens;
-- EventKit-derived Board fixture through the unchanged Phase 1 contract.
-
-### Accepted evidence
-
-- six Reminder specimens;
-- six Calendar specimens;
-- exact twelve-file allowlist and byte/hash hold;
-- deterministic Calendar ordering before the discovery cap;
-- stale-inspection invalidation;
-- native and Node quality gates.
-
-### Boundaries
-
-- no EventKit write behavior;
-- no frozen production contract;
-- no network, database, daemon, deployment, or Board integration;
-- no fabricated support for unobserved cases.
+- exact twelve-file owner-approved EventKit evidence hold;
+- no EventKit write behavior.
 
 ---
 
@@ -115,19 +82,18 @@ This roadmap is intentionally conservative. The project should earn complexity t
 
 **Contract:** [`docs/apple-source-contract-v1.md`](docs/apple-source-contract-v1.md).
 
-### Accepted shape
+### Accepted result
 
-- separate `AppleReminderSourceSnapshotV1` and `AppleCalendarSourceSnapshotV1` documents;
+- separate strict `AppleReminderSourceSnapshotV1` and `AppleCalendarSourceSnapshotV1` documents;
 - one opaque Bridge and one selected source container per snapshot;
-- explicit matched count and truncation state;
+- exact matched count and explicit truncation;
 - exact Calendar window scope;
-- strict TypeScript and Swift validation of the same fixtures;
+- cross-language Swift and TypeScript validation of the same fixtures;
 - exact timezone-qualified Calendar instants;
-- rejection of ambiguous or nonexistent local Calendar times;
+- rejection of ambiguous/nonexistent local Calendar times;
 - deterministic ordering with collision rejection;
 - complete empty scopes as authoritative cases;
-- absence authority exposed only after runtime and semantic validation;
-- privacy-minimized field set.
+- privacy-minimized v1 field set.
 
 ### Accepted authority rule
 
@@ -135,19 +101,13 @@ This roadmap is intentionally conservative. The project should earn complexity t
 
 Truncated, malformed, failed, partial, collision-bearing, or otherwise invalid candidates authorize no deletion.
 
-### Boundaries
-
-- no transport or ingestion endpoint;
-- no database or persistence implementation;
-- no synchronization generations, deployment, Board integration, or Apple writes.
-
 ---
 
 # Phase 3 — One-Way Apple Mirror
 
-**Question:** Can real Calendar and Reminder changes travel reliably from Apple to both Deskboard clients without Deskboard modifying the source systems?
+**Question:** Can real Calendar and Reminder changes travel reliably from Apple to the Board without Deskboard modifying the source systems?
 
-The original connected phase contained persistence, transport, native conversion, Board composition, deployment, freshness, and a real-use soak. It is therefore delivered as bounded sub-slices. Later sub-slices must preserve the accepted Phase 2B authority semantics rather than redesigning them opportunistically.
+The original connected phase combined persistence, transport, conversion, composition, deployment, freshness, and real-use proof. It is therefore delivered as bounded sub-slices. Each later slice must preserve the accepted source authority and retry semantics rather than redesigning them opportunistically.
 
 ## Phase 3A — Atomic Core Apple Source Mirror
 
@@ -155,131 +115,137 @@ The original connected phase contained persistence, transport, native conversion
 
 **Status:** accepted and merged in PR #14.
 
-The accepted implementation is documented in [`docs/apple-source-mirror.md`](docs/apple-source-mirror.md). It provides the isolated SQLite mirror, ordered strict migration, validation-before-mutation, transactional replacement service, source-scoped revisions and normalized digests, rollback proof, and close/reopen persistence. Phase 3A exposes no transport or Board path.
+**Design:** [`docs/apple-source-mirror.md`](docs/apple-source-mirror.md).
 
-### Scope
+### Accepted result
 
-- isolated SQLite-backed Apple source mirror inside Core;
-- source-controlled migrations and foreign-key enforcement;
-- strict validation before mutation;
-- operational source revision and normalized digest outside source contract v1;
-- transactional Reminder whole-scope replacement;
-- transactional Calendar overlap-window replacement;
+- isolated SQLite-backed source mirror;
+- source-controlled strict migrations and foreign-key enforcement;
+- validation before mutation;
+- source-scoped operational revisions and normalized digests;
+- atomic Reminder whole-list replacement;
+- atomic Calendar overlap-window replacement;
 - retained out-of-window Calendar rows;
-- explicit duplicate, stale, conflict, truncated, invalid, and applied results;
-- rollback, reopen, and migration proofs;
-- narrow internal read methods for tests and later slices;
-- `docs/apple-source-mirror.md`.
+- duplicate, stale, conflict, truncated, invalid, and applied results;
+- destructive rollback, migration, and close/reopen proofs;
+- no transport or Board path.
 
-### Core rules
-
-- revision scope is Bridge + entity + source container;
-- same revision and same digest is an idempotent duplicate;
-- same revision and different digest is a conflict;
-- lower revision is stale;
-- invalid or truncated input does not mutate records, freshness, or accepted revision;
-- complete Reminder snapshots replace the entire selected-list scope;
-- Calendar snapshots replace only stored rows overlapping the accepted window;
-- Calendar rows outside the window remain stored but are not current-window candidates;
-- all destructive work and scope metadata commit in one transaction.
-
-### Boundaries
-
-- no HTTP or other ingestion endpoint;
-- no Swift network client or production EventKit conversion;
-- no Board composition or change to `GET /v1/board`;
-- no authentication, deployment, scheduler, daemon, Docker, or Tailscale;
-- no Apple writes or later semantic features;
-- no generic persistence framework.
-
-### Exit criteria
-
-- authoritative snapshots apply atomically to exact scopes;
-- complete empty scopes clear only their authoritative regions;
-- truncated, invalid, stale, conflicting, and failed candidates preserve previous good state;
-- duplicate delivery is idempotent;
-- Calendar window shifts never delete unobserved out-of-window records;
-- injected destructive failure rolls back completely;
-- migrations and close/reopen persistence are proved;
-- native and complete Node gates pass;
-- Phase 1 Board remains fixture-backed and unchanged.
+---
 
 ## Phase 3B — Authenticated Manual Bridge Delivery
 
-**Question:** Can the Mac produce contract-v1 snapshots from selected EventKit sources and deliver them to Core safely on explicit demand?
+**Question:** Can the Mac produce contract-v1 snapshots from selected EventKit sources and deliver them safely to Core on explicit demand?
 
-**Status:** active under issue #15.
+**Status:** accepted and merged in PR #18.
 
-The review implementation is documented in [`docs/apple-bridge-manual-delivery.md`](docs/apple-bridge-manual-delivery.md). The real Phase 3B proof runs a dedicated sandboxed Bridge and Core on the same Mac over loopback. It deliberately settles production conversion, authentication, persistent Bridge identity, source-scoped revisions, and crash-safe retry before remote topology, deployment, background operation, or Board composition begins. Phase 3B remains active until review and merge.
+**Design and setup:** [`docs/apple-bridge-manual-delivery.md`](docs/apple-bridge-manual-delivery.md).
 
-### Scope
+### Accepted result
 
-- dedicated sandboxed, hardened, read-only macOS Bridge separate from the Phase 2A probe;
-- production EventKit-to-v1 conversion that reads only accepted contract fields;
-- separate intentional Calendar and Reminder permissions and empty-by-default source selections;
-- explicit content-free permission-request results that distinguish system errors from completed requests with no TCC decision;
-- persistent opaque Bridge identity and source-scoped acknowledged revisions;
-- one crash-safe pending delivery envelope per source coordinate;
-- one strict authenticated Core ingestion route;
-- bearer token stored in macOS Keychain and bound to the configured Bridge identity;
-- loopback-only manual delivery through an explicit `Sync Now` action;
-- strict body, source-record, and response limits;
-- idempotent application through the accepted Phase 3A mirror;
-- content-free status for applied, duplicate, stale, conflict, truncated, invalid, and transport-failed results;
-- no background scheduler.
+- dedicated signed, sandboxed, Hardened Runtime, read-only macOS Bridge;
+- strict production EventKit-to-v1 conversion using only admitted fields;
+- separate intentional Calendar and Reminders permissions and selections;
+- content-free before/result/after permission outcomes;
+- persistent opaque Bridge identity and per-source acknowledged revisions;
+- one exact crash-safe pending envelope per source coordinate;
+- Keychain bearer credential;
+- numeric-loopback-only HTTP client;
+- one authenticated Core ingestion route;
+- direct application through the Phase 3A mirror;
+- exact uncertain-response retry across termination and relaunch;
+- stable Apple Development identity and TCC decisions across rebuilds;
+- content-free local Calendar and Reminder delivery proof.
 
-### Central retry rule
+### Accepted retry rule
 
 > Persist the exact envelope before sending. After timeout, crash, relaunch, or another uncertain response, resend that byte-equivalent envelope at the same revision.
 
-The Bridge must not reread EventKit and reuse an uncertain revision for changed content. Only `applied` and `unchangedDuplicate` acknowledge the revision and clear pending state. All other results preserve pending state and fail closed.
+Only `applied` and `unchangedDuplicate` acknowledge the revision and clear pending state. Truncated, invalid, stale, conflict, and transport-failed outcomes preserve pending state and fail closed.
 
-### Boundaries
+### Boundary retained
 
-- Calendar and Reminders remain read-only;
-- Core continues listening only on loopback for the real proof;
-- no Board composition from the mirror;
-- no daemon, login item, background scheduler, deployment, Tailscale, TLS termination, or public ingress;
-- no write commands or general command bus;
-- no source administration in the Board;
-- no automatic stale/conflict recovery or silent Bridge identity reset.
+The Board remains fixture-backed. There is no remote topology, background process, homelab deployment, Board composition, or Apple write path.
+
+---
+
+## Phase 3C — Truthful Local Mirror-Backed Board
+
+**Question:** Can Core compose the existing calm Board from the Apple mirror on the same Mac while accurately representing selected, stale, truncated, retrying, missing, and unavailable sources?
+
+**Status:** active under issue [#19](https://github.com/kasselvania/deskboard/issues/19).
+
+This is the first real-data Board slice. It remains same-Mac, loopback-only, manually synchronized, and read-only. Issue #19 is the detailed implementation and proof contract.
+
+### Required scope
+
+- a strict, separately versioned, content-free Bridge status snapshot;
+- exact selected-source roster and independent permission categories;
+- content-free per-source delivery health and acknowledged/pending revisions;
+- crash-safe status-envelope delivery using the existing authentication boundary;
+- one additional authenticated loopback status-ingestion route;
+- Core persistence and idempotency for accepted Bridge status;
+- explicit mirror-backed Board mode, while fixture mode remains the default;
+- required configured IANA Board time zone;
+- truthful `fresh`, `stale`, and `unavailable` derivation;
+- selected incomplete due/start Reminder candidates for `Today`;
+- selected ongoing/upcoming non-cancelled Calendar candidates for `Next`;
+- existing maximum of three Tasks and two Commitments;
+- concise deterministic reasons;
+- opaque client IDs that expose no source provenance;
+- unchanged `BoardSnapshot` v1 and unchanged web client unless a compatibility failure proves a tiny correction necessary.
+
+### Central honesty rule
+
+The source mirror alone is not enough to infer current selection or health. A previously mirrored row may belong to a source that is now deselected, blocked, missing, denied, or retry-pending.
+
+> Compose only from the latest accepted selected-source roster, preserve last-good facts without calling them fresh, and never convert missing operational evidence into source deletion.
+
+### Product rules
+
+- undated and future Reminders remain mirrored but do not enter `Today` in this slice;
+- completed and blank-title Reminders are excluded;
+- canceled and blank-title Calendar records are excluded;
+- no Apple priority, AI score, project inference, recurrence inference, note parsing, or backlog import;
+- reasons remain calm and explainable;
+- the Sideways prompt remains fixture behavior and is not connected to Apple data.
+
+### Privacy proof rule
+
+The owner may inspect the real Board privately. Agents must not receive real Board text, source names, source identifiers, EventKit identifiers, accessibility trees, screenshots, DOM dumps, request bodies, database rows, or pending envelopes. Agent-visible proof uses only schema success, masked ordinals, item counts, permission/freshness categories, and content-free status kinds.
 
 ### Exit criteria
 
-- a sandboxed production Bridge converts controlled Calendar and Reminder sources into exact accepted v1 snapshots;
-- one authenticated loopback route applies envelopes through the Phase 3A mirror;
-- missing or wrong authentication fails before body application and leaks no private content;
-- first delivery, acknowledgement, duplicate retry, timeout, relaunch, stale, conflict, invalid, and truncation behavior are proved;
-- an uncertain response retries the exact persisted envelope and revision;
-- credentials remain in injected Core configuration and macOS Keychain, excluded from Git and SQLite;
-- entitlement inspection proves sandbox, outgoing client, Calendar access, no incoming service, and no EventKit writes;
-- an Apple Development-signed installed Release product produces independent Calendar and Reminders decisions and retains them across a same-identity rebuild;
-- a content-free manual local Calendar and Reminder delivery proof passes;
-- `/health` and the fixture-backed Board remain unchanged;
-- Phase 3C, deployment, background operation, and Apple writes remain absent.
+- Core has a strict accepted view of current Bridge selection and health;
+- status delivery is crash-safe and source delivery remains unchanged;
+- `/v1/board` can be explicitly switched to same-Mac mirror-backed composition;
+- the unchanged Board contract displays at most three real Task candidates and two real Commitment candidates;
+- deselected, truncated, missing, unavailable, and stale sources are represented honestly;
+- fixture mode remains the default;
+- the owner privately confirms the real Board is recognizable and calm;
+- no private real-data proof enters agent-visible tooling or Git;
+- deployment, scheduling, backup, and Apple writes remain absent.
 
-## Phase 3C — Real Read-Only Board and Private Deployment
+---
 
-**Question:** Can the validated one-way mirror drive the real Board reliably on the iPad and Steam Deck in the private homelab?
+## Phase 3D — Private Deployment, Background Read Path, and Soak
 
-**Status:** planned; blocked on accepted Phase 3B.
+**Question:** Can the accepted real-data Board run reliably on the iPad and Steam Deck through the private homelab without weakening source authority or freshness honesty?
+
+**Status:** planned; blocked on accepted Phase 3C.
 
 ### Intended scope
 
-- Core composition of Tasks and Commitments from the source mirror;
-- deterministic reasons and existing Board capacity limits;
-- source freshness and honest stale states;
-- background Bridge scheduling only after manual delivery is reliable;
-- Ubuntu/CasaOS deployment;
-- private Tailscale access;
-- backup and restore for the Core database;
+- Ubuntu/CasaOS deployment of Core and Web;
+- private Tailscale topology and TLS termination;
+- background Bridge scheduling only after manual delivery is accepted;
+- source freshness presentation on both clients;
+- database backup and restore;
 - one-week read-only soak on both target devices.
 
 ### Boundaries
 
 - Calendar and Reminders remain read-only;
-- no client write actions;
-- no source-management UI in the Board;
+- no client write actions or source-management UI;
 - no Notes, Home Assistant, Open Loops, Projects, sessions, timers, ranking, or AI;
 - no public internet ingress requirement.
 
@@ -303,7 +269,7 @@ Use the read-only Deskboard daily. Record which facts deserve space, which reaso
 
 **Question:** Can Deskboard acknowledge completion of one ordinary Reminder safely without becoming a Reminder-management application?
 
-**Status:** blocked on a reliable read-only Phase 3 path and its deliberate pause.
+**Status:** blocked on an accepted and deliberately used read-only Phase 3 path.
 
 ### Scope
 
@@ -318,7 +284,7 @@ Required pieces:
 - a small inline `Done` action on eligible Reminder rows;
 - Core command queue;
 - unique client mutation IDs;
-- Bridge command polling over its existing outbound connection;
+- Bridge command polling through the accepted private connection;
 - source-version conflict detection;
 - EventKit completion and save;
 - pending, success, conflict, and failed states;
@@ -331,15 +297,6 @@ Required pieces:
 - no Calendar writes;
 - no optimistic permanent removal before source confirmation;
 - no general command bus.
-
-### Exit criteria
-
-- completion from either client updates the real Reminder and both Boards;
-- duplicate commands complete only once;
-- source changes produce explicit conflicts rather than overwrites;
-- a sleeping Mac leaves the command visibly pending;
-- every attempt is auditable;
-- no other Apple-editing control appears.
 
 ---
 
@@ -363,14 +320,6 @@ Required pieces:
 - no streaks, missed-instance debt, charts, AI ranking, or automatic cadence prescription;
 - no completion of a persistent Reminder anchor.
 
-### Exit criteria
-
-- engagement resets elapsed time and derived state;
-- pause is intentional and preserves history;
-- both clients show the same state;
-- the Board never labels the user failed, behind, or unproductive;
-- the loop is used for at least two preferred windows and adds less maintenance than it removes.
-
 ---
 
 ## Phase 6 — One Session Timer
@@ -388,14 +337,6 @@ Required pieces:
 ### Boundaries
 
 - no Pomodoro framework, billing, timesheets, productivity score, automatic monitoring, overlapping timers, or elaborate reports.
-
-### Exit criteria
-
-- start on one client and stop on the other;
-- the timer survives reload, lock, and reconnect;
-- duplicate requests are idempotent;
-- session completion updates associated engagement;
-- durations feel informative rather than burdensome.
 
 ---
 
