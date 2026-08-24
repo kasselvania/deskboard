@@ -2,25 +2,34 @@
 
 ## Status
 
-This document describes the intended architecture and the boundaries for the first several implementation slices. It is a working design, not a promise that every listed component will be built immediately.
+The accepted product is a **read-only Apple attention surface**.
 
-The current implementation phase is **truthful local mirror-backed Board composition**. Phase 3B's signed, sandboxed Bridge and authenticated manual source delivery are accepted. The active Phase 3C branch adds a separately versioned content-free Bridge status stream and composes selected last-good mirror facts into unchanged `BoardSnapshot` v1 on the same Mac. Fixture mode remains the default; the content-free private owner acceptance gate is complete and review remains pending. Remote deployment, background operation, backup/restore, source administration, and every Apple write remain deferred.
+Phases 1 through 3C are accepted. Deskboard can now:
 
-## Architectural Thesis
+- read explicitly selected Calendar and Reminder sources through a signed, sandboxed macOS Bridge;
+- convert only privacy-minimized fields into strict versioned source documents;
+- deliver source and content-free status envelopes manually and idempotently;
+- persist them atomically in Core;
+- compose the unchanged calm `BoardSnapshot` v1 from the latest selected-source roster;
+- represent fresh, stale, and unavailable source states honestly.
 
-Deskboard is a distributed system with **one authoritative owner for every piece of information**. It is not a distributed database in which every device can independently edit the same record.
+The active Phase 3D slice deploys this **existing manual path** to the private Ubuntu/CasaOS homelab and serves the iPad and Steam Deck through one Tailscale HTTPS origin. Background scheduling, backup/restore automation, source administration, public ingress, and every Apple write remain deferred.
+
+## Architectural thesis
+
+Deskboard has one authoritative owner for every kind of information. It is not a distributed database in which every client edits the same record.
 
 - Apple Calendar owns Calendar events.
 - Apple Reminders owns ordinary reminders.
-- Deskboard Core will eventually own loop history, sessions, project state, and attention-selection state.
-- Display clients own only disposable local caches and ephemeral UI state.
-- The macOS Bridge transports and normalizes Apple data; it does not become another source of truth.
+- Deskboard Core owns the read-only mirror, operational Bridge status, Board composition, and future Deskboard-native state.
+- Display clients own only disposable cache and ephemeral UI state.
+- The macOS Bridge transports and normalizes Apple facts; it is not another source of truth.
 
 The operating rule is:
 
 > **Replicate facts, not authority.**
 
-## Initial System Shape
+## Accepted system shape
 
 ```text
                          APPLE / ICLOUD
@@ -31,594 +40,387 @@ The operating rule is:
                              │ EventKit
                              ▼
                 ┌──────────────────────────┐
-                │ Deskboard Bridge         │
-                │ macOS / SwiftUI          │
+                │ Deskboard Apple Bridge   │
+                │ signed / sandboxed macOS │
+                │ read-only / outbound     │
                 │                          │
-                │ • select sources         │
-                │ • normalize records      │
-                │ • push snapshots         │
-                │ • report freshness       │
+                │ • explicit source roster │
+                │ • source-v1 conversion   │
+                │ • source/status outboxes │
+                │ • explicit Sync Now      │
                 └─────────────┬────────────┘
-                              │ outbound HTTPS
-                              │ over Tailscale
+                              │ authenticated delivery
                               ▼
 ┌──────────────────────────────────────────────────────────┐
-│                   DESKBOARD CORE                         │
-│                    Ubuntu / CasaOS                       │
+│                      DESKBOARD CORE                      │
 │                                                          │
-│  source mirror        board composition       API       │
-│  metadata parser      attention rules         storage   │
+│ strict source mirror     content-free Bridge status      │
+│ atomic SQLite state      truthful Board composition      │
 │                                                          │
-│                      GET /v1/board                       │
+│ GET  /health                                            │
+│ GET  /v1/board                                          │
+│ POST /v1/apple-source-snapshots                         │
+│ POST /v1/apple-bridge-status                            │
 └────────────────────────────┬─────────────────────────────┘
-                             │
-                    private HTTPS/Tailscale
-                             │
-            ┌────────────────┼─────────────────┐
-            ▼                ▼                 ▼
-        iPad PWA        Steam Deck         Future clients
-        desk profile    desk profile       Android/E-Ink
+                             │ BoardSnapshot v1
+                 ┌───────────┴───────────┐
+                 ▼                       ▼
+             iPad PWA               Steam Deck
 ```
 
-The diagram is the intended private homelab topology, not the current deployment. Phase 3C keeps Bridge and Core on the same Mac over loopback and adds only Board composition from mirrored facts. Phase 3D owns Tailscale, remote deployment, background operation, and backup/restore.
+Phase 3D instantiates Core and Web on the homelab without changing the logical boundaries:
+
+```text
+Bridge --manual HTTPS/Tailscale--> Tailscale Serve
+                                      │ loopback
+                                      ▼
+                              private web/proxy
+                                      │ container network
+                                      ├── production PWA
+                                      └── Core API + SQLite volume
+```
 
 ## Components
 
-### 1. Deskboard Web
+### Deskboard Web
 
-**Technology:** React, TypeScript, and Vite, delivered as an installable Progressive Web App.
+**Technology:** React, TypeScript, and Vite, delivered as an installable PWA.
 
-**Responsibilities:**
+Responsibilities:
 
 - render one calm, non-scrolling Board;
-- adapt the same semantic layout to iPad and Steam Deck dimensions;
-- render the server-selected explanation for every visible item;
-- cache the most recently successful Board snapshot for display-only offline use;
-- expose no source-management interface in the first phase.
+- support the accepted iPad and Steam Deck layouts;
+- show Core-selected reasons and source freshness;
+- cache the most recent valid Board for display-only fallback;
+- poll the existing Board endpoint;
+- expose no Apple source-management interface.
 
-**Non-responsibilities:**
+Non-responsibilities:
 
-- deciding which reminders deserve attention;
-- interpreting Apple recurrence rules;
-- owning source records;
-- directly calling Apple services;
-- becoming a general-purpose task manager;
-- implementing separate navigation for Calendar, Reminders, or projects.
+- ranking source records independently;
+- reading Apple services;
+- interpreting EventKit recurrence;
+- owning source facts;
+- exposing mirror or Bridge status internals;
+- becoming a task manager or dashboard framework.
 
-The first route is simply:
+The product route remains:
 
 ```text
 /board
 ```
 
-The web technology is a delivery mechanism. The experience should feel like a dedicated appliance rather than an open browser.
+### Deskboard Core
 
-### 2. Deskboard Core
+**Technology:** TypeScript, Fastify, and Node 24 built-in SQLite.
 
-**Initial technology:** TypeScript and Fastify.
+Responsibilities:
 
-**Initial persistence:** Phase 3A introduced an isolated SQLite Apple source mirror. Phase 3C adds the latest accepted content-free Bridge status to that same private database. Source ingestion, status ingestion, and mirror-backed Board reads share one Core-owned connection lifecycle.
+- validate every external and internal contract at runtime;
+- authenticate Bridge delivery;
+- hold the normalized Apple source mirror;
+- hold the latest accepted content-free Bridge selection/status document;
+- preserve operational revisions, digests, timestamps, and transactional boundaries;
+- compose a display-ready Board centrally;
+- expose only the accepted health, Board, source-ingestion, and status-ingestion routes;
+- eventually own Deskboard-native state such as sessions and Open Loop history.
 
-**Responsibilities:**
+Core does not expose raw mirror rows, source records, status documents, roster coordinates, or direct database access to clients.
 
-- expose the versioned Deskboard API;
-- validate all contracts at runtime;
-- hold normalized source snapshots once the Bridge exists;
-- compose a display-ready Board snapshot;
-- make attention decisions centrally so every client sees the same Board;
-- eventually own Deskboard-native state such as sessions and loop history.
+### macOS Bridge
 
-The client should receive a display-ready document instead of reproducing selection logic.
+**Technology:** Swift/SwiftUI using EventKit and Apple Security APIs.
 
-Illustrative shape:
+Accepted mode:
 
-```json
-{
-  "schemaVersion": 1,
-  "boardVersion": "fixture-001",
-  "generatedAt": "2026-08-21T17:00:00Z",
-  "freshness": {
-    "calendar": {
-      "status": "fixture",
-      "updatedAt": "2026-08-21T16:58:00Z"
-    },
-    "reminders": {
-      "status": "fixture",
-      "updatedAt": "2026-08-21T16:58:00Z"
-    }
-  },
-  "today": {
-    "label": "Today",
-    "items": [
-      {
-        "id": "task-library-book",
-        "kind": "task",
-        "title": "Return the library book",
-        "reason": "due today",
-        "temporal": {
-          "kind": "date",
-          "localDate": "2026-08-21"
-        }
-      }
-    ]
-  },
-  "next": {
-    "label": "Next",
-    "items": [
-      {
-        "id": "commitment-planning-call",
-        "kind": "commitment",
-        "title": "Fictional planning call",
-        "reason": "first commitment tomorrow",
-        "whenLabel": "Tomorrow · 9:30 AM",
-        "temporal": {
-          "kind": "dateTime",
-          "localDateTime": "2026-08-22T09:30:00",
-          "timeZone": "America/Los_Angeles"
-        }
-      }
-    ]
-  },
-  "sidewaysPrompt": {
-    "label": "Sideways",
-    "text": "Ask what the room would notice if the plan became quieter."
-  }
-}
-```
+- Apple Development-signed;
+- App Sandbox enabled;
+- Hardened Runtime enabled;
+- outbound network client only;
+- Calendar and Reminders read-only behavior;
+- explicit source selection;
+- explicit **Sync Now**.
 
-The exact contract will be established and tested in the first implementation slice.
+Responsibilities:
 
-### 3. macOS Bridge
+- request Calendar and Reminders access independently;
+- preserve source selections and permission outcomes independently;
+- read only fields admitted by Apple source contract v1;
+- build one source document per selected source scope;
+- preserve exact Calendar and Reminder temporal meaning;
+- persist exact source and status envelopes before sending;
+- retry byte-equivalent pending envelopes after uncertain delivery;
+- store the bearer token in Keychain;
+- preserve one opaque Bridge identity and source/status revisions;
+- report content-free local status.
 
-**Technology:** Swift/SwiftUI using EventKit.
+Non-responsibilities in the accepted read path:
 
-**Initial production mode:** outbound-only, read-only, sandboxed, and explicitly invoked.
+- EventKit save or remove calls;
+- Reminder completion;
+- inbound network service;
+- Apple account credential export;
+- notes, locations, participants, URLs, alarms, or recurrence-grammar collection;
+- automatic scheduling during Phase 3D;
+- source administration through the Board.
 
-**Responsibilities:**
+### Private homelab boundary
 
-- request explicit access to selected Calendar and Reminder sources;
-- let the user whitelist which calendars and reminder lists are included;
-- read a bounded range of Calendar events and selected reminders;
-- preserve important temporal semantics such as all-day, date-only, local-time, and timezone-qualified values;
-- normalize EventKit records directly into the accepted v1 contract;
-- persist an opaque Bridge identity and source-scoped revision state;
-- persist the exact pending delivery envelope before sending;
-- retry the same envelope and revision after an uncertain response;
-- authenticate outbound delivery without exposing Apple credentials;
-- report content-free per-source status.
+Phase 3D uses the existing Ubuntu/CasaOS and Tailscale environment.
 
-**Non-responsibilities during the first connected phase:**
+The accepted target posture is:
 
-- completing reminders;
-- rescheduling or deleting events;
-- exposing an inbound service on the Mac;
-- background scheduling or launch-at-login behavior;
-- collecting fields excluded from source contract v1;
-- parsing every visible feature in Apple’s applications;
-- continuously rewriting Reminder notes.
+- production Core and Web containers;
+- one private persistent SQLite volume;
+- API reachable only on the private container network;
+- one host-facing web/private-proxy port bound to host loopback;
+- Tailscale Serve as the sole remote HTTPS ingress;
+- no Tailscale Funnel and no public internet ingress;
+- all private configuration supplied at runtime and excluded from Git;
+- manual Bridge delivery only.
 
-The Bridge will eventually become the only component permitted to perform approved Apple write-back. That capability is explicitly deferred until the one-way path is reliable.
+Background operation and backup/restore move to Phase 3E after the remote manual path is accepted.
 
-### 4. Ubuntu Homelab and Tailscale
-
-Deskboard Core may later run in a container on the existing Ubuntu/CasaOS host during Phase 3D, after the local real-data Board is accepted.
-
-The intended network posture is private:
-
-- the API binds to the local host or container network;
-- Tailscale provides remote connectivity;
-- HTTPS is terminated through Tailscale Serve or an equivalently private reverse proxy;
-- no public internet ingress is required;
-- no Apple credentials are stored on the server;
-- secrets are supplied at runtime and excluded from Git.
-
-Phase 3C does not instantiate this topology. It keeps Bridge and Core on the same Mac over loopback.
-
-## Data Ownership
+## Data ownership
 
 | Information | Authoritative owner | Other copies |
 |---|---|---|
-| Calendar event | Apple Calendar | Normalized read-only mirror in Core |
-| Ordinary reminder | Apple Reminders | Normalized read-only mirror in Core |
-| Reminder completion | Apple Reminders | Deferred command/audit state in Core after write-back exists |
-| Loop declaration | Initially Reminder note metadata or explicit Core configuration | Parsed mirror in Core |
-| Loop engagement history | Deskboard Core | Derived summaries in Board snapshots |
-| Session history | Deskboard Core | Display cache on clients |
-| Project state | Deskboard Core | Optional links from source records |
-| Attention selection | Deskboard Core | Current Board snapshot on clients |
-| UI expansion/focus | Current client | Disposable |
-| Cached Board | Current client | Disposable, never authoritative |
+| Calendar event | Apple Calendar | Strict read-only mirror in Core |
+| Ordinary Reminder | Apple Reminders | Strict read-only mirror in Core |
+| Source selection | Bridge local state | Latest content-free roster in Core |
+| Source delivery health | Bridge operational state | Latest strict status document in Core |
+| Board composition | Deskboard Core | Immutable Board snapshot and disposable client cache |
+| Bridge bearer token | macOS Keychain / Core runtime secret | Authorization header only |
+| Bridge ID and revisions | Bridge operational state | Auth/reconciliation metadata in Core |
+| Future Reminder completion | Apple Reminders | Deferred command/audit state in Core |
+| Future Open Loop/session/project state | Deskboard Core | Derived Board summaries |
+| UI focus/expansion | Current client | Disposable |
 
-## Source Normalization
+## Source contracts and authority
 
-Apple objects should be stored first as normalized source records, not immediately collapsed into Deskboard tasks or projects.
-
-Phase 2B defines the first source boundary in [`docs/apple-source-contract-v1.md`](docs/apple-source-contract-v1.md). It has two concrete, strict documents:
+Phase 2B defines two strict source documents:
 
 ```text
 AppleReminderSourceSnapshotV1
 AppleCalendarSourceSnapshotV1
 ```
 
-Each snapshot covers one opaque Bridge identity, one selected source container, one entity type, one capture time, and one deterministically ordered retained record set. Calendar additionally declares an offset-bearing `[start, end)` overlap window and the civil time zone used to interpret local and all-day values. Timezone-qualified Calendar records carry exact offset-bearing start/end instants plus a display time zone; civil display values are derived rather than used to reconstruct identity.
+Each document covers:
 
-The v1 document carries exact matched count and truncation state. Only a runtime-validated non-truncated snapshot may assert absence inside its declared scope. A complete empty snapshot is authoritative for removing the old contents of that exact scope. A truncated, partial, failed, malformed, collision-bearing, or otherwise semantically invalid result cannot authorize deletion of unseen records. `records.length` supplies the retained count, and absence authority is derived rather than duplicated on the wire.
+- one opaque Bridge identity;
+- one selected source container;
+- one entity type;
+- one capture instant;
+- one deterministically ordered retained record set;
+- exact matched count and truncation state.
 
-The ordering coordinate is total only when it is unique. Equal complete coordinates invalidate the candidate and preserve the previous good scope; Core must not choose from upstream order, merge, or discard colliding records.
+Calendar additionally declares its exact overlap window and civil interpretation time zone.
 
-The contract deliberately excludes source/account titles, notes, URLs, locations, participants, alarms, creation/modification times, complete recurrence grammar, normalization diagnostics, content hashes, synchronization generations, database identifiers, and transport/deployment metadata. Phase 3 operational data must remain outside the source-fact document.
+Authority rule:
 
-A second mapping layer can later associate a validated source record with a Deskboard concept.
+> A source fact may be called absent only after a strict, semantically valid, non-truncated document successfully covers the exact scope in which absence is claimed.
 
-This separation matters because:
+A truncated, malformed, partial, failed, collision-bearing, or invalid candidate authorizes no deletion.
 
-- imported facts should remain inspectable;
-- Apple fields may evolve independently of Deskboard semantics;
-- a Reminder is not automatically an Open Loop;
-- later metadata parsers can be revised without losing the original normalized record;
-- synchronization errors can be diagnosed without guessing what EventKit returned.
+The source documents deliberately exclude account/source titles, notes, URLs, locations, participants, alarms, complete recurrence grammar, content hashes, synchronization revisions, database identifiers, and deployment metadata.
 
-### Phase 3A atomic source mirror
+## Atomic mirror
 
-The accepted Phase 3A implementation is specified in [`docs/apple-source-mirror.md`](docs/apple-source-mirror.md). It accepts an unknown candidate plus a positive operational source revision, validates the candidate through the accepted Phase 2B union, and derives a deterministic SHA-256 digest only from the normalized parsed document. Revision and digest remain Core delivery metadata; the accepted v1 source contract is unchanged.
-
-Core stores one strict scope row per Bridge, entity, and selected container, with separate strict Reminder and Calendar record tables. Scope metadata and records commit in one SQLite transaction. Complete Reminder snapshots replace their entire exact scope. Complete Calendar snapshots replace only stored rows whose interpreted exact ranges overlap the declared `[start, end)` window; unobserved out-of-window rows remain stored and are excluded from the normal current-window read. Complete empty snapshots clear only those authoritative regions.
-
-Invalid, truncated, stale, conflicting, or failed candidates do not change records, accepted revision, digest, timestamps, counts, or Calendar window. An equal revision with an equal digest is an idempotent no-op. Phase 3A performs no identity-history merge through EventKit provenance hints.
-
-### Phase 3B authenticated manual delivery
-
-The accepted Phase 3B implementation adds exactly one loopback-only source-ingestion boundary and one dedicated production Bridge, as specified in [`docs/apple-bridge-manual-delivery.md`](docs/apple-bridge-manual-delivery.md). Core authenticates a strict operational envelope before application, binds one configured bearer token to one opaque Bridge identity, and delegates all source replacement to the accepted Phase 3A mirror.
-
-The Bridge stores its token in macOS Keychain and its identity, selections, acknowledged revisions, pending source envelopes, pending status envelope, and content-free results in the sandbox container. It persists exact bytes before either source or status delivery. A timeout, crash, relaunch, malformed response, or otherwise uncertain outcome retries that byte-equivalent envelope at the same revision; the Bridge does not reread EventKit or rebuild different status under an uncertain revision.
-
-Calendar and Reminders permission requests return separate content-free results containing before/after authorization categories, the EventKit-returned Boolean when present, and a normalized outcome. A thrown system request and a completed request that remains `notDetermined` are distinct. Manual TCC acceptance requires a stable Apple Development designated requirement across two Release builds and one installed bundle path. Ad hoc signing remains only an explicit automated-test override; no custom signing authority is supported.
-
-Only `applied` and `unchangedDuplicate` acknowledge a source or status revision and clear its independent pending state. Truncated source, invalid, stale, conflict, and transport-failed outcomes preserve the relevant pending bytes and fail closed. Phase 3C adds Board composition, but remote topology, background scheduling, and Apple writes remain absent. Status details are specified in [`docs/apple-bridge-status-v1.md`](docs/apple-bridge-status-v1.md).
-
-## Initial Apple Field Map
-
-Phase 2A observations are recorded in [`docs/apple-eventkit-discovery.md`](docs/apple-eventkit-discovery.md). The inventory below remains empirical evidence and retains its original classifications. The Phase 2B inclusion/exclusion decision is separate in [`docs/apple-source-contract-v1.md`](docs/apple-source-contract-v1.md).
-
-### Verified through selected sources
-
-| Entity | Observed fields |
-|---|---|
-| both | local identifier presence, external identifier presence, selected container identity/category/mutability, title presence, creation/modification presence, alarm count |
-| Reminder | absent/date-only/timezone-qualified start or due values, incomplete/completed state, completion date presence, notes presence, raw priority values `0` and `1` |
-| Calendar | timed start **and** end, timezone-qualified time, exclusive all-day range, occurrence date, event identifier, recurrence structure, `none`/`confirmed` status, `busy`/`free`/`notSupported` availability, read-only/subscribed source state, location and structured-location presence |
-
-### Available with caveats
-
-- local and external identifiers are provenance fields; stability, duplication, and cross-device behavior remain unresolved;
-- Calendar recurrence was observed, but detached exceptions were not;
-- Reminder completion date is current-record evidence, not repeated completion history;
-- Calendar status and availability were observed only for the categories listed above;
-- participant properties remain privacy-reduced to organizer presence and attendee count, and no nonzero case was observed;
-- Reminder notes were observed, but no candidate metadata block was present;
-- creation and modification timestamps were present, but mutation behavior was not tested because the probe is read-only.
-
-### Unavailable through the installed supported Reminder API
-
-- tags;
-- sections;
-- subtasks;
-- attachments.
-
-Smart-list behavior and grocery categorization are also not source-contract fields.
-
-### Not tested through selected sources
-
-- Reminder recurrence, URL, and location;
-- floating/local timed values without timezone identity;
-- Calendar cancellation/decline, detached exceptions, and multi-day all-day ranges;
-- participant presence and Calendar URL;
-- identifier changes after Apple edits or synchronization.
-
-## Temporal Semantics
-
-The Apple source contract preserves these explicit variants:
+Core stores one source scope per:
 
 ```text
-Reminder: absent | dateOnly | localDateTime | timeZoneDateTime
-Calendar: localTimedRange | timeZoneTimedRange | allDayRange
+bridgeId + entityType + sourceContainerId
 ```
 
-All values use real Gregorian dates and real clocks. A local date-time cannot carry an offset. Timezone-qualified Calendar ranges use exact offset-bearing start/end instants and retain a time zone only for civil display context. Local/floating Calendar boundaries must each resolve to exactly one instant in the window zone; repeated and nonexistent civil times fail instead of choosing an occurrence. Timed and exclusive all-day ends must be later than their starts. Date-only Reminders and all-day Calendar ranges remain civil values; they are not flattened to UTC.
+Operational `sourceRevision` and normalized digest sit outside source contract v1.
+
+Revision behavior:
+
+- greater revision may apply;
+- equal revision/equal digest is an unchanged duplicate;
+- equal revision/different digest is conflict;
+- lower revision is stale;
+- invalid and truncated candidates make no change.
+
+Reminder replacement covers the complete selected list scope.
+
+Calendar replacement deletes and replaces only stored rows overlapping the accepted `[window.start, window.end)` scope. Unobserved out-of-window rows remain stored and are excluded from normal current-window reads.
+
+Records, metadata, revisions, digests, freshness, deletions, and insertions commit together.
+
+## Bridge status contract
+
+The mirror cannot prove current source selection or health. Phase 3C therefore adds a separate strict content-free document:
+
+```text
+AppleBridgeStatusSnapshotV1
+```
+
+It contains only:
+
+- Bridge ID;
+- status revision and capture instant;
+- independent Calendar and Reminders permission categories;
+- the exact selected source-coordinate roster;
+- content-free per-source delivery status;
+- acknowledged and optional pending revisions;
+- safe attempt and acknowledgement instants.
+
+It contains no source title, record title, source temporal data, token, pending envelope bytes, account data, or EventKit payload.
+
+The roster is authoritative for Board selection, not source deletion. Deselection removes a source from Board composition while retaining its mirror rows.
+
+Status delivery has its own exact crash-safe outbox. It never rewrites or discards pending source envelopes.
+
+## Board composition
+
+Fixture mode remains the zero-configuration default. Mirror mode requires:
+
+- complete ingestion configuration;
+- explicit `apple-mirror` mode;
+- explicit valid IANA Board time zone.
+
+Both modes return unchanged `BoardSnapshot` v1.
+
+### Freshness
+
+An entity is `fresh` only when:
+
+- permission is granted;
+- at least one source is selected;
+- every selected source has a successful nonpending status;
+- every selected source has an accepted mirror scope at the acknowledged revision;
+- status and acknowledgements are within the fixed freshness interval.
+
+An entity is `stale` when selected sources exist but any one is blocked, retrying, missing, revision-mismatched, source-unavailable, or old.
+
+An entity is `unavailable` when permission is not granted or no source is selected.
+
+Last-good selected facts may remain visible while stale or unavailable. Operational failure never authorizes source deletion.
+
+### Today
+
+The first mirror-backed Today composition includes only selected, incomplete, nonblank Reminders whose due value—or start value when due is absent—is today or overdue in the configured Board time zone.
+
+It excludes future, undated, completed, and blank-title Reminders.
+
+Ordering favors:
+
+1. timed due-today values;
+2. date-only due-today values;
+3. start-only available-today values;
+4. recent overdue values;
+5. accepted provenance only as deterministic tie-breaking.
+
+The existing three-item cap remains.
+
+### Next
+
+The first mirror-backed Next composition includes only selected, noncancelled, nonblank Calendar records in the accepted latest window whose end is after `now`.
+
+Ordering uses interpreted start, interpreted end, and accepted provenance order. Exact instants are projected into the configured Board time zone; all-day values remain civil date ranges.
+
+The existing two-item cap remains.
+
+### Client privacy
+
+Board IDs are domain-separated opaque hashes over scoped provenance. Raw Bridge, source-container, EventKit, local, event, occurrence, and external identifiers never reach clients.
+
+`boardVersion` hashes semantic Board content and freshness, not raw source coordinates or `generatedAt`.
 
 ## Synchronization
 
-### Phase A: Fixture path
+The accepted manual sequence is:
 
 ```text
-Versioned fixture
-      ↓
-Deskboard Core
-      ↓
-GET /v1/board
-      ↓
-iPad and Steam Deck
+1. retry exact pending status, if any
+2. stop if that status remains unresolved
+3. retry exact pending source envelopes
+4. read and deliver eligible new source snapshots
+5. persist exact final content-free status
+6. deliver that exact status
+7. Core composes Board from accepted source + status state
 ```
 
-This proves the contract and display before introducing private data or Apple-specific behavior.
+Only successful application or an unchanged duplicate acknowledges a revision and clears its pending bytes.
 
-### Phase B: Apple read path
+Phase 3D changes the approved network destination, not this sequence.
 
-```text
-Apple data changes
-      ↓
-iCloud reaches Mac
-      ↓
-Bridge performs an explicit bounded read
-      ↓
-Bridge persists a pending source envelope
-      ↓
-Bridge sends the authenticated envelope over loopback
-      ↓
-Core validates and atomically applies that source scope
-      ↓
-Bridge persists and sends final content-free status
-      ↓
-Core atomically accepts status revision and digest
-      ↓
-Core composes selected mirror facts plus honest freshness
-      ↓
-GET /v1/board returns unchanged BoardSnapshot v1
-```
+## API principles
 
-The Bridge uses understandable bounded snapshots rather than clever incremental synchronization. Independent source and status revisions and pending-delivery state wrap the accepted source contract without changing its source meaning.
-
-Atomic replacement is allowed only after the complete document passes strict and semantic validation. Items missing from a non-truncated snapshot may be marked absent only inside that exact Bridge, entity, container, and Calendar-window scope. A truncated or failed replacement must retain unseen source data. An uncertain transport response must retry the same persisted envelope and revision rather than create a different candidate under the same revision.
-
-### Phase C: One write path, later
-
-After the read path is stable, the first and only Apple write action will be completing an ordinary Reminder.
+Accepted routes:
 
 ```text
-Deskboard action
-      ↓
-Core queues command
-      ↓
-Bridge pulls command
-      ↓
-Bridge verifies current Apple item
-      ↓
-Bridge completes Reminder through EventKit
-      ↓
-Normal read synchronization confirms the result
-```
-
-Calendar remains read-only during this phase.
-
-## Board Composition
-
-The Board is not a projection of every available source record. It is a constrained composition.
-
-Fixture mode and the explicitly configured Phase 3C mirror mode both produce the same Board contract. The Board has only:
-
-- a header and source-freshness state;
-- a small Today section based on fixture or selected mirrored Reminders;
-- a small Next section based on fixture or selected mirrored Calendar events;
-- a Sideways Prompt;
-- optional empty states.
-
-Initial capacity limits should be explicit and testable, for example:
-
-- no more than three Today items;
-- no more than two Next commitments;
-- exactly zero vertical scrolling at target viewports;
-- one prompt only when room exists.
-
-Every visible item should include a human-readable reason chosen by the Core, such as:
-
-- `due today`
-- `overdue from yesterday`
-- `in 90 minutes`
-- `all day`
-
-Mirror mode uses the latest accepted status roster rather than inferring selection or health from old rows. Its fixed 15-minute freshness rule joins each selected acknowledgement to an exact accepted mirror revision. Stale and unavailable selections may retain last-good items without being called fresh. Reminder and Calendar candidate eligibility, ordering, time-zone projection, opaque IDs, and semantic Board-version hashing are specified in [`docs/mirror-backed-board.md`](docs/mirror-backed-board.md). No AI or opaque score belongs in Board composition.
-
-## Client Update and Offline Behavior
-
-The initial client update mechanism is intentionally simple:
-
-- fetch on load;
-- poll every 30–60 seconds while visible;
-- pause or reduce polling when the document is hidden;
-- retain the most recent valid Board snapshot in local storage or IndexedDB;
-- display cached content immediately on launch;
-- make staleness visible when the Core cannot be reached.
-
-WebSockets, Server-Sent Events, background push, and offline mutations are deferred until polling is shown to be inadequate.
-
-## API Principles
-
-- Prefix versioned endpoints with `/v1`.
-- Validate requests and responses at runtime.
-- Share generated or source-controlled TypeScript contracts between API and web client.
-- Treat Board snapshots as immutable documents identified by version.
-- Use ISO 8601 for instants and explicit structures for date-only values.
-- Return structured errors with stable codes.
-- Do not expose raw EventKit payloads to display clients.
-- Do not expose secrets, private notes, attendees, or source identifiers to display clients.
-- Keep mutation endpoints absent until their phase begins.
-
-The display API remains:
-
-```text
-GET /health
-GET /v1/board
-```
-
-Phase 3B adds the source-ingestion route. Phase 3C adds exactly one status-ingestion route. Both are authenticated internal routes, available only with complete configuration while the API remains bound to loopback:
-
-```text
+GET  /health
+GET  /v1/board
 POST /v1/apple-source-snapshots
 POST /v1/apple-bridge-status
 ```
 
-Neither ingestion route is a web-client API. No mirror, status, roster, or source read route exists.
+Principles:
 
-## Security and Privacy
+- versioned runtime validation;
+- fixed content-free errors;
+- no raw EventKit payloads for clients;
+- no source/status read API;
+- no direct database access;
+- Board responses use `Cache-Control: no-store`;
+- Bridge routes authenticate before body parsing;
+- one bearer token is bound to one expected Bridge identity;
+- no mutation endpoint until its dedicated phase.
 
-- The repository must contain no real Calendar, Reminder, health, recovery, household, or contact data.
-- Fixtures must be synthetic.
-- `.env` files, credentials, Tailscale details, database files, pending envelopes, and exported source snapshots are ignored by Git.
-- The Bridge whitelists source containers rather than ingesting every Calendar and Reminder list.
-- The production Bridge is sandboxed, read-only, and has no inbound network service.
-- The Bridge bearer token lives in macOS Keychain and appears only in the Authorization header.
-- Core authenticates before applying the ingestion body and binds the token to one opaque Bridge identity.
-- Core and Bridge logs use content-free operational status rather than private records.
-- Future family-facing profiles should use explicit allowlists; private information is excluded by default.
-- Future agent actions must pass through the same audited API as all other clients.
-- No client or agent should receive direct database access.
+## Phase 3D network boundary
 
-## Repository Shape
+The Bridge keeps accepted numeric-loopback HTTP origins for local operation.
 
-The first coding slice established the TypeScript monorepo. Connected native code is added only in its active slice.
+The only additional production origin class permitted in Phase 3D is a strict Tailscale HTTPS origin:
 
-```text
-deskboard/
-├── apps/
-│   ├── web/                 React + TypeScript + Vite
-│   └── api/                 Fastify + TypeScript
-│
-├── packages/
-│   └── contracts/           Runtime schemas and shared types
-│
-├── fixtures/
-│   ├── board/               Synthetic Board examples
-│   ├── eventkit/            Approved sanitized discovery evidence
-│   ├── apple-source-contract/ Strict cross-language source fixtures
-│   └── apple-bridge-status/ Strict cross-language status fixtures
-│
-├── native/
-│   └── apple-bridge/        Dedicated production macOS Bridge and tests
-├── tools/
-│   └── apple-eventkit-probe/ Contained discovery probe
-├── .github/
-│   └── workflows/           Complete quality gate
-│
-├── ARCHITECTURE.md
-├── MANIFESTO.md
-├── ROADMAP.md
-└── README.md
-```
+- `https` scheme;
+- exact `.ts.net` host;
+- no user info, query, fragment, or preconfigured path;
+- normal system TLS validation;
+- redirects rejected;
+- no raw LAN/tailnet IP, arbitrary HTTPS host, public hostname, or remote plain HTTP.
 
-Do not scaffold empty packages for future ideas.
+The Bridge appends only the two accepted ingestion paths.
 
-## Testing Strategy
+Changing destination does not change Bridge identity, Keychain credential, selections, TCC grants, revisions, or pending envelope bytes.
 
-### Contract tests
+## Security and privacy
 
-Prove that:
+- Real source data and Board content never enter committed fixtures.
+- `.env` files, tokens, certificates, provisioning profiles, databases, backups, Tailscale details, and pending envelopes are ignored and prohibited from Git.
+- Agent-visible real-data proof is content-free.
+- No real Board screenshot, accessibility tree, OCR, DOM dump, API body, mirror row, or pending envelope may be transmitted to an agent.
+- The owner may inspect the real Board privately.
+- Deployment and proxy logs must not contain request headers, bodies, Board responses, source coordinates, or credentials.
+- Tailscale Serve is private ingress; Funnel is forbidden.
+- Apple writes remain absent.
 
-- fixture Board snapshots satisfy the runtime schema;
-- invalid temporal values are rejected;
-- API responses match the shared contract;
-- the web client handles unsupported schema versions safely.
+## Decision boundaries
 
-### Apple source contract tests
-
-Phase 2B independently proves in TypeScript and Swift that:
-
-- the exact same versioned synthetic fixture allowlist is used;
-- every valid Reminder and Calendar snapshot passes;
-- every invalid snapshot fails;
-- unknown keys fail at every strict object boundary;
-- dates, clocks, ranges, completion, counts, truncation, order, and Calendar scope are semantic invariants;
-- timezone-qualified Calendar ranges preserve exact instants, while ambiguous/nonexistent local ranges fail;
-- complete ordering-coordinate collisions fail rather than inherit upstream order;
-- complete empty Reminder and Calendar scopes authorize absence only after strict runtime validation;
-- truncated snapshots never authorize absence;
-- the accepted Phase 2A specimen allowlist continues to decode without accessing private fixtures.
-
-### Atomic mirror tests
-
-Phase 3A proves:
-
-- valid authoritative snapshots apply atomically;
-- invalid, truncated, stale, conflicting, and failed candidates preserve previous good state;
-- duplicate delivery is idempotent;
-- Reminder scopes replace completely;
-- Calendar overlap windows preserve unobserved out-of-window rows;
-- destructive failure rolls metadata and records back;
-- migrations and close/reopen persistence are repeatable.
-
-### Manual Bridge delivery tests
-
-Phase 3B must prove:
-
-- one strict authenticated route applies through the accepted mirror;
-- authentication and Bridge-ID binding fail before private application;
-- converter output includes only accepted v1 fields;
-- exact temporal, ordering, count, collision, and truncation semantics are preserved;
-- source selections remain separate and empty by default;
-- Bridge identity, revisions, credentials, and pending delivery survive relaunch;
-- timeout or crash retries the exact persisted envelope and revision;
-- applied and duplicate results acknowledge once, while other results fail closed;
-- the production target is sandboxed with outbound-only network behavior and no EventKit writes;
-- the manual local proof reports only masked counts and result kinds.
-
-### Bridge status and mirror-backed Board tests
-
-Phase 3C proves:
-
-- exact matching Swift and TypeScript status fixture inventories;
-- strict keys, permission independence, coordinate order, uniqueness, and pending invariants;
-- transactional status revision/digest duplicate, stale, conflict, invalid, and strict-read behavior;
-- exact pending-status retry across timeout and relaunch without changing source pending bytes;
-- selected-source fresh, stale, unavailable, missing, mismatched, blocked, retry, and deselection behavior;
-- deterministic Reminder eligibility, reasons, provenance tie-breaking, opaque IDs, and three-item cap;
-- deterministic Calendar current-window eligibility, all-day preservation, Board-zone offset projection, opaque IDs, and two-item cap;
-- final Board runtime validation, stable semantic versioning, unchanged fixture mode, and one shared resource lifecycle.
-
-### Component/accessibility tests
-
-Prove that:
-
-- sections have meaningful headings;
-- all visible content is keyboard reachable where interaction exists;
-- no information relies only on color;
-- reduced-motion preferences are respected;
-- loading, empty, stale, and error states are understandable.
-
-### Browser proof tests
-
-At minimum, capture or assert the Board at representative viewports:
-
-- iPad landscape: `1366 × 1024` CSS-pixel reference viewport;
-- Steam Deck: `1280 × 800`;
-- a narrower portrait sanity check.
-
-The proof should assert that the target Board has no document-level vertical overflow at the two primary viewports.
-
-## Decision Boundaries
-
-The following choices are intentional for the opening phases:
-
-| Concern | Initial decision |
+| Concern | Accepted decision |
 |---|---|
-| Front end | React + TypeScript + Vite PWA |
-| Server | Fastify + TypeScript |
-| Monorepo | npm workspaces unless a concrete need suggests otherwise |
-| Database | private SQLite Apple source mirror plus content-free Bridge status |
-| Phase 3C topology | same-Mac loopback only |
-| Later private access | Tailscale in Phase 3D |
-| Live updates | existing ordinary Board polling; background source sync deferred |
-| Apple integration | sandboxed outbound EventKit Bridge |
-| Calendar writes | deferred |
-| Reminder writes | deferred until one explicit completion slice |
-| AI | absent from selection logic |
-| Home Assistant | deferred |
-| Native mobile clients | deferred |
+| Web | React + TypeScript + Vite PWA |
+| Core | Fastify + TypeScript |
+| Persistence | Node 24 SQLite source mirror plus content-free Bridge status |
+| Apple integration | Signed sandboxed EventKit Bridge |
+| Source delivery | Strict snapshots with exact pending-envelope retry |
+| Board contract | `BoardSnapshot` v1 |
+| Board mode | Fixture default; explicit mirror mode |
+| Phase 3D access | Private Tailscale HTTPS only |
+| Phase 3D sync | Explicit manual Sync Now |
+| Public ingress | None |
+| Calendar writes | Deferred |
+| Reminder writes | Deferred until one explicit completion slice |
+| AI selection | Absent |
+| Background scheduling | Deferred to Phase 3E |
+| Backup/restore | Deferred to Phase 3E |
 
-## Change Rule
+A proposed architectural dependency must answer:
 
-A proposed architectural dependency should answer all three questions:
+1. Which current issue requirement does it satisfy?
+2. Why is the accepted simpler mechanism insufficient?
+3. What maintenance and privacy burden does it add?
 
-1. Which current slice requirement does it satisfy?
-2. Why is the existing simpler mechanism insufficient?
-3. What maintenance burden does it add?
-
-If the first answer is “a future feature,” the dependency does not belong in the current slice.
+If the first answer is a future feature, it does not belong in the current slice.
