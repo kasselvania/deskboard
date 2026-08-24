@@ -4,7 +4,7 @@
 
 This document describes the intended architecture and the boundaries for the first several implementation slices. It is a working design, not a promise that every listed component will be built immediately.
 
-The current implementation phase is **truthful local mirror-backed Board composition**. Phase 3B's signed, sandboxed Bridge and authenticated manual source delivery are accepted. The active Phase 3C branch adds a separately versioned content-free Bridge status stream and composes selected last-good mirror facts into unchanged `BoardSnapshot` v1 on the same Mac. Fixture mode remains the default; private owner acceptance and review are pending. Remote deployment, background operation, backup/restore, source administration, and every Apple write remain deferred.
+The current implementation phase is **truthful local mirror-backed Board composition**. Phase 3B's signed, sandboxed Bridge and authenticated manual source delivery are accepted. The active Phase 3C branch adds a separately versioned content-free Bridge status stream and composes selected last-good mirror facts into unchanged `BoardSnapshot` v1 on the same Mac. Fixture mode remains the default; the content-free private owner acceptance gate is complete and review remains pending. Remote deployment, background operation, backup/restore, source administration, and every Apple write remain deferred.
 
 ## Architectural Thesis
 

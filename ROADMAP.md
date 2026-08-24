@@ -172,7 +172,7 @@ The Board remains fixture-backed. There is no remote topology, background proces
 
 **Question:** Can Core compose the existing calm Board from the Apple mirror on the same Mac while accurately representing selected, stale, truncated, retrying, missing, and unavailable sources?
 
-**Status:** active under issue [#19](https://github.com/kasselvania/deskboard/issues/19). The feature branch implements the bounded slice and synthetic proof; private owner acceptance and review are still pending.
+**Status:** active under issue [#19](https://github.com/kasselvania/deskboard/issues/19). The feature branch implements the bounded slice and synthetic proof, and the content-free private owner acceptance gate is complete; review is still pending.
 
 This is the first real-data Board slice. It remains same-Mac, loopback-only, manually synchronized, and read-only. Issue #19 is the detailed implementation and proof contract.
 

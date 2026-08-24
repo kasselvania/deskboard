@@ -86,7 +86,7 @@ Phase 3B provides one signed, sandboxed, read-only macOS Bridge; strict EventKit
 
 **Phase 3C — Truthful Local Mirror-Backed Board: active under issue [#19](https://github.com/kasselvania/deskboard/issues/19).**
 
-The feature branch implements the strict content-free Bridge status contract and exact status outbox, one additional authenticated loopback route, transactional status persistence, and selected-source mirror composition into the unchanged Board contract. Fixture mode remains the default, and mirror mode requires an explicit IANA Board time zone. Automated synthetic proof is documented in [docs/apple-bridge-status-v1.md](docs/apple-bridge-status-v1.md) and [docs/mirror-backed-board.md](docs/mirror-backed-board.md); private owner acceptance and review remain required before Phase 3C can be accepted.
+The feature branch implements the strict content-free Bridge status contract and exact status outbox, one additional authenticated loopback route, transactional status persistence, and selected-source mirror composition into the unchanged Board contract. Fixture mode remains the default, and mirror mode requires an explicit IANA Board time zone. Automated synthetic proof is documented in [docs/apple-bridge-status-v1.md](docs/apple-bridge-status-v1.md) and [docs/mirror-backed-board.md](docs/mirror-backed-board.md). The content-free private owner acceptance gate is complete; review remains required before Phase 3C can be accepted.
 
 **Remote deployment and background operation: not begun.** No private remote topology, automatic Bridge schedule, production homelab deployment, or Apple write action exists.
 

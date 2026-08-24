@@ -45,7 +45,7 @@ The question for Phase 3C is:
 
 This is a same-Mac, manually synchronized, read-only Board-composition slice. It is not deployment, background operation, source administration, or an Apple write path.
 
-The active feature branch implements the bounded status, outbox, Core route/storage, and mirror-backed composer. Phase 3C remains active until the private owner gate and review are complete; this branch is not an accepted basis for Phase 3D.
+The active feature branch implements the bounded status, outbox, Core route/storage, and mirror-backed composer. The content-free private owner gate is complete. Phase 3C remains active until review is complete; this branch is not an accepted basis for Phase 3D.
 
 ## Allowed Phase 3C Shape
 

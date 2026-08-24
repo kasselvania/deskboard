@@ -71,7 +71,7 @@ The accepted Phase 3B path is same-Mac and manual only:
 
 ## Implemented Phase 3C real-data Board controls
 
-The active Phase 3C branch composes a local real-data Board only after Core has a strict content-free view of current Bridge selection and source health. Acceptance still requires the private owner gate and review.
+The active Phase 3C branch composes a local real-data Board only after Core has a strict content-free view of current Bridge selection and source health. The content-free private owner gate is complete; acceptance still requires review.
 
 - A selected-source roster and content-free delivery status are operational facts, separate from source records.
 - One additional authenticated loopback status route reuses the Phase 3B token and Bridge binding; it has a finite body limit and no read counterpart.
