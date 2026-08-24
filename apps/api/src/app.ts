@@ -9,7 +9,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import {
   materializeDefaultBoard,
   type FixtureClock,
-} from "./materialize-default-board";
+} from "./materialize-default-board.js";
 import {
   MirrorBackedBoardConfigurationError,
   type BoardRuntimeConfiguration,
