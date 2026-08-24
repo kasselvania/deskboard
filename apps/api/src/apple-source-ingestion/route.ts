@@ -7,6 +7,10 @@ import {
 import { authorizationMatchesConfiguredToken } from "./auth.js";
 import type { AppleSourceIngestionConfiguration } from "./config.js";
 import { parseAppleSourceIngestionEnvelope } from "./envelope.js";
+import {
+  registerAppleBridgeStatus,
+  type AppleBridgeStatusApplicationBoundary,
+} from "../apple-bridge-status/route.js";
 
 export const APPLE_SOURCE_INGESTION_BODY_LIMIT_BYTES = 1_048_576;
 export const APPLE_SOURCE_INGESTION_ROUTE = "/v1/apple-source-snapshots";
@@ -16,6 +20,7 @@ export interface AppleSourceMirrorApplicationBoundary {
     snapshot: unknown;
     sourceRevision: number;
   }): AppleSourceMirrorApplyResult;
+  applyBridgeStatus?: AppleBridgeStatusApplicationBoundary["applyBridgeStatus"];
   close(): void;
 }
 
@@ -83,6 +88,16 @@ export function registerAppleSourceIngestion(
       mirror.close();
     }
   });
+
+  if (mirror.applyBridgeStatus) {
+    registerAppleBridgeStatus(app, {
+      expectedBridgeId: options.expectedBridgeId,
+      bearerToken: options.bearerToken,
+      application: {
+        applyBridgeStatus: mirror.applyBridgeStatus.bind(mirror),
+      },
+    });
+  }
 
   app.post(
     APPLE_SOURCE_INGESTION_ROUTE,

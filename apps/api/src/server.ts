@@ -1,5 +1,5 @@
 import { buildApp } from "./app.js";
-import { readAppleSourceIngestionConfiguration } from "./apple-source-ingestion/index.js";
+import { readDeskboardRuntimeConfiguration } from "./board-configuration.js";
 
 const DEFAULT_PORT = 3001;
 
@@ -16,10 +16,13 @@ function readPort(value: string | undefined): number {
   return port;
 }
 
-const appleSourceIngestion = readAppleSourceIngestionConfiguration(process.env);
+const runtime = readDeskboardRuntimeConfiguration(process.env);
 const app = buildApp({
   logger: true,
-  ...(appleSourceIngestion ? { appleSourceIngestion } : {}),
+  board: runtime.board,
+  ...(runtime.appleSourceIngestion
+    ? { appleSourceIngestion: runtime.appleSourceIngestion }
+    : {}),
 });
 
 try {

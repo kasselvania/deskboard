@@ -23,6 +23,8 @@
 		B4000000000000000000000E /* BridgeStateAndDeliveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000000E /* BridgeStateAndDeliveryTests.swift */; };
 		B4000000000000000000000F /* HTTPAndCredentialTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000000F /* HTTPAndCredentialTests.swift */; };
 		B40000000000000000000012 /* NativeSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000015 /* NativeSecurityTests.swift */; };
+		B40000000000000000000013 /* AppleBridgeStatusContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000016 /* AppleBridgeStatusContract.swift */; };
+		B40000000000000000000014 /* BridgeStatusContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000017 /* BridgeStatusContractTests.swift */; };
 		B40000000000000000000010 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A40000000000000000000012 /* EventKit.framework */; };
 		B40000000000000000000011 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A40000000000000000000013 /* Security.framework */; };
 /* End PBXBuildFile section */
@@ -54,6 +56,8 @@
 		A4000000000000000000000E /* BridgeStateAndDeliveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeStateAndDeliveryTests.swift; sourceTree = "<group>"; };
 		A4000000000000000000000F /* HTTPAndCredentialTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPAndCredentialTests.swift; sourceTree = "<group>"; };
 		A40000000000000000000015 /* NativeSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSecurityTests.swift; sourceTree = "<group>"; };
+		A40000000000000000000016 /* AppleBridgeStatusContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleBridgeStatusContract.swift; sourceTree = "<group>"; };
+		A40000000000000000000017 /* BridgeStatusContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeStatusContractTests.swift; sourceTree = "<group>"; };
 		A40000000000000000000010 /* DeskboardAppleBridge.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DeskboardAppleBridge.entitlements; sourceTree = "<group>"; };
 		A40000000000000000000011 /* DeskboardAppleBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeskboardAppleBridge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A40000000000000000000014 /* DeskboardAppleBridgeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DeskboardAppleBridgeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -106,6 +110,7 @@
 				A40000000000000000000009 /* LoopbackHTTPClient.swift */,
 				A4000000000000000000000A /* EventKitBridgeReader.swift */,
 				A4000000000000000000000B /* ManualSyncCoordinator.swift */,
+				A40000000000000000000016 /* AppleBridgeStatusContract.swift */,
 				A40000000000000000000010 /* DeskboardAppleBridge.entitlements */,
 			);
 			path = DeskboardAppleBridge;
@@ -118,6 +123,7 @@
 				A4000000000000000000000E /* BridgeStateAndDeliveryTests.swift */,
 				A4000000000000000000000F /* HTTPAndCredentialTests.swift */,
 				A40000000000000000000015 /* NativeSecurityTests.swift */,
+				A40000000000000000000017 /* BridgeStatusContractTests.swift */,
 			);
 			path = DeskboardAppleBridgeTests;
 			sourceTree = "<group>";
@@ -251,6 +257,7 @@
 				B4000000000000000000000A /* EventKitBridgeReader.swift in Sources */,
 				B4000000000000000000000B /* ManualSyncCoordinator.swift in Sources */,
 				B4000000000000000000000C /* AppleSourceContract.swift in Sources */,
+				B40000000000000000000013 /* AppleBridgeStatusContract.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -262,6 +269,7 @@
 				B4000000000000000000000E /* BridgeStateAndDeliveryTests.swift in Sources */,
 				B4000000000000000000000F /* HTTPAndCredentialTests.swift in Sources */,
 				B40000000000000000000012 /* NativeSecurityTests.swift in Sources */,
+				B40000000000000000000014 /* BridgeStatusContractTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

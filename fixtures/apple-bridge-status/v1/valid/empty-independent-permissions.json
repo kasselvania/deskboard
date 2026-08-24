@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "bridgeId": "synthetic-bridge-empty",
+  "statusRevision": 1,
+  "capturedAt": "2026-08-24T18:00:00Z",
+  "permissions": {
+    "calendar": "denied",
+    "reminders": "granted"
+  },
+  "selectedSources": []
+}

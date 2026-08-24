@@ -5,12 +5,14 @@ enum BridgeWireError: Error, LocalizedError {
     case invalidEnvelope
     case envelopeTooLarge
     case invalidResponse
+    case statusEnvelopeTooLarge
 
     var errorDescription: String? {
         switch self {
         case .invalidEnvelope: "The pending delivery envelope is invalid."
         case .envelopeTooLarge: "The source snapshot exceeds the delivery limit."
         case .invalidResponse: "Core returned an invalid delivery response."
+        case .statusEnvelopeTooLarge: "The Bridge status exceeds the delivery limit."
         }
     }
 }

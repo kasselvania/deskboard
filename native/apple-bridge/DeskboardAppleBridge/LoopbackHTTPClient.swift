@@ -12,6 +12,7 @@ enum LoopbackEndpointError: Error, LocalizedError {
 struct LoopbackIngestionEndpoint: Equatable {
     let origin: URL
     let ingestionURL: URL
+    let statusURL: URL
 
     init(origin value: String) throws {
         guard
@@ -38,8 +39,13 @@ struct LoopbackIngestionEndpoint: Equatable {
         guard let ingestionURL = components.url else {
             throw LoopbackEndpointError.invalid
         }
+        components.path = "/v1/apple-bridge-status"
+        guard let statusURL = components.url else {
+            throw LoopbackEndpointError.invalid
+        }
         self.origin = origin
         self.ingestionURL = ingestionURL
+        self.statusURL = statusURL
     }
 
     private static func isNumericLoopback(_ host: String) -> Bool {
@@ -146,6 +152,13 @@ protocol AppleSourceDelivering: AnyObject {
     ) async throws -> AppleSourceApplyResponse
 }
 
+protocol AppleBridgeStatusDelivering: AnyObject {
+    func deliverStatus(
+        envelopeData: Data,
+        endpoint: LoopbackIngestionEndpoint
+    ) async throws -> AppleBridgeStatusApplyResponse
+}
+
 final class AppleSourceDeliveryClient: AppleSourceDelivering {
     private let credentialStore: BridgeCredentialStore
     private let transport: AppleSourceHTTPTransport
@@ -200,6 +213,64 @@ final class AppleSourceDeliveryClient: AppleSourceDelivering {
                 result.entityType == envelope.snapshot.entityType,
                 result.sourceRevision == envelope.sourceRevision
             else {
+                throw BridgeDeliveryError.invalidResponse
+            }
+        }
+        return result
+    }
+}
+
+final class AppleBridgeStatusDeliveryClient: AppleBridgeStatusDelivering {
+    private let credentialStore: BridgeCredentialStore
+    private let transport: AppleSourceHTTPTransport
+
+    init(
+        credentialStore: BridgeCredentialStore,
+        transport: AppleSourceHTTPTransport
+    ) {
+        self.credentialStore = credentialStore
+        self.transport = transport
+    }
+
+    func deliverStatus(
+        envelopeData: Data,
+        endpoint: LoopbackIngestionEndpoint
+    ) async throws -> AppleBridgeStatusApplyResponse {
+        let snapshot: AppleBridgeStatusSnapshotV1
+        do {
+            snapshot = try AppleBridgeStatusEnvelopeCodec.decode(envelopeData)
+        } catch {
+            throw BridgeDeliveryError.invalidResponse
+        }
+        guard let token = try credentialStore.readToken() else {
+            throw BridgeDeliveryError.credentialUnavailable
+        }
+
+        let response: AppleSourceUploadResponse
+        do {
+            response = try await transport.upload(
+                AppleSourceUploadRequest(
+                    url: endpoint.statusURL,
+                    authorizationHeader: "Bearer \(token)",
+                    body: envelopeData,
+                    timeout: BridgeProductionLimits.uploadTimeout
+                )
+            )
+        } catch {
+            throw BridgeDeliveryError.transportFailed
+        }
+
+        let result: AppleBridgeStatusApplyResponse
+        do {
+            result = try AppleBridgeStatusApplyResponseCodec.decode(response.body)
+        } catch {
+            throw BridgeDeliveryError.invalidResponse
+        }
+        guard response.statusCode == result.expectedHTTPStatus else {
+            throw BridgeDeliveryError.invalidResponse
+        }
+        if result.kind != .rejectedInvalid {
+            guard result.statusRevision == snapshot.statusRevision else {
                 throw BridgeDeliveryError.invalidResponse
             }
         }

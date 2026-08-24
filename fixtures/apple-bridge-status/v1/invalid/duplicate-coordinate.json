@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "bridgeId": "synthetic-invalid",
+  "statusRevision": 1,
+  "capturedAt": "2026-08-24T18:00:00Z",
+  "permissions": { "calendar": "granted", "reminders": "granted" },
+  "selectedSources": [
+    { "entityType": "calendar", "sourceContainerId": "same", "status": "idle", "acknowledgedSourceRevision": 0 },
+    { "entityType": "calendar", "sourceContainerId": "same", "status": "idle", "acknowledgedSourceRevision": 0 }
+  ]
+}
