@@ -1,47 +1,69 @@
 import Darwin
 import Foundation
 
-enum LoopbackEndpointError: Error, LocalizedError {
+enum CoreEndpointError: Error, LocalizedError {
     case invalid
 
     var errorDescription: String? {
-        "Core must use an explicit numeric loopback HTTP origin with a port."
+        "Core must use numeric loopback HTTP or private Tailscale HTTPS."
     }
 }
 
-struct LoopbackIngestionEndpoint: Equatable {
+struct CoreIngestionEndpoint: Equatable {
     let origin: URL
     let ingestionURL: URL
     let statusURL: URL
 
     init(origin value: String) throws {
         guard
+            !value.isEmpty,
+            value == value.trimmingCharacters(in: .whitespacesAndNewlines),
+            value.unicodeScalars.allSatisfy({
+                !CharacterSet.controlCharacters.contains($0)
+            }),
             var components = URLComponents(string: value),
-            components.scheme == "http",
             components.user == nil,
             components.password == nil,
             components.query == nil,
             components.fragment == nil,
             components.path.isEmpty || components.path == "/",
-            let host = components.host,
-            Self.isNumericLoopback(host),
-            let port = components.port,
-            (1 ... 65_535).contains(port)
+            let host = components.host
         else {
-            throw LoopbackEndpointError.invalid
+            throw CoreEndpointError.invalid
+        }
+
+        if components.scheme == "http" {
+            guard
+                Self.isNumericLoopback(host),
+                let port = components.port,
+                (1 ... 65_535).contains(port)
+            else {
+                throw CoreEndpointError.invalid
+            }
+        } else if components.scheme == "https" {
+            guard
+                components.port == nil || components.port == 443,
+                Self.isValidTailscaleHostname(host)
+            else {
+                throw CoreEndpointError.invalid
+            }
+            components.host = host.lowercased()
+            components.port = nil
+        } else {
+            throw CoreEndpointError.invalid
         }
 
         components.path = ""
         guard let origin = components.url else {
-            throw LoopbackEndpointError.invalid
+            throw CoreEndpointError.invalid
         }
         components.path = "/v1/apple-source-snapshots"
         guard let ingestionURL = components.url else {
-            throw LoopbackEndpointError.invalid
+            throw CoreEndpointError.invalid
         }
         components.path = "/v1/apple-bridge-status"
         guard let statusURL = components.url else {
-            throw LoopbackEndpointError.invalid
+            throw CoreEndpointError.invalid
         }
         self.origin = origin
         self.ingestionURL = ingestionURL
@@ -68,6 +90,48 @@ struct LoopbackIngestionEndpoint: Equatable {
             }
         }
         return false
+    }
+
+    private static func isValidTailscaleHostname(_ host: String) -> Bool {
+        guard
+            host.utf8.count <= 253,
+            host.unicodeScalars.allSatisfy({ $0.isASCII }),
+            !host.hasSuffix("."),
+            !host.contains("%")
+        else {
+            return false
+        }
+
+        let labels = host.lowercased().split(separator: ".", omittingEmptySubsequences: false)
+        guard
+            labels.count >= 3,
+            labels.suffix(2).elementsEqual(["ts", "net"]),
+            labels.dropLast(2).allSatisfy({ !$0.hasPrefix("xn--") })
+        else {
+            return false
+        }
+
+        return labels.allSatisfy { label in
+            guard
+                !label.isEmpty,
+                label.utf8.count <= 63,
+                let first = label.utf8.first,
+                let last = label.utf8.last,
+                Self.isASCIIAlphanumeric(first),
+                Self.isASCIIAlphanumeric(last)
+            else {
+                return false
+            }
+            return label.utf8.allSatisfy { byte in
+                Self.isASCIIAlphanumeric(byte) || byte == 45
+            }
+        }
+    }
+
+    private static func isASCIIAlphanumeric(_ byte: UInt8) -> Bool {
+        (48 ... 57).contains(byte)
+            || (65 ... 90).contains(byte)
+            || (97 ... 122).contains(byte)
     }
 }
 
@@ -148,14 +212,14 @@ enum BridgeDeliveryError: Error, LocalizedError, Equatable {
 protocol AppleSourceDelivering: AnyObject {
     func deliver(
         envelopeData: Data,
-        endpoint: LoopbackIngestionEndpoint
+        endpoint: CoreIngestionEndpoint
     ) async throws -> AppleSourceApplyResponse
 }
 
 protocol AppleBridgeStatusDelivering: AnyObject {
     func deliverStatus(
         envelopeData: Data,
-        endpoint: LoopbackIngestionEndpoint
+        endpoint: CoreIngestionEndpoint
     ) async throws -> AppleBridgeStatusApplyResponse
 }
 
@@ -173,7 +237,7 @@ final class AppleSourceDeliveryClient: AppleSourceDelivering {
 
     func deliver(
         envelopeData: Data,
-        endpoint: LoopbackIngestionEndpoint
+        endpoint: CoreIngestionEndpoint
     ) async throws -> AppleSourceApplyResponse {
         let envelope: AppleSourceOperationalEnvelopeV1
         do {
@@ -234,7 +298,7 @@ final class AppleBridgeStatusDeliveryClient: AppleBridgeStatusDelivering {
 
     func deliverStatus(
         envelopeData: Data,
-        endpoint: LoopbackIngestionEndpoint
+        endpoint: CoreIngestionEndpoint
     ) async throws -> AppleBridgeStatusApplyResponse {
         let snapshot: AppleBridgeStatusSnapshotV1
         do {

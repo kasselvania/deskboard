@@ -7,7 +7,7 @@ enum ManualSyncError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .configurationRequired: "Store a valid loopback Core origin before syncing."
+        case .configurationRequired: "Store a valid Core origin before syncing."
         case .alreadyInProgress: "Manual synchronization is already in progress."
         case .revisionExhausted: "A source revision requires operator action."
         }
@@ -49,7 +49,7 @@ final class ManualSyncCoordinator {
         guard let origin = state.coreOrigin else {
             throw ManualSyncError.configurationRequired
         }
-        let endpoint = try LoopbackIngestionEndpoint(origin: origin)
+        let endpoint = try CoreIngestionEndpoint(origin: origin)
 
         try await attemptPendingStatus(endpoint: endpoint, state: &state)
         guard state.pendingStatus == nil else {
@@ -225,7 +225,7 @@ final class ManualSyncCoordinator {
     }
 
     private func attemptPendingStatus(
-        endpoint: LoopbackIngestionEndpoint,
+        endpoint: CoreIngestionEndpoint,
         state: inout BridgePersistentState
     ) async throws {
         guard let pending = state.pendingStatus else { return }
@@ -268,7 +268,7 @@ final class ManualSyncCoordinator {
 
     private func attemptPending(
         coordinate: BridgeSourceCoordinate,
-        endpoint: LoopbackIngestionEndpoint,
+        endpoint: CoreIngestionEndpoint,
         state: inout BridgePersistentState,
         attemptAlreadyRecorded: Bool = false
     ) async throws {

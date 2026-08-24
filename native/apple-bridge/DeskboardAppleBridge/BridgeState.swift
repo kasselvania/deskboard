@@ -220,7 +220,7 @@ struct BridgePersistentState: Codable, Equatable {
             throw BridgeStateError.invalid
         }
         if let coreOrigin {
-            _ = try LoopbackIngestionEndpoint(origin: coreOrigin)
+            _ = try CoreIngestionEndpoint(origin: coreOrigin)
         }
         guard
             acknowledgedStatusRevision >= 0,

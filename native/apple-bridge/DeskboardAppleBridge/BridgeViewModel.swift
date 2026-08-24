@@ -121,14 +121,14 @@ final class BridgeViewModel: ObservableObject {
 
     func saveCoreOrigin() {
         do {
-            let endpoint = try LoopbackIngestionEndpoint(origin: coreOriginInput)
+            let endpoint = try CoreIngestionEndpoint(origin: coreOriginInput)
             var state = try stateStore.loadOrCreate()
             state.coreOrigin = endpoint.origin.absoluteString
             try stateStore.save(state)
             coreOriginInput = endpoint.origin.absoluteString
-            notice = "Loopback Core origin stored."
+            notice = "Core origin stored."
         } catch {
-            notice = "Core origin must be an explicit numeric loopback HTTP origin."
+            notice = "Core origin must be numeric loopback HTTP or private Tailscale HTTPS."
         }
     }
 

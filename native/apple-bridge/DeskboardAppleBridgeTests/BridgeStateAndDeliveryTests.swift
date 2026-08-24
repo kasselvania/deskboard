@@ -138,7 +138,7 @@ private final class QueueDeliveryClient: AppleSourceDelivering {
 
     func deliver(
         envelopeData: Data,
-        endpoint: LoopbackIngestionEndpoint
+        endpoint: CoreIngestionEndpoint
     ) async throws -> AppleSourceApplyResponse {
         envelopes.append(envelopeData)
         guard !outcomes.isEmpty else { throw Failure.uncertain }
@@ -158,7 +158,7 @@ private final class QueueStatusDeliveryClient: AppleBridgeStatusDelivering {
 
     func deliverStatus(
         envelopeData: Data,
-        endpoint: LoopbackIngestionEndpoint
+        endpoint: CoreIngestionEndpoint
     ) async throws -> AppleBridgeStatusApplyResponse {
         envelopes.append(envelopeData)
         guard !outcomes.isEmpty else { throw Failure.uncertain }
@@ -171,7 +171,7 @@ private final class AcknowledgingStatusDeliveryClient: AppleBridgeStatusDeliveri
 
     func deliverStatus(
         envelopeData: Data,
-        endpoint: LoopbackIngestionEndpoint
+        endpoint: CoreIngestionEndpoint
     ) async throws -> AppleBridgeStatusApplyResponse {
         envelopes.append(envelopeData)
         let snapshot = try AppleBridgeStatusEnvelopeCodec.decode(envelopeData)
@@ -751,6 +751,32 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
         XCTAssertNotEqual(reset.bridgeId, originalBridgeId)
         XCTAssertTrue(reset.selectedReminderSourceIds.isEmpty)
         XCTAssertTrue(reset.deliveries.isEmpty)
+    }
+
+    func testChangingCoreOriginChangesOnlyTheStoredDestination() throws {
+        var original = try stateWithPending()
+        original.acknowledgedStatusRevision = 6
+        original.pendingStatus = BridgePendingStatusEnvelope(
+            statusRevision: 7,
+            encodedEnvelope: try statusEnvelopeData(for: original, revision: 7)
+        )
+        original.statusDeliveryResult = .retryPending
+        try original.validate()
+        let store = MemoryStateStore(original)
+        let model = BridgeViewModel(
+            stateStore: store,
+            sourceReader: SyntheticSourceReader(),
+            credentialStore: SyntheticCredentialStore(),
+            transport: UnusedHTTPTransport()
+        )
+
+        model.coreOriginInput = "https://synthetic-device.synthetic-tailnet.ts.net"
+        model.saveCoreOrigin()
+
+        var expected = original
+        expected.coreOrigin = "https://synthetic-device.synthetic-tailnet.ts.net"
+        XCTAssertEqual(try store.loadOrCreate(), expected)
+        XCTAssertEqual(model.notice, "Core origin stored.")
     }
 
     func testPendingPayloadNeverAppearsInStateFailureDescription() throws {

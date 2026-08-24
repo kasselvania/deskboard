@@ -51,26 +51,46 @@ private final class MemoryKeychainBackend: KeychainTokenBackend {
 final class HTTPAndCredentialTests: XCTestCase {
     private let syntheticToken = String(repeating: "a", count: 64)
 
-    func testLoopbackPolicyAcceptsOnlyExplicitNumericHTTPOrigins() throws {
+    func testCoreOriginPolicyAcceptsNumericLoopbackHTTPAndPrivateTailscaleHTTPS() throws {
         XCTAssertEqual(
-            try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+            try CoreIngestionEndpoint(origin: "http://127.0.0.1:3001")
                 .ingestionURL.absoluteString,
             "http://127.0.0.1:3001/v1/apple-source-snapshots"
         )
         XCTAssertEqual(
-            try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+            try CoreIngestionEndpoint(origin: "http://127.0.0.1:3001")
                 .statusURL.absoluteString,
             "http://127.0.0.1:3001/v1/apple-bridge-status"
         )
         XCTAssertEqual(
-            try LoopbackIngestionEndpoint(origin: "http://[::1]:3001")
+            try CoreIngestionEndpoint(origin: "http://[::1]:3001")
                 .ingestionURL.absoluteString,
             "http://[::1]:3001/v1/apple-source-snapshots"
         )
         XCTAssertNoThrow(
-            try LoopbackIngestionEndpoint(origin: "http://127.42.0.9:3001")
+            try CoreIngestionEndpoint(origin: "http://127.42.0.9:3001")
         )
 
+        let privateOrigin = "https://synthetic-device.synthetic-tailnet.ts.net"
+        let privateEndpoint = try CoreIngestionEndpoint(origin: privateOrigin)
+        XCTAssertEqual(privateEndpoint.origin.absoluteString, privateOrigin)
+        XCTAssertEqual(
+            privateEndpoint.ingestionURL.absoluteString,
+            "\(privateOrigin)/v1/apple-source-snapshots"
+        )
+        XCTAssertEqual(
+            privateEndpoint.statusURL.absoluteString,
+            "\(privateOrigin)/v1/apple-bridge-status"
+        )
+        XCTAssertEqual(
+            try CoreIngestionEndpoint(
+                origin: "https://SYNTHETIC-DEVICE.SYNTHETIC-TAILNET.TS.NET:443/"
+            ).origin.absoluteString,
+            privateOrigin
+        )
+    }
+
+    func testCoreOriginPolicyRejectsEveryOtherDestinationShape() {
         for rejected in [
             "http://localhost:3001",
             "https://127.0.0.1:3001",
@@ -80,8 +100,30 @@ final class HTTPAndCredentialTests: XCTestCase {
             "http://127.0.0.1:3001?token=synthetic",
             "http://127.0.0.1:3001/other",
             "http://127.0.0.1",
+            "http://synthetic-device.synthetic-tailnet.ts.net",
+            "https://localhost",
+            "https://192.168.1.20",
+            "https://100.64.0.2",
+            "https://example.com",
+            "https://synthetic-device.synthetic-tailnet.ts.net:8443",
+            "https://user@synthetic-device.synthetic-tailnet.ts.net",
+            "https://user:password@synthetic-device.synthetic-tailnet.ts.net",
+            "https://synthetic-device.synthetic-tailnet.ts.net?token=synthetic",
+            "https://synthetic-device.synthetic-tailnet.ts.net#fragment",
+            "https://synthetic-device.synthetic-tailnet.ts.net/preconfigured",
+            "https://synthetic-device.synthetic-tailnet.ts.net.",
+            "https://synthetic-device..ts.net",
+            "https://-synthetic.ts.net",
+            "https://synthetic-.ts.net",
+            "https://synthetic_name.ts.net",
+            "https://xn--synthetic.ts.net",
+            "https://ts.net",
+            "https://synthetic.ts.net.example.com",
+            "https://synthetic.tѕ.net",
+            " https://synthetic-device.synthetic-tailnet.ts.net",
+            "https://synthetic-device.synthetic-tailnet.ts.net\n",
         ] {
-            XCTAssertThrowsError(try LoopbackIngestionEndpoint(origin: rejected))
+            XCTAssertThrowsError(try CoreIngestionEndpoint(origin: rejected))
         }
     }
 
@@ -99,7 +141,7 @@ final class HTTPAndCredentialTests: XCTestCase {
 
         let result = try await client.deliver(
             envelopeData: body,
-            endpoint: try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+            endpoint: try CoreIngestionEndpoint(origin: "http://127.0.0.1:3001")
         )
 
         XCTAssertEqual(result.kind, .applied)
@@ -149,7 +191,7 @@ final class HTTPAndCredentialTests: XCTestCase {
 
         let result = try await client.deliverStatus(
             envelopeData: body,
-            endpoint: try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+            endpoint: try CoreIngestionEndpoint(origin: "http://127.0.0.1:3001")
         )
 
         XCTAssertEqual(result.kind, .applied)
@@ -162,11 +204,12 @@ final class HTTPAndCredentialTests: XCTestCase {
 
     func testStatusClientRejectsMalformedMismatchedAndUnexpectedResponses() async throws {
         let body = try statusEnvelopeData()
-        let endpoint = try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+        let endpoint = try CoreIngestionEndpoint(origin: "http://127.0.0.1:3001")
         let cases: [(Int, Data)] = [
             (200, Data("not-json".utf8)),
             (200, Data(#"{"kind":"applied","statusRevision":2}"#.utf8)),
             (201, Data(#"{"kind":"applied","statusRevision":1}"#.utf8)),
+            (302, Data(#"{"kind":"applied","statusRevision":1}"#.utf8)),
             (200, Data(#"{"kind":"applied","statusRevision":1,"extra":true}"#.utf8)),
         ]
 
@@ -190,12 +233,18 @@ final class HTTPAndCredentialTests: XCTestCase {
     func testStrictResponseParsingRejectsMalformedNonJSONAndUnexpectedStatus() async throws {
         let body = try envelopeData()
         let credentials = MemoryCredentialStore(token: syntheticToken)
-        let endpoint = try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+        let endpoint = try CoreIngestionEndpoint(origin: "http://127.0.0.1:3001")
         let cases: [(Int, Data)] = [
             (200, Data("not-json".utf8)),
             (200, Data(#"{"kind":"applied","sourceRevision":1}"#.utf8)),
             (
                 201,
+                Data(
+                    #"{"entityType":"reminder","kind":"applied","sourceRevision":1}"#.utf8
+                )
+            ),
+            (
+                302,
                 Data(
                     #"{"entityType":"reminder","kind":"applied","sourceRevision":1}"#.utf8
                 )
@@ -242,7 +291,7 @@ final class HTTPAndCredentialTests: XCTestCase {
         do {
             _ = try await client.deliver(
                 envelopeData: envelopeData(),
-                endpoint: try LoopbackIngestionEndpoint(origin: "http://127.0.0.1:3001")
+                endpoint: try CoreIngestionEndpoint(origin: "http://127.0.0.1:3001")
             )
             XCTFail("Expected uncertain transport failure")
         } catch let error as BridgeDeliveryError {
