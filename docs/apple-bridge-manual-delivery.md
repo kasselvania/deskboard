@@ -279,7 +279,7 @@ Per-source operational rows use masked entity ordinals rather than source identi
 
 Run this only on the owner's Mac. Do not capture or publish the source-selection UI, pending state, mirror rows, token, or source values.
 
-1. Run `security find-identity -v -p codesigning` privately. Continue only when an Apple Development identity is available through Xcode. Do not create signing credentials automatically. If none exists, complete automated corrections and stop with that human prerequisite.
+1. Inspect `security find-identity -p codesigning` privately and discover the local Xcode team without printing either value. The actual Apple-Development-signed Release build below is the signing source of truth: a `-v` summary that reports zero valid identities does not by itself block the attempt. If the build fails, diagnose its exact Xcode/codesign error rather than returning the identity summary. Do not create signing credentials automatically or invent another signing posture.
 2. Inspect the previous Bridge only for content-free pending and status counts. If its state or Keychain item is unavailable to the signed product, stop for owner awareness before the intentional new-identity reset described above.
 3. Supply the local team only in the shell environment and build a Release product with Apple Development signing, automatic provisioning, the committed entitlements, and Hardened Runtime. Never commit or publish the team or signer.
 4. Quit every running Bridge copy. Copy the exact signed product with `ditto` to `~/Applications/DeskboardAppleBridge.app`. Launch no DerivedData copy concurrently.
@@ -295,6 +295,25 @@ Run this only on the owner's Mac. Do not capture or publish the source-selection
 If a correctly Apple-Development-signed installed product still completes a request as `noSystemDecision`, stop without opening a PR. Retain only content-free before/result/after diagnostics, collect local TCC/EventKit material only as needed for Feedback Assistant, file Apple feedback, and report only its number and the normalized result. Do not disable SIP, edit the TCC database, insert grants, broaden entitlements, or reset unrelated applications or services.
 
 No manual-proof record belongs in Git unless it is fully content-free.
+
+## Content-free local acceptance record
+
+The owner-Mac acceptance run on 2026-08-24 completed against the installed second Release product. This record deliberately omits signer, team, certificate, designated-requirement text, source values, identifiers, temporal payloads, token material, pending bytes, and database rows.
+
+- Identity category: one Xcode Personal Team Apple Development identity was available. The first real Release build with automatic signing and provisioning updates succeeded; no certificate-chain repair or custom trust action was needed.
+- Installed product: strict signature valid; Apple Development authority present; expected bundle identifier present; stable non-ad-hoc designated requirement present; Hardened Runtime present.
+- Entitlements: App Sandbox `true`; outgoing network client `true`; Calendar/EventKit `true`; incoming network absent; arbitrary file access absent.
+- Calendar permission: before `notDetermined`; system prompt appeared; returned grant Boolean `true`; normalized result `granted`; after `granted`. The Reminders state was unchanged by this request.
+- Reminders permission: before `notDetermined`; system prompt appeared; returned grant Boolean `true`; normalized result `granted`; after `granted`. The Calendar state was unchanged by this request.
+- Same-identity rebuild: designated requirement stable `yes`; Calendar decision persisted `yes`; Reminders decision persisted `yes`; rebuild-only prompt `no`.
+- Signer transition: the signed product loaded the existing sandbox state and Keychain credential through their production boundaries. No state reset, Bridge-ID change, credential migration, or revision restart was required.
+- Signed delivery: two Calendar scopes and two non-truncated Reminder scopes were accepted into the isolated mirror, containing 18 and 61 records respectively. A fifth selected Reminder scope remained honestly `blockedTruncated` with its revision-1 pending envelope preserved.
+- Uncertain response: Core committed Calendar revision 4, its response was deliberately withheld, and the installed Bridge was terminated. Relaunch showed the exact persisted revision still pending. The next **Sync Now** returned `unchangedDuplicate` for revision 4, which proves the resent revision had the same accepted digest; the pending delivery then cleared.
+- Controlled source change: one synthetic owner-controlled Calendar change was made through Calendar, not through the Bridge. Both selected Calendar scopes and both usable Reminder scopes then returned `applied` at revision 5.
+- Permission isolation: Calendar was changed to `denied` while Reminders remained `granted`. Calendar scopes reported `permissionUnavailable`; both usable Reminder scopes returned `applied` at revision 6; the truncated Reminder stayed blocked and pending.
+- Validation: Node 24.19.0 passed lint, typecheck, 73 unit/integration tests, all production builds, and five browser tests with one intentional skip. The production Bridge passed 30 tests. The accepted Phase 2A probe passed 35 tests. Both signed Release builds and the final installed-product verification passed.
+
+Phase 3B remains a review implementation until its draft pull request is reviewed and merged. This local acceptance record does not activate Phase 3C.
 
 ## Content-free troubleshooting
 
@@ -357,7 +376,7 @@ xcodebuild \
 
 The three trailing settings are the explicit no-identity override for automated structural tests. They are not manual TCC evidence.
 
-Before the manual proof, verify an Apple Development identity privately, provide its team without committing it, and build a signed product:
+Before the manual proof, inspect the Apple Development identity privately, provide its team without committing it, and attempt the signed product. Treat this `xcodebuild` result, not the standalone identity-validity count, as the diagnostic boundary:
 
 ```bash
 security find-identity -v -p codesigning
