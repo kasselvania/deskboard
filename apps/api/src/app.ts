@@ -10,6 +10,10 @@ import {
   materializeDefaultBoard,
   type FixtureClock,
 } from "./materialize-default-board";
+import {
+  registerAppleSourceIngestion,
+  type AppleSourceIngestionRegistrationOptions,
+} from "./apple-source-ingestion/index.js";
 
 const defaultFixtureUrl = new URL(
   "../../../fixtures/board/default.json",
@@ -19,6 +23,7 @@ const defaultFixtureUrl = new URL(
 export type BoardLoader = () => Promise<unknown>;
 
 export interface BuildAppOptions {
+  appleSourceIngestion?: AppleSourceIngestionRegistrationOptions;
   clock?: FixtureClock;
   loadBoard?: BoardLoader;
   logger?: boolean;
@@ -75,6 +80,10 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
       });
     }
   });
+
+  if (options.appleSourceIngestion) {
+    registerAppleSourceIngestion(app, options.appleSourceIngestion);
+  }
 
   return app;
 }

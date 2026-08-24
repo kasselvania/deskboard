@@ -12,9 +12,10 @@ Before changing code or configuration, read:
 6. `docs/apple-eventkit-discovery.md`
 7. `docs/apple-source-contract-v1.md`
 8. `docs/apple-source-mirror.md`
-9. `CONTRIBUTING.md`
-10. `SECURITY.md`
-11. the active GitHub issue and its review context
+9. `docs/apple-bridge-manual-delivery.md` when present on the active Phase 3B branch
+10. `CONTRIBUTING.md`
+11. `SECURITY.md`
+12. the active GitHub issue and its review context
 
 If a task conflicts with those documents, pause and explain the conflict instead of silently expanding or redesigning the project.
 
@@ -35,6 +36,8 @@ Phase 2B — Apple Source Contract and Reconciliation Semantics — is accepted 
 Phase 3A — Atomic Core Apple Source Mirror — is accepted and merged in PR #14. Its SQLite migrations, revision/digest behavior, exact scope replacement, truncation rules, and transaction semantics are accepted infrastructure.
 
 The current implementation target is **Phase 3B — Authenticated Manual Bridge Delivery** from issue #15.
+
+The feature branch contains the dedicated production Bridge, authenticated Core ingestion boundary, crash-safe pending-delivery state, and synthetic proof suite documented in `docs/apple-bridge-manual-delivery.md`. These are Phase 3B review artifacts, not an accepted basis for Phase 3C. Phase 3B remains active until review and merge.
 
 The question for Phase 3B is:
 
@@ -60,6 +63,7 @@ The exact native directory is an implementation choice. Do not convert the Phase
 
 - create one sandboxed, hardened macOS Bridge target with outgoing network access and EventKit/Calendar entitlement;
 - retain separate intentional Calendar and Reminders permissions and source selections;
+- expose content-free before/result/after permission-request outcomes and distinguish system errors from completed requests with no decision;
 - convert selected EventKit records directly into the accepted v1 fields;
 - create one strict operational envelope containing `sourceRevision` and one v1 snapshot;
 - add one authenticated Core ingestion route that applies through the accepted Phase 3A mirror;
@@ -196,6 +200,10 @@ The production Bridge target must prove:
 - token access through a Keychain-backed credential boundary;
 - synthetic tests use in-memory credential and state fakes.
 
+Manual TCC acceptance additionally requires an Apple Development-signed Release product installed and launched only from `~/Applications/DeskboardAppleBridge.app`. Do not commit a development team, signer, certificate, provisioning profile, or Team ID. Do not create a self-signed certificate, local certificate authority, custom signing workflow, Developer ID distribution, or notarization path. The production application target must not force ad hoc signing. An explicit command-line ad hoc override remains acceptable only for automated structural builds and synthetic tests, never as permission or designated-requirement evidence.
+
+Changing signer identity may make prior sandbox or Keychain state unavailable. Inspect only content-free pending/status counts before any reset. Never silently copy or reinterpret old state. An intentional reset requires owner awareness, a new opaque Bridge ID, Core reconfiguration, and a fresh revision sequence under the new identity.
+
 The local UI may show source titles on the owner’s Mac. Automated logs, screenshots, PRs, and reports must use masked labels, counts, and result kinds only.
 
 ## Engineering Guardrails
@@ -239,6 +247,8 @@ Phase 3B is not complete without all proofs in issue #15, including:
 - loopback URL enforcement and strict response parsing;
 - built entitlement inspection and absence of EventKit writes;
 - complete existing Node and native gates;
+- explicit permission-result and Calendar/Reminders independence tests;
+- stable Apple Development signature, installed-path permission decisions, and designated-requirement persistence across two builds;
 - content-free manual local Calendar and Reminder proof.
 
 Tests must not require the user’s real EventKit store unless explicitly marked as a private manual acceptance step. No private values may enter test output or Git.

@@ -50,6 +50,26 @@ The planned architecture follows these boundaries:
 
 Any change to these boundaries requires an explicit architecture and privacy review.
 
+## Phase 3B manual-delivery controls
+
+The active Phase 3B implementation is same-Mac and manual only:
+
+- Core remains bound to loopback and exposes exactly one optional ingestion route.
+- The route is absent without complete configuration and authenticates one fixed-format bearer token before parsing a body.
+- One configured opaque Bridge identity must match the identity inside every accepted snapshot.
+- The production Bridge accepts only numeric loopback HTTP origins and has no incoming-network entitlement.
+- The Bridge is sandboxed, uses Hardened Runtime, reads only explicitly selected EventKit sources, and contains no EventKit write call.
+- Calendar and Reminders requests expose only normalized before/after authorization categories, the returned grant Boolean when present, and fixed content-free outcomes; arbitrary system error descriptions are not published.
+- Manual TCC acceptance uses an Apple Development-signed Release product from `~/Applications/DeskboardAppleBridge.app` and proves a stable designated requirement across a same-identity rebuild.
+- The repository commits no development team, signer, Team ID, certificate, or provisioning profile. Ad hoc signing is only an explicit automated-test override; custom certificate authorities and signing workflows are unsupported.
+- The bearer token is stored in macOS Keychain and appears only in the Authorization header.
+- Bridge identity, source selections, revisions, and exact pending envelopes live only in the private sandbox container.
+- Pending envelopes are treated as private source data and are never logged, exported, attached, or committed.
+- Core and Bridge responses and status use content-free result kinds rather than source values.
+- A signer transition never silently reuses inaccessible private state. Any intentional state reset requires owner awareness, a new opaque Bridge ID, and Core reconfiguration before revision 1 begins under the new identity.
+
+Remote transport security, Tailscale, TLS termination, deployment, background delivery, Board composition, and Apple writes remain absent until later reviewed slices.
+
 ## Dependency and implementation hygiene
 
 - Add dependencies only for current requirements.

@@ -4,7 +4,7 @@
 
 This document describes the intended architecture and the boundaries for the first several implementation slices. It is a working design, not a promise that every listed component will be built immediately.
 
-The current implementation phase is **authenticated manual read-only Bridge delivery**. The strict Apple source contract and atomic Core mirror are accepted. Phase 3B connects them manually over loopback on the same Mac; the Board remains fixture-backed, remote deployment is deferred, and Deskboard does not modify Calendar or Reminders.
+The current implementation phase is **authenticated manual read-only Bridge delivery**. The strict Apple source contract and atomic Core mirror are accepted. The active Phase 3B review implementation connects them manually over loopback on the same Mac and is documented in [`docs/apple-bridge-manual-delivery.md`](docs/apple-bridge-manual-delivery.md). Its production permission proof uses an Apple Development-signed product from one stable installed path; the source tree commits no development team or signer. The Board remains fixture-backed, remote deployment is deferred, and Deskboard does not modify Calendar or Reminders.
 
 ## Architectural Thesis
 
@@ -268,9 +268,11 @@ Invalid, truncated, stale, conflicting, or failed candidates do not change recor
 
 ### Phase 3B authenticated manual delivery
 
-Phase 3B adds exactly one loopback-only ingestion boundary and one dedicated production Bridge. Core authenticates a strict operational envelope before application, binds one configured bearer token to one opaque Bridge identity, and delegates all source replacement to the accepted Phase 3A mirror.
+The active Phase 3B implementation adds exactly one loopback-only ingestion boundary and one dedicated production Bridge, as specified in [`docs/apple-bridge-manual-delivery.md`](docs/apple-bridge-manual-delivery.md). Core authenticates a strict operational envelope before application, binds one configured bearer token to one opaque Bridge identity, and delegates all source replacement to the accepted Phase 3A mirror.
 
 The Bridge stores its token in macOS Keychain and its identity, selections, acknowledged revisions, pending envelopes, and content-free status in the sandbox container. It persists the exact pending envelope before sending. A timeout, crash, relaunch, malformed response, or otherwise uncertain outcome retries that byte-equivalent envelope at the same revision; the Bridge does not reread EventKit and reuse the revision for changed content.
+
+Calendar and Reminders permission requests return separate content-free results containing before/after authorization categories, the EventKit-returned Boolean when present, and a normalized outcome. A thrown system request and a completed request that remains `notDetermined` are distinct. Manual TCC acceptance requires a stable Apple Development designated requirement across two Release builds and one installed bundle path. Ad hoc signing remains only an explicit automated-test override; no custom signing authority is supported.
 
 Only `applied` and `unchangedDuplicate` acknowledge a revision and clear pending state. Truncated, invalid, stale, conflict, and transport-failed outcomes preserve pending state and fail closed. Remote topology, background scheduling, Board composition, and Apple writes remain absent.
 
@@ -442,7 +444,7 @@ GET /health
 GET /v1/board
 ```
 
-Phase 3B may add exactly one authenticated internal ingestion route, available only when explicitly configured and bound to loopback:
+Phase 3B adds exactly one authenticated internal ingestion route, available only when explicitly configured while the API remains bound to loopback:
 
 ```text
 POST /v1/apple-source-snapshots
@@ -482,7 +484,8 @@ deskboard/
 │   ├── eventkit/            Approved sanitized discovery evidence
 │   └── apple-source-contract/ Strict cross-language source fixtures
 │
-├── native/                  Production macOS Bridge when Phase 3B begins
+├── native/
+│   └── apple-bridge/        Dedicated production macOS Bridge and tests
 ├── tools/
 │   └── apple-eventkit-probe/ Contained discovery probe
 ├── .github/

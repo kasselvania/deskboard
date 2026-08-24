@@ -1,0 +1,432 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B40000000000000000000001 /* DeskboardAppleBridgeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000001 /* DeskboardAppleBridgeApp.swift */; };
+		B40000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000002 /* ContentView.swift */; };
+		B40000000000000000000003 /* BridgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000003 /* BridgeViewModel.swift */; };
+		B40000000000000000000004 /* ProductionLimits.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000004 /* ProductionLimits.swift */; };
+		B40000000000000000000005 /* BridgeWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000005 /* BridgeWire.swift */; };
+		B40000000000000000000006 /* AppleSourceConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000006 /* AppleSourceConverter.swift */; };
+		B40000000000000000000007 /* BridgeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000007 /* BridgeState.swift */; };
+		B40000000000000000000008 /* CredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000008 /* CredentialStore.swift */; };
+		B40000000000000000000009 /* LoopbackHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000009 /* LoopbackHTTPClient.swift */; };
+		B4000000000000000000000A /* EventKitBridgeReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000000A /* EventKitBridgeReader.swift */; };
+		B4000000000000000000000B /* ManualSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000000B /* ManualSyncCoordinator.swift */; };
+		B4000000000000000000000C /* AppleSourceContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000000C /* AppleSourceContract.swift */; };
+		B4000000000000000000000D /* AppleSourceConverterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000000D /* AppleSourceConverterTests.swift */; };
+		B4000000000000000000000E /* BridgeStateAndDeliveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000000E /* BridgeStateAndDeliveryTests.swift */; };
+		B4000000000000000000000F /* HTTPAndCredentialTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000000F /* HTTPAndCredentialTests.swift */; };
+		B40000000000000000000012 /* NativeSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000015 /* NativeSecurityTests.swift */; };
+		B40000000000000000000010 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A40000000000000000000012 /* EventKit.framework */; };
+		B40000000000000000000011 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A40000000000000000000013 /* Security.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D40000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A40000000000000000000020 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A40000000000000000000025;
+			remoteInfo = DeskboardAppleBridge;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A40000000000000000000001 /* DeskboardAppleBridgeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeskboardAppleBridgeApp.swift; sourceTree = "<group>"; };
+		A40000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A40000000000000000000003 /* BridgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeViewModel.swift; sourceTree = "<group>"; };
+		A40000000000000000000004 /* ProductionLimits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionLimits.swift; sourceTree = "<group>"; };
+		A40000000000000000000005 /* BridgeWire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeWire.swift; sourceTree = "<group>"; };
+		A40000000000000000000006 /* AppleSourceConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSourceConverter.swift; sourceTree = "<group>"; };
+		A40000000000000000000007 /* BridgeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeState.swift; sourceTree = "<group>"; };
+		A40000000000000000000008 /* CredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
+		A40000000000000000000009 /* LoopbackHTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopbackHTTPClient.swift; sourceTree = "<group>"; };
+		A4000000000000000000000A /* EventKitBridgeReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitBridgeReader.swift; sourceTree = "<group>"; };
+		A4000000000000000000000B /* ManualSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualSyncCoordinator.swift; sourceTree = "<group>"; };
+		A4000000000000000000000C /* AppleSourceContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppleSourceContract.swift; path = ../../tools/apple-eventkit-probe/AppleEventKitProbe/AppleSourceContract.swift; sourceTree = "<group>"; };
+		A4000000000000000000000D /* AppleSourceConverterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSourceConverterTests.swift; sourceTree = "<group>"; };
+		A4000000000000000000000E /* BridgeStateAndDeliveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeStateAndDeliveryTests.swift; sourceTree = "<group>"; };
+		A4000000000000000000000F /* HTTPAndCredentialTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPAndCredentialTests.swift; sourceTree = "<group>"; };
+		A40000000000000000000015 /* NativeSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSecurityTests.swift; sourceTree = "<group>"; };
+		A40000000000000000000010 /* DeskboardAppleBridge.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DeskboardAppleBridge.entitlements; sourceTree = "<group>"; };
+		A40000000000000000000011 /* DeskboardAppleBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeskboardAppleBridge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A40000000000000000000014 /* DeskboardAppleBridgeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DeskboardAppleBridgeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A40000000000000000000012 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
+		A40000000000000000000013 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C40000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B40000000000000000000010 /* EventKit.framework in Frameworks */,
+				B40000000000000000000011 /* Security.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C40000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A40000000000000000000021 = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000022 /* DeskboardAppleBridge */,
+				A40000000000000000000023 /* DeskboardAppleBridgeTests */,
+				A4000000000000000000000C /* AppleSourceContract.swift */,
+				A40000000000000000000027 /* Frameworks */,
+				A40000000000000000000024 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A40000000000000000000022 /* DeskboardAppleBridge */ = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000001 /* DeskboardAppleBridgeApp.swift */,
+				A40000000000000000000002 /* ContentView.swift */,
+				A40000000000000000000003 /* BridgeViewModel.swift */,
+				A40000000000000000000004 /* ProductionLimits.swift */,
+				A40000000000000000000005 /* BridgeWire.swift */,
+				A40000000000000000000006 /* AppleSourceConverter.swift */,
+				A40000000000000000000007 /* BridgeState.swift */,
+				A40000000000000000000008 /* CredentialStore.swift */,
+				A40000000000000000000009 /* LoopbackHTTPClient.swift */,
+				A4000000000000000000000A /* EventKitBridgeReader.swift */,
+				A4000000000000000000000B /* ManualSyncCoordinator.swift */,
+				A40000000000000000000010 /* DeskboardAppleBridge.entitlements */,
+			);
+			path = DeskboardAppleBridge;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000023 /* DeskboardAppleBridgeTests */ = {
+			isa = PBXGroup;
+			children = (
+				A4000000000000000000000D /* AppleSourceConverterTests.swift */,
+				A4000000000000000000000E /* BridgeStateAndDeliveryTests.swift */,
+				A4000000000000000000000F /* HTTPAndCredentialTests.swift */,
+				A40000000000000000000015 /* NativeSecurityTests.swift */,
+			);
+			path = DeskboardAppleBridgeTests;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000024 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000011 /* DeskboardAppleBridge.app */,
+				A40000000000000000000014 /* DeskboardAppleBridgeTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000027 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000012 /* EventKit.framework */,
+				A40000000000000000000013 /* Security.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A40000000000000000000025 /* DeskboardAppleBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F40000000000000000000002 /* Build configuration list for PBXNativeTarget "DeskboardAppleBridge" */;
+			buildPhases = (
+				C40000000000000000000001 /* Sources */,
+				C40000000000000000000002 /* Frameworks */,
+				C40000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DeskboardAppleBridge;
+			productName = DeskboardAppleBridge;
+			productReference = A40000000000000000000011 /* DeskboardAppleBridge.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A40000000000000000000026 /* DeskboardAppleBridgeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F40000000000000000000003 /* Build configuration list for PBXNativeTarget "DeskboardAppleBridgeTests" */;
+			buildPhases = (
+				C40000000000000000000004 /* Sources */,
+				C40000000000000000000005 /* Frameworks */,
+				C40000000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D40000000000000000000002 /* PBXTargetDependency */,
+			);
+			name = DeskboardAppleBridgeTests;
+			productName = DeskboardAppleBridgeTests;
+			productReference = A40000000000000000000014 /* DeskboardAppleBridgeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A40000000000000000000020 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2640;
+				LastUpgradeCheck = 2640;
+				TargetAttributes = {
+					A40000000000000000000025 = {
+						CreatedOnToolsVersion = 26.4;
+					};
+					A40000000000000000000026 = {
+						CreatedOnToolsVersion = 26.4;
+						TestTargetID = A40000000000000000000025;
+					};
+				};
+			};
+			buildConfigurationList = F40000000000000000000001 /* Build configuration list for PBXProject "DeskboardAppleBridge" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A40000000000000000000021;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A40000000000000000000024 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A40000000000000000000025 /* DeskboardAppleBridge */,
+				A40000000000000000000026 /* DeskboardAppleBridgeTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C40000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C40000000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C40000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B40000000000000000000001 /* DeskboardAppleBridgeApp.swift in Sources */,
+				B40000000000000000000002 /* ContentView.swift in Sources */,
+				B40000000000000000000003 /* BridgeViewModel.swift in Sources */,
+				B40000000000000000000004 /* ProductionLimits.swift in Sources */,
+				B40000000000000000000005 /* BridgeWire.swift in Sources */,
+				B40000000000000000000006 /* AppleSourceConverter.swift in Sources */,
+				B40000000000000000000007 /* BridgeState.swift in Sources */,
+				B40000000000000000000008 /* CredentialStore.swift in Sources */,
+				B40000000000000000000009 /* LoopbackHTTPClient.swift in Sources */,
+				B4000000000000000000000A /* EventKitBridgeReader.swift in Sources */,
+				B4000000000000000000000B /* ManualSyncCoordinator.swift in Sources */,
+				B4000000000000000000000C /* AppleSourceContract.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C40000000000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B4000000000000000000000D /* AppleSourceConverterTests.swift in Sources */,
+				B4000000000000000000000E /* BridgeStateAndDeliveryTests.swift in Sources */,
+				B4000000000000000000000F /* HTTPAndCredentialTests.swift in Sources */,
+				B40000000000000000000012 /* NativeSecurityTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D40000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A40000000000000000000025 /* DeskboardAppleBridge */;
+			targetProxy = D40000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		E40000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E40000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E40000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = DeskboardAppleBridge/DeskboardAppleBridge.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Deskboard Apple Bridge";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Deskboard reads only the Calendar sources you explicitly select for manual local delivery.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Deskboard reads only the Reminder lists you explicitly select for manual local delivery.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kasselvania.deskboard.AppleBridge;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E40000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = DeskboardAppleBridge/DeskboardAppleBridge.entitlements;
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Deskboard Apple Bridge";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Deskboard reads only the Calendar sources you explicitly select for manual local delivery.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Deskboard reads only the Reminder lists you explicitly select for manual local delivery.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				OTHER_CODE_SIGN_FLAGS = "$(inherited) --options runtime";
+				PRODUCT_BUNDLE_IDENTIFIER = com.kasselvania.deskboard.AppleBridge;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E40000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kasselvania.deskboard.AppleBridgeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DeskboardAppleBridge.app/Contents/MacOS/DeskboardAppleBridge";
+			};
+			name = Debug;
+		};
+		E40000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kasselvania.deskboard.AppleBridgeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DeskboardAppleBridge.app/Contents/MacOS/DeskboardAppleBridge";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F40000000000000000000001 /* Build configuration list for PBXProject "DeskboardAppleBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E40000000000000000000001 /* Debug */,
+				E40000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F40000000000000000000002 /* Build configuration list for PBXNativeTarget "DeskboardAppleBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E40000000000000000000003 /* Debug */,
+				E40000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F40000000000000000000003 /* Build configuration list for PBXNativeTarget "DeskboardAppleBridgeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E40000000000000000000005 /* Debug */,
+				E40000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A40000000000000000000020 /* Project object */;
+}
