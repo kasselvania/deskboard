@@ -14,7 +14,7 @@ Deskboard is built around a few durable ideas:
 - **Existing tools keep ownership.** Calendar events remain Calendar events; ordinary tasks remain Reminders.
 - **The Board is not a backlog.** It is a curated field of attention.
 - **Freshness must be honest.** Missing, truncated, stale, or unavailable sources must never be silently presented as complete.
-- **Privacy is architectural.** Real source data, credentials, databases, screenshots, accessibility trees, and diagnostic payloads do not enter Git or agent-visible evidence.
+- **Privacy is architectural.** Real source data, credentials, databases, screenshots, accessibility trees, DOM dumps, and payloads do not enter Git or agent-visible evidence.
 - **Complexity must be earned.** Every phase proves one bounded assumption and stops.
 
 Read the full philosophy in [MANIFESTO.md](MANIFESTO.md).
@@ -109,7 +109,7 @@ fixtures/eventkit/                Approved sanitized discovery evidence
 fixtures/apple-source-contract/   Strict cross-language source fixtures
 fixtures/apple-bridge-status/     Strict cross-language operational fixtures
 native/apple-bridge/              Signed sandboxed production Bridge
-	tools/apple-eventkit-probe/       Contained EventKit discovery probe
+tools/apple-eventkit-probe/       Contained EventKit discovery probe
 tests/browser/                    iPad, Steam Deck, and portrait proofs
 .github/workflows/                Complete quality gate
 ```
