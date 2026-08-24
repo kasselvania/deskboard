@@ -82,11 +82,11 @@ Phase 3A provides the isolated SQLite-backed Core mirror, ordered strict migrati
 
 **Phase 3B — Authenticated Manual Bridge Delivery: active under issue [#15](https://github.com/kasselvania/deskboard/issues/15).**
 
-Phase 3B is intentionally limited to one sandboxed read-only macOS Bridge, production EventKit-to-v1 conversion, crash-safe per-source revision and pending-envelope state, and one authenticated loopback-only Core ingestion route invoked by an explicit `Sync Now` action. The real manual proof runs Bridge and Core on the same Mac. LAN listening, Tailscale, homelab deployment, background scheduling, Board composition, and every Apple write path remain blocked.
+The active review implementation contains one sandboxed read-only macOS Bridge, production EventKit-to-v1 conversion, crash-safe per-source revision and pending-envelope state, and one authenticated loopback-only Core ingestion route invoked by an explicit `Sync Now` action. Its topology, setup, limits, result mapping, retry invariant, and proof commands are documented in [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md). Phase 3B is not accepted until review and merge. LAN listening, Tailscale, homelab deployment, background scheduling, Board composition, and every Apple write path remain blocked.
 
 **Phase 3C and later connected work: not begun.** No private remote topology, real-data Board composition, background Bridge schedule, deployment, or Apple write action exists.
 
-The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md), and the accepted Core mirror is documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md).
+The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md), the accepted Core mirror is documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md), and the active manual-delivery implementation is documented in [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md).
 
 ## Phase 1 development
 
@@ -139,12 +139,13 @@ npm run check
 ### Repository structure
 
 ```text
-apps/api/                         Fastify API, fixture Board, and Core mirror tests
+apps/api/                         Fastify API, fixture Board, mirror, and optional ingestion route
 apps/web/                         React/Vite Board and component tests
 packages/contracts/               Board and Apple source runtime contracts
 fixtures/board/                   Publish-safe Board fixtures
 fixtures/eventkit/                Owner-approved sanitized discovery evidence
 fixtures/apple-source-contract/   Strict cross-language source-contract fixtures
+native/apple-bridge/              Dedicated sandboxed production Bridge and synthetic tests
 tools/apple-eventkit-probe/       Contained native EventKit discovery probe
 tests/browser/                    Playwright viewport proofs
 .github/workflows/                The complete CI quality gate
@@ -161,6 +162,7 @@ Deskboard should earn complexity through use. Before contributing or directing a
 - [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md)
 - [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md)
 - [docs/apple-source-mirror.md](docs/apple-source-mirror.md)
+- [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md)
 - [AGENTS.md](AGENTS.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)

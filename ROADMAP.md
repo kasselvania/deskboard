@@ -210,7 +210,7 @@ The accepted implementation is documented in [`docs/apple-source-mirror.md`](doc
 
 **Status:** active under issue #15.
 
-The real Phase 3B proof runs a dedicated sandboxed Bridge and Core on the same Mac over loopback. It deliberately settles production conversion, authentication, persistent Bridge identity, source-scoped revisions, and crash-safe retry before remote topology, deployment, background operation, or Board composition begins.
+The review implementation is documented in [`docs/apple-bridge-manual-delivery.md`](docs/apple-bridge-manual-delivery.md). The real Phase 3B proof runs a dedicated sandboxed Bridge and Core on the same Mac over loopback. It deliberately settles production conversion, authentication, persistent Bridge identity, source-scoped revisions, and crash-safe retry before remote topology, deployment, background operation, or Board composition begins. Phase 3B remains active until review and merge.
 
 ### Scope
 

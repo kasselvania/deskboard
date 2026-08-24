@@ -1,4 +1,5 @@
 import { buildApp } from "./app.js";
+import { readAppleSourceIngestionConfiguration } from "./apple-source-ingestion/index.js";
 
 const DEFAULT_PORT = 3001;
 
@@ -15,7 +16,11 @@ function readPort(value: string | undefined): number {
   return port;
 }
 
-const app = buildApp({ logger: true });
+const appleSourceIngestion = readAppleSourceIngestionConfiguration(process.env);
+const app = buildApp({
+  logger: true,
+  ...(appleSourceIngestion ? { appleSourceIngestion } : {}),
+});
 
 try {
   await app.listen({

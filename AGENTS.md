@@ -12,9 +12,10 @@ Before changing code or configuration, read:
 6. `docs/apple-eventkit-discovery.md`
 7. `docs/apple-source-contract-v1.md`
 8. `docs/apple-source-mirror.md`
-9. `CONTRIBUTING.md`
-10. `SECURITY.md`
-11. the active GitHub issue and its review context
+9. `docs/apple-bridge-manual-delivery.md` when present on the active Phase 3B branch
+10. `CONTRIBUTING.md`
+11. `SECURITY.md`
+12. the active GitHub issue and its review context
 
 If a task conflicts with those documents, pause and explain the conflict instead of silently expanding or redesigning the project.
 
@@ -35,6 +36,8 @@ Phase 2B — Apple Source Contract and Reconciliation Semantics — is accepted 
 Phase 3A — Atomic Core Apple Source Mirror — is accepted and merged in PR #14. Its SQLite migrations, revision/digest behavior, exact scope replacement, truncation rules, and transaction semantics are accepted infrastructure.
 
 The current implementation target is **Phase 3B — Authenticated Manual Bridge Delivery** from issue #15.
+
+The feature branch contains the dedicated production Bridge, authenticated Core ingestion boundary, crash-safe pending-delivery state, and synthetic proof suite documented in `docs/apple-bridge-manual-delivery.md`. These are Phase 3B review artifacts, not an accepted basis for Phase 3C. Phase 3B remains active until review and merge.
 
 The question for Phase 3B is:
 
