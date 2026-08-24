@@ -42,6 +42,7 @@ playwright-report/
 test-results/
 blob-report/
 .nyc_output/
+.phase3d-proof.*
 
 # Logs
 *.log
@@ -91,6 +92,7 @@ xcuserdata/
 
 # Local deployment and credentials
 secrets/
+deploy/.private-origin
 *.local.yml
 *.local.yaml
 compose.override.yml
