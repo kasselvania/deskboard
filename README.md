@@ -21,7 +21,7 @@ The initial board emphasizes:
 - an optional daily sideways prompt, inspired by Oblique Strategies;
 - a display that feels like an appliance rather than a general-purpose website.
 
-The first connected release will be strictly one-way:
+The first connected release is strictly one-way:
 
 ```text
 Apple Calendar + Apple Reminders
@@ -54,9 +54,9 @@ The current intended architecture is intentionally modest:
 
 - **React + TypeScript + Vite** for the responsive PWA;
 - **Fastify + TypeScript** for the Deskboard Core API;
-- **SQLite** when persistent Deskboard-owned state is introduced;
+- **SQLite** for the accepted Apple source mirror and later Deskboard-owned state;
 - a small **Swift/SwiftUI macOS bridge using EventKit** for Apple Calendar and Reminders;
-- **Tailscale** for private access to the Ubuntu homelab without a public cloud dependency.
+- **Tailscale** later, for private access to the Ubuntu homelab without a public cloud dependency.
 
 The repository is developed in bounded vertical slices. The sequence and exit criteria are documented in [ROADMAP.md](ROADMAP.md), while ownership and synchronization boundaries are documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -66,7 +66,7 @@ The repository is developed in bounded vertical slices. The sequence and exit cr
 
 The repository contains the complete synthetic presentation spine: runtime-validated fixtures, a two-route Fastify API, a single-route React Board, validated display caching, responsive iPad and Steam Deck layouts, and automated contract, API, component, accessibility, and browser proof tests.
 
-The Board has also been reached from the physical iPad over the local network. Phase 1 was accepted from the complete local Node 24 quality gate and device proof. The hosted GitHub Actions job did not execute repository steps because of the account billing/spending restriction; the workflow itself remains unchanged and should be rerun after that administrative issue is resolved.
+The Board has also been reached from the physical iPad over the local network. Phase 1 was accepted from the complete local Node 24 quality gate and device proof. The hosted GitHub Actions job does not currently execute repository steps because of the account billing/spending restriction; the workflow remains unchanged and should be rerun after that administrative issue is resolved.
 
 **Phase 2A — EventKit Discovery Evidence: accepted and merged in PR [#7](https://github.com/kasselvania/deskboard/pull/7).**
 
@@ -80,13 +80,17 @@ Phase 2B defines the strict versioned Reminder and Calendar source snapshots, cr
 
 Phase 3A provides the isolated SQLite-backed Core mirror, ordered strict migrations, validation-before-mutation, source-scoped revisions and normalized digests, transactional Reminder and Calendar replacement, out-of-window Calendar retention, idempotency, rollback proof, and close/reopen persistence. Its accepted behavior is documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md).
 
-**Phase 3B — Authenticated Manual Bridge Delivery: active under issue [#15](https://github.com/kasselvania/deskboard/issues/15).**
+**Phase 3B — Authenticated Manual Bridge Delivery: accepted and merged in PR [#18](https://github.com/kasselvania/deskboard/pull/18).**
 
-The active review implementation contains one sandboxed read-only macOS Bridge, production EventKit-to-v1 conversion, explicit content-free permission-request outcomes, crash-safe per-source revision and pending-envelope state, and one authenticated loopback-only Core ingestion route invoked by an explicit `Sync Now` action. Manual TCC acceptance requires an Apple Development-signed Release product launched from the stable per-user Applications path; no development team or signer is committed, and ad hoc signing is only an automated structural-test override. The topology, setup, limits, result mapping, retry invariant, signing procedure, and proof commands are documented in [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md). Phase 3B is not accepted until review and merge. LAN listening, Tailscale, homelab deployment, background scheduling, Board composition, and every Apple write path remain blocked.
+Phase 3B provides one signed, sandboxed, read-only macOS Bridge; strict EventKit-to-v1 conversion; independent Calendar and Reminders permissions; crash-safe source-scoped revisions and exact pending-envelope retries; Keychain credentials; numeric-loopback-only delivery; and one authenticated Core ingestion route. The installed Apple Development-signed product proved stable permissions across rebuilds and manual loopback delivery without adding a background process, remote topology, Board integration, or Apple writes. Its accepted setup and reliability boundary are documented in [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md).
 
-**Phase 3C and later connected work: not begun.** No private remote topology, real-data Board composition, background Bridge schedule, deployment, or Apple write action exists.
+**Phase 3C — Truthful Local Mirror-Backed Board: active under issue [#19](https://github.com/kasselvania/deskboard/issues/19).**
 
-The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md), the accepted Core mirror is documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md), and the active manual-delivery implementation is documented in [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md).
+Phase 3C is intentionally limited to the same Mac and explicit manual synchronization. It adds a strict content-free Bridge status boundary so Core knows which sources are selected, blocked, retrying, missing, or unavailable; then it composes the unchanged Board contract from selected last-good mirror facts with honest freshness. Fixture mode remains the default. Homelab deployment, Tailscale, background scheduling, backup/restore, Board source management, and every Apple write path remain blocked.
+
+**Remote deployment and background operation: not begun.** No private remote topology, automatic Bridge schedule, production homelab deployment, or Apple write action exists.
+
+The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md), the accepted Core mirror is documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md), and the accepted manual-delivery path is documented in [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md).
 
 ## Phase 1 development
 
@@ -123,7 +127,7 @@ http://<development-machine-LAN-address>:5173/board
 
 This is a fixture-only development server. It is not configured or intended for public exposure.
 
-### Validate the slice
+### Validate the repository
 
 ```bash
 npm run lint
@@ -134,18 +138,20 @@ npm run build
 npm run check
 ```
 
-`npm run check` is the complete local and CI gate. Browser tests exercise WebKit at `1366 × 1024`, Chromium at `1280 × 800`, and a `768 × 1024` portrait sanity viewport. The iPad and Steam Deck runs write screenshot artifacts under `test-results/playwright/`; CI uploads that directory and the Playwright report even after a browser-test failure.
+`npm run check` is the complete local and CI Node gate. Browser tests exercise WebKit at `1366 × 1024`, Chromium at `1280 × 800`, and a `768 × 1024` portrait sanity viewport. The iPad and Steam Deck runs write screenshot artifacts under `test-results/playwright/`; CI uploads that directory and the Playwright report even after a browser-test failure.
+
+Native validation commands for the accepted EventKit probe and production Bridge are documented in their respective READMEs and Apple integration documents.
 
 ### Repository structure
 
 ```text
-apps/api/                         Fastify API, fixture Board, mirror, and optional ingestion route
+apps/api/                         Fastify API, fixture Board, Apple mirror, and optional ingestion
 apps/web/                         React/Vite Board and component tests
-packages/contracts/               Board and Apple source runtime contracts
+packages/contracts/               Board and Apple runtime contracts
 fixtures/board/                   Publish-safe Board fixtures
 fixtures/eventkit/                Owner-approved sanitized discovery evidence
 fixtures/apple-source-contract/   Strict cross-language source-contract fixtures
-native/apple-bridge/              Dedicated sandboxed production Bridge and synthetic tests
+native/apple-bridge/              Signed sandboxed production Bridge and synthetic tests
 tools/apple-eventkit-probe/       Contained native EventKit discovery probe
 tests/browser/                    Playwright viewport proofs
 .github/workflows/                The complete CI quality gate
@@ -166,6 +172,7 @@ Deskboard should earn complexity through use. Before contributing or directing a
 - [AGENTS.md](AGENTS.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
+- the active GitHub issue and its review context
 
 The guiding implementation rule is simple:
 
