@@ -1,6 +1,6 @@
 # Security and Privacy Policy
 
-Deskboard is local-first software intended to process personal Calendar, Reminder, project, household, and activity information. Privacy boundaries are part of the product design, not a deployment afterthought.
+Deskboard is local-first software that processes personal Calendar, Reminder, project, household, and activity information. Privacy boundaries are part of the architecture, not a deployment afterthought.
 
 ## Supported code
 
@@ -8,109 +8,189 @@ Until versioned releases exist, only the current `main` branch is considered sup
 
 ## Reporting a security issue
 
-Do not open a public issue containing credentials, private source data, exploit details, or identifying information.
+Do not open a public issue containing credentials, private source data, exploit details, host information, or identifying information.
 
-Report sensitive findings through a GitHub private security advisory when available, or contact the repository owner through an established private channel. Include:
+Use a GitHub private security advisory when available or an established private channel. Include only:
 
-- the affected component and revision;
-- steps to reproduce;
+- affected component and revision;
+- sanitized reproduction steps;
 - expected and observed behavior;
 - likely impact;
-- any suggested mitigation;
-- only the minimum sanitized evidence needed to demonstrate the issue.
+- suggested mitigation;
+- the minimum evidence required.
 
-Do not include real Calendar events, Reminders, contacts, addresses, health or recovery information, household state, Tailscale identifiers, tokens, or private database contents.
-
-## Repository rules
+## Repository prohibitions
 
 The repository must not contain:
 
-- `.env` files or production secrets;
-- access tokens, private keys, certificates, or provisioning profiles;
-- real EventKit exports;
-- real Calendar, Reminder, Notes, household, contact, or activity data;
-- real Board screenshots, accessibility trees, DOM dumps, or API payloads;
-- Tailscale hostnames, keys, or tailnet identifiers;
-- production SQLite databases or backups;
+- populated `.env` files or production secrets;
+- access tokens, private keys, certificates, provisioning profiles, or Team IDs;
+- real EventKit exports or source records;
+- real Calendar, Reminder, Notes, household, contact, health, recovery, or work data;
+- real Board screenshots, accessibility trees, OCR, DOM dumps, API payloads, or remote-debug output;
+- real Bridge, source, record, account, or status identifiers;
+- Tailscale hostnames, tailnet names, device names, IPs, keys, certificates, or Serve state;
+- production SQLite databases, journals, dumps, backups, or host volume paths;
 - pending source or Bridge-status envelopes;
-- logs or screenshots containing personal information.
+- CasaOS exports containing private values;
+- logs or screenshots containing personal or operational secrets.
 
-Committed fixtures must be synthetic and safe to publish.
+Committed fixtures and automated deployment examples must be synthetic and publish-safe.
 
-## Intended trust boundaries
-
-The architecture follows these boundaries:
+## Trust boundaries
 
 - Apple Calendar owns Calendar records.
 - Apple Reminders owns ordinary Reminder records.
-- The macOS Bridge receives Apple permissions and sends only normalized, explicitly selected data outward.
-- Deskboard Core stores the read-only source mirror and later Deskboard-owned metadata.
-- Display clients receive only the fields required to render their Board.
-- Clients and agents do not receive direct database access.
+- The signed macOS Bridge receives Apple permissions and sends only normalized, explicitly selected facts plus content-free operational status.
+- Deskboard Core stores the strict read-only mirror, Bridge status, and composed Board state.
+- Display clients receive only `BoardSnapshot` v1 fields.
+- Clients and agents do not receive direct database, mirror, roster, or status access.
 - Apple credentials do not leave the Mac.
-- Public internet ingress is not required for the initial deployment.
+- The bearer token appears only in Keychain/Core runtime configuration and the Authorization header.
+- Public internet ingress is not required or accepted.
 
-Any change to these boundaries requires an explicit architecture and privacy review.
+Any change to these boundaries requires explicit architecture and privacy review.
 
-## Accepted Phase 3B manual-delivery controls
+## Accepted Bridge and ingestion controls
 
-The accepted Phase 3B path is same-Mac and manual only:
+- The production Bridge is Apple Development-signed, sandboxed, Hardened Runtime-enabled, outbound-only, and behaviorally read-only.
+- Calendar and Reminders permissions and selections remain independent.
+- The Bridge reads only fields admitted by Apple source contract v1.
+- There is no EventKit save or remove call.
+- Source and status envelopes are strictly validated and persisted exactly before delivery.
+- An uncertain response retries byte-equivalent bytes at the same revision.
+- Only `applied` and `unchangedDuplicate` acknowledge and clear pending state.
+- The source and status outboxes are independent.
+- The bearer credential is stored in macOS Keychain.
+- Core authenticates before body parsing and binds the token to one expected opaque Bridge identity.
+- Request limits, response parsing, and errors are finite and content-free.
+- No source or status read route exists.
 
-- Core remains bound to loopback and exposes exactly one optional source-ingestion route.
-- The route is absent without complete configuration and authenticates one fixed-format bearer token before parsing a body.
-- One configured opaque Bridge identity must match the identity inside every accepted snapshot.
-- The production Bridge accepts only numeric loopback HTTP origins and has no incoming-network entitlement.
-- The Bridge is Apple Development-signed, sandboxed, uses Hardened Runtime, reads only explicitly selected EventKit sources, and contains no EventKit write call.
-- Calendar and Reminders requests expose only normalized before/after authorization categories, the returned grant Boolean when present, and fixed content-free outcomes.
-- The repository commits no development team, signer, Team ID, certificate, or provisioning profile. Ad hoc signing is only an explicit automated-test override; custom certificate authorities and signing workflows are unsupported.
-- The bearer token is stored in macOS Keychain and appears only in the Authorization header.
-- Bridge identity, source selections, revisions, and exact pending source envelopes live only in the private sandbox container.
-- Pending envelopes are treated as private source data and are never logged, exported, attached, or committed.
-- Core and Bridge responses and status use content-free result kinds rather than source values.
-- A signer transition never silently reuses inaccessible private state. Any intentional state reset requires owner awareness, a new opaque Bridge ID, and Core reconfiguration before revision 1 begins under the new identity.
+## Accepted mirror and Board controls
 
-## Implemented Phase 3C real-data Board controls
+- Core mutates source scopes only after strict validation and inside one transaction.
+- Truncated, invalid, stale, conflicting, or failed candidates preserve the previous good state.
+- Calendar replacement is authoritative only in the accepted overlap window.
+- The latest accepted Bridge status roster controls Board selection.
+- Deselection removes a source from composition without deleting its mirror rows.
+- Blocked, retrying, missing, revision-mismatched, unavailable, or old selected sources cannot appear fresh.
+- Last-good selected facts may remain visible with stale or unavailable freshness.
+- `BoardSnapshot` v1 exposes no Bridge ID, source-container ID, EventKit ID, mirror row, status document, token, or pending envelope.
+- Board item IDs and versions are opaque and do not reveal raw provenance.
+- Fixture mode remains the default; mirror mode requires explicit complete configuration and a valid IANA Board time zone.
 
-The active Phase 3C branch composes a local real-data Board only after Core has a strict content-free view of current Bridge selection and source health. The content-free private owner gate is complete; acceptance still requires review.
+## Phase 3D private deployment controls
 
-- A selected-source roster and content-free delivery status are operational facts, separate from source records.
-- One additional authenticated loopback status route reuses the Phase 3B token and Bridge binding; it has a finite body limit and no read counterpart.
-- The Bridge persists and retries exact pending status bytes independently of pending source bytes.
-- Core stores parsed status, revision, and digest transactionally in the existing private mirror database.
-- In mirror mode, source ingestion, status ingestion, and Board composition share one Core-owned resource and one close lifecycle.
-- A deselected source disappears from Board consideration but its mirror rows are not deleted merely because it is absent from the roster.
-- A blocked, truncated, retrying, missing, permission-denied, or stale source must not be silently ignored to make an entity appear fresh.
-- Last-good selected-source facts may remain displayable with stale or unavailable freshness; operational failure never fabricates source deletion.
-- The web client receives only the accepted Board contract. It receives no Bridge ID, source-container ID, EventKit ID, mirror row, status document, token, or pending envelope.
-- Board item IDs and versions must not reveal raw source provenance.
-- Fixture mode remains the default; mirror-backed mode requires complete explicit local configuration and a valid IANA Board time zone.
+Phase 3D deploys the already accepted manual read path. It does not add automatic synchronization or write behavior.
 
-### Agent-visible evidence boundary
+### Container boundary
 
-The owner may privately inspect real source-selection and Board surfaces. Agents and shared tooling may receive only purpose-built content-free evidence such as schema success, item counts, freshness categories, permission categories, revisions, result kinds, and masked ordinals.
+- Build only from the committed lockfile and production source.
+- Do not place secrets or databases in image layers or build arguments.
+- Run containers as non-root where practical.
+- Persist the private SQLite mirror/status database in one protected host volume.
+- Do not publish the API container port to the host.
+- Publish only the web/private-proxy service, bound to host loopback.
+- Use content-free health checks.
+- Proxy only the accepted health, Board, source-ingestion, and status-ingestion routes.
+- Disable request/response-body logging, directory listing, and arbitrary file serving.
+- Board responses remain `no-store`; static hashed assets may use bounded immutable caching.
 
-Do not use or transmit any of the following for real-data acceptance:
+### Tailscale boundary
+
+- Tailscale Serve is the sole private HTTPS ingress.
+- Tailscale Funnel and public ingress are forbidden.
+- Real hostname, tailnet, device name, keys, IPs, certificates, and Serve state remain local and unreported.
+- Do not introduce another VPN, certificate authority, reverse-proxy account system, or public cloud dependency.
+- Prove the service is unreachable outside the tailnet and reachable from authenticated tailnet devices.
+
+### Bridge destination boundary
+
+The Bridge retains numeric-loopback HTTP for local development and may additionally accept only a strict private Tailscale origin:
+
+- HTTPS scheme;
+- exact `.ts.net` host;
+- no credentials, query, fragment, or preconfigured path;
+- normal system TLS validation;
+- no redirects;
+- no raw LAN IP, raw tailnet IP, arbitrary public host, ordinary remote hostname, or remote plain HTTP.
+
+Changing destination must not change Bridge ID, Keychain credential, source/status revisions, selections, TCC grants, or exact pending bytes.
+
+### Manual operation only
+
+Phase 3D retains explicit **Sync Now**. It must not add a scheduler, daemon, launch item, watcher, menu-bar agent, notification, or background task.
+
+Background operation and backup/restore automation are deferred to Phase 3E.
+
+## Agent-visible evidence boundary
+
+The owner may privately inspect real source-selection, deployment, and Board surfaces.
+
+Agents and shared tooling may receive only purpose-built content-free evidence:
+
+- schema success/failure;
+- item counts;
+- freshness and permission categories;
+- applied/duplicate/stale/conflict/truncated result kinds;
+- masked source ordinals;
+- device reachability and Board-version agreement;
+- vertical-overflow yes/no;
+- recognizable/calm yes/no.
+
+Do not use or transmit for real-data acceptance:
 
 - screenshots;
 - accessibility trees;
-- OCR output;
+- OCR;
 - DOM dumps;
 - API request or response bodies;
-- source titles or Board titles;
+- source or Board titles;
+- source identifiers;
 - mirror rows;
+- status documents;
 - pending envelopes;
-- EventKit or source identifiers.
+- browser remote-debug content;
+- real Tailscale or host information.
 
-The private accessibility-inspection incident during Phase 3B did not enter Git or public artifacts, but it establishes this hard process rule for every later real-data slice.
+The prior private accessibility-inspection incident did not enter Git, but it establishes this hard process rule for every later real-data slice.
 
-Remote transport security, Tailscale, TLS termination, deployment, background delivery, backup/restore, Board source management, and Apple writes remain absent until later reviewed slices.
+## Logging and diagnostics
+
+Logs and errors may contain fixed result codes and minimum safe operational metadata only.
+
+Never log:
+
+- Authorization headers or tokens;
+- source or status request bodies;
+- Board response bodies;
+- source coordinates or record identifiers;
+- titles, temporal values, notes, locations, URLs, or participants;
+- database rows;
+- pending envelopes;
+- private host, tailnet, or volume information.
+
+Sensitive local diagnostics used for a private Apple or deployment investigation must be deleted when no longer needed and must not be attached to public issues or PRs.
 
 ## Dependency and implementation hygiene
 
-- Add dependencies only for current requirements.
-- Commit lockfiles and review dependency changes.
-- Validate all network and persistence boundaries at runtime.
-- Log errors without logging full private records by default.
-- Prefer least-privilege source selection and explicit allowlists.
-- Treat cached client data as sensitive even when it is not authoritative.
-- Future write actions must be authenticated, idempotent, auditable, and narrowly scoped.
+- Add dependencies only for current issue requirements.
+- Commit and review lockfiles.
+- Validate every network, contract, and persistence boundary at runtime.
+- Prefer explicit allowlists and least privilege.
+- Treat cached Board data as sensitive even when non-authoritative.
+- Do not add generic auth, deployment, persistence, scheduler, adapter, or command frameworks for imagined future work.
+- Future write actions must be authenticated, idempotent, conflict-aware, auditable, and separately reviewed.
+
+## Deferred security work
+
+Phase 3D does not include:
+
+- public ingress;
+- background synchronization;
+- backup/restore automation;
+- source administration;
+- automatic conflict recovery;
+- Apple Calendar or Reminder writes.
+
+These remain absent until their own bounded, reviewed phases.
