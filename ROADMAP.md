@@ -153,14 +153,9 @@ The original connected phase contained persistence, transport, native conversion
 
 **Question:** Can Core persist and transactionally reconcile validated Apple source snapshots without deleting unseen facts?
 
-**Status:** active under issue #12.
+**Status:** accepted and merged in PR #14.
 
-The active feature slice now contains the internal SQLite mirror, ordered
-migration, strict validation boundary, transactional replacement service, and
-focused synthetic proofs described in
-[`docs/apple-source-mirror.md`](docs/apple-source-mirror.md). These remain
-Phase 3A review artifacts until the draft pull request is accepted and merged;
-Phase 3B and Phase 3C have not begun.
+The accepted implementation is documented in [`docs/apple-source-mirror.md`](docs/apple-source-mirror.md). It provides the isolated SQLite mirror, ordered strict migration, validation-before-mutation, transactional replacement service, source-scoped revisions and normalized digests, rollback proof, and close/reopen persistence. Phase 3A exposes no transport or Board path.
 
 ### Scope
 
@@ -213,34 +208,53 @@ Phase 3B and Phase 3C have not begun.
 
 **Question:** Can the Mac produce contract-v1 snapshots from selected EventKit sources and deliver them to Core safely on explicit demand?
 
-**Status:** planned; blocked on accepted Phase 3A.
+**Status:** active under issue #15.
 
-### Intended scope
+The real Phase 3B proof runs a dedicated sandboxed Bridge and Core on the same Mac over loopback. It deliberately settles production conversion, authentication, persistent Bridge identity, source-scoped revisions, and crash-safe retry before remote topology, deployment, background operation, or Board composition begins.
 
-- production EventKit-to-contract conversion behind the accepted source boundary;
-- persistent opaque Bridge identity and monotonic per-source revisions;
-- one narrow authenticated Core ingestion route;
-- outbound-only Bridge delivery;
-- strict payload and operational-envelope limits;
-- idempotent application through the Phase 3A mirror;
-- explicit manual “sync now” behavior and status;
-- no background scheduler yet.
+### Scope
+
+- dedicated sandboxed, hardened, read-only macOS Bridge separate from the Phase 2A probe;
+- production EventKit-to-v1 conversion that reads only accepted contract fields;
+- separate intentional Calendar and Reminder permissions and empty-by-default source selections;
+- persistent opaque Bridge identity and source-scoped acknowledged revisions;
+- one crash-safe pending delivery envelope per source coordinate;
+- one strict authenticated Core ingestion route;
+- bearer token stored in macOS Keychain and bound to the configured Bridge identity;
+- loopback-only manual delivery through an explicit `Sync Now` action;
+- strict body, source-record, and response limits;
+- idempotent application through the accepted Phase 3A mirror;
+- content-free status for applied, duplicate, stale, conflict, truncated, invalid, and transport-failed results;
+- no background scheduler.
+
+### Central retry rule
+
+> Persist the exact envelope before sending. After timeout, crash, relaunch, or another uncertain response, resend that byte-equivalent envelope at the same revision.
+
+The Bridge must not reread EventKit and reuse an uncertain revision for changed content. Only `applied` and `unchangedDuplicate` acknowledge the revision and clear pending state. All other results preserve pending state and fail closed.
 
 ### Boundaries
 
 - Calendar and Reminders remain read-only;
+- Core continues listening only on loopback for the real proof;
 - no Board composition from the mirror;
-- no daemon, login item, deployment, Tailscale, or public ingress;
+- no daemon, login item, background scheduler, deployment, Tailscale, TLS termination, or public ingress;
 - no write commands or general command bus;
-- no source administration in the Board.
+- no source administration in the Board;
+- no automatic stale/conflict recovery or silent Bridge identity reset.
 
 ### Exit criteria
 
-- a synthetic or deliberately controlled local source change can be manually delivered end to end;
-- duplicate, stale, conflict, truncated, rejected, and successful results are visible without leaking source content;
-- credentials remain local and excluded from Git;
-- no Apple credential leaves the Mac;
-- failed delivery preserves the previous Core mirror.
+- a sandboxed production Bridge converts controlled Calendar and Reminder sources into exact accepted v1 snapshots;
+- one authenticated loopback route applies envelopes through the Phase 3A mirror;
+- missing or wrong authentication fails before body application and leaks no private content;
+- first delivery, acknowledgement, duplicate retry, timeout, relaunch, stale, conflict, invalid, and truncation behavior are proved;
+- an uncertain response retries the exact persisted envelope and revision;
+- credentials remain in injected Core configuration and macOS Keychain, excluded from Git and SQLite;
+- entitlement inspection proves sandbox, outgoing client, Calendar access, no incoming service, and no EventKit writes;
+- a content-free manual local Calendar and Reminder delivery proof passes;
+- `/health` and the fixture-backed Board remain unchanged;
+- Phase 3C, deployment, background operation, and Apple writes remain absent.
 
 ## Phase 3C — Real Read-Only Board and Private Deployment
 

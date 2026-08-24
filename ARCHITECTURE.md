@@ -4,7 +4,7 @@
 
 This document describes the intended architecture and the boundaries for the first several implementation slices. It is a working design, not a promise that every listed component will be built immediately.
 
-The current product phase is **read-only bulletin board**. Apple Calendar and Apple Reminders will eventually supply data to Deskboard, but Deskboard will not initially modify either source.
+The current implementation phase is **authenticated manual read-only Bridge delivery**. The strict Apple source contract and atomic Core mirror are accepted. Phase 3B connects them manually over loopback on the same Mac; the Board remains fixture-backed, remote deployment is deferred, and Deskboard does not modify Calendar or Reminders.
 
 ## Architectural Thesis
 
@@ -60,7 +60,7 @@ The operating rule is:
         desk profile    desk profile       Android/E-Ink
 ```
 
-The implementation begins with only the lower half of this diagram: a fixture-backed API and Board. The macOS Bridge arrives only after the display contract is proven.
+The diagram is the intended private homelab topology, not the current deployment. Phase 3B proves the Bridge and Core boundary with both processes on the same Mac over loopback. Phase 3C owns Tailscale, remote deployment, Board composition from mirrored facts, and background operation.
 
 ## Components
 
@@ -97,7 +97,7 @@ The web technology is a delivery mechanism. The experience should feel like a de
 
 **Initial technology:** TypeScript and Fastify.
 
-**Initial persistence:** Phase 3A introduces an isolated SQLite Apple source mirror. The fixture-backed Board and every other Core concern remain unchanged and non-persistent.
+**Initial persistence:** Phase 3A introduced an isolated SQLite Apple source mirror. The fixture-backed Board and every other Core concern remain unchanged and non-persistent.
 
 **Responsibilities:**
 
@@ -172,7 +172,7 @@ The exact contract will be established and tested in the first implementation sl
 
 **Technology:** Swift/SwiftUI using EventKit.
 
-**Initial mode:** outbound-only and read-only.
+**Initial production mode:** outbound-only, read-only, sandboxed, and explicitly invoked.
 
 **Responsibilities:**
 
@@ -180,15 +180,20 @@ The exact contract will be established and tested in the first implementation sl
 - let the user whitelist which calendars and reminder lists are included;
 - read a bounded range of Calendar events and selected reminders;
 - preserve important temporal semantics such as all-day, date-only, local-time, and timezone-qualified values;
-- normalize EventKit records into the Bridge contract;
-- push complete, bounded synchronization snapshots to Deskboard Core;
-- report sync status and errors without exposing iCloud credentials to the homelab.
+- normalize EventKit records directly into the accepted v1 contract;
+- persist an opaque Bridge identity and source-scoped revision state;
+- persist the exact pending delivery envelope before sending;
+- retry the same envelope and revision after an uncertain response;
+- authenticate outbound delivery without exposing Apple credentials;
+- report content-free per-source status.
 
 **Non-responsibilities during the first connected phase:**
 
 - completing reminders;
 - rescheduling or deleting events;
 - exposing an inbound service on the Mac;
+- background scheduling or launch-at-login behavior;
+- collecting fields excluded from source contract v1;
 - parsing every visible feature in Apple’s applications;
 - continuously rewriting Reminder notes.
 
@@ -196,9 +201,9 @@ The Bridge will eventually become the only component permitted to perform approv
 
 ### 4. Ubuntu Homelab and Tailscale
 
-Deskboard Core is intended to run in a container on the existing Ubuntu/CasaOS host.
+Deskboard Core is intended to run in a container on the existing Ubuntu/CasaOS host during Phase 3C, after manual loopback delivery is accepted.
 
-The initial network posture is private:
+The intended network posture is private:
 
 - the API binds to the local host or container network;
 - Tailscale provides remote connectivity;
@@ -207,7 +212,7 @@ The initial network posture is private:
 - no Apple credentials are stored on the server;
 - secrets are supplied at runtime and excluded from Git.
 
-The system should remain usable on the local network even if a public cloud service is unavailable.
+Phase 3B does not instantiate this topology. It keeps Bridge and Core on the same Mac over loopback.
 
 ## Data Ownership
 
@@ -255,27 +260,19 @@ This separation matters because:
 
 ### Phase 3A atomic source mirror
 
-The active Phase 3A implementation is specified in
-[`docs/apple-source-mirror.md`](docs/apple-source-mirror.md). It accepts an
-unknown candidate plus a positive operational source revision, validates the
-candidate through the accepted Phase 2B union, and derives a deterministic
-SHA-256 digest only from the normalized parsed document. Revision and digest
-remain Core delivery metadata; the accepted v1 source contract is unchanged.
+The accepted Phase 3A implementation is specified in [`docs/apple-source-mirror.md`](docs/apple-source-mirror.md). It accepts an unknown candidate plus a positive operational source revision, validates the candidate through the accepted Phase 2B union, and derives a deterministic SHA-256 digest only from the normalized parsed document. Revision and digest remain Core delivery metadata; the accepted v1 source contract is unchanged.
 
-Core stores one strict scope row per Bridge, entity, and selected container,
-with separate strict Reminder and Calendar record tables. Scope metadata and
-records commit in one SQLite transaction. Complete Reminder snapshots replace
-their entire exact scope. Complete Calendar snapshots replace only stored rows
-whose interpreted exact ranges overlap the declared `[start, end)` window;
-unobserved out-of-window rows remain stored and are excluded from the normal
-current-window read. Complete empty snapshots clear only those authoritative
-regions.
+Core stores one strict scope row per Bridge, entity, and selected container, with separate strict Reminder and Calendar record tables. Scope metadata and records commit in one SQLite transaction. Complete Reminder snapshots replace their entire exact scope. Complete Calendar snapshots replace only stored rows whose interpreted exact ranges overlap the declared `[start, end)` window; unobserved out-of-window rows remain stored and are excluded from the normal current-window read. Complete empty snapshots clear only those authoritative regions.
 
-Invalid, truncated, stale, conflicting, or failed candidates do not change
-records, accepted revision, digest, timestamps, counts, or Calendar window. An
-equal revision with an equal digest is an idempotent no-op. Phase 3A performs no
-identity-history merge through EventKit provenance hints and exposes no
-transport or Board path.
+Invalid, truncated, stale, conflicting, or failed candidates do not change records, accepted revision, digest, timestamps, counts, or Calendar window. An equal revision with an equal digest is an idempotent no-op. Phase 3A performs no identity-history merge through EventKit provenance hints.
+
+### Phase 3B authenticated manual delivery
+
+Phase 3B adds exactly one loopback-only ingestion boundary and one dedicated production Bridge. Core authenticates a strict operational envelope before application, binds one configured bearer token to one opaque Bridge identity, and delegates all source replacement to the accepted Phase 3A mirror.
+
+The Bridge stores its token in macOS Keychain and its identity, selections, acknowledged revisions, pending envelopes, and content-free status in the sandbox container. It persists the exact pending envelope before sending. A timeout, crash, relaunch, malformed response, or otherwise uncertain outcome retries that byte-equivalent envelope at the same revision; the Bridge does not reread EventKit and reuse the revision for changed content.
+
+Only `applied` and `unchangedDuplicate` acknowledge a revision and clear pending state. Truncated, invalid, stale, conflict, and transport-failed outcomes preserve pending state and fail closed. Remote topology, background scheduling, Board composition, and Apple writes remain absent.
 
 ## Initial Apple Field Map
 
@@ -350,22 +347,20 @@ Apple data changes
       ↓
 iCloud reaches Mac
       ↓
-EventKit change signal or scheduled refresh
+Bridge performs an explicit bounded read
       ↓
-Bridge performs a bounded rescan
+Bridge persists a pending source envelope
       ↓
-Bridge submits one validated source snapshot
+Bridge sends the authenticated envelope over loopback
       ↓
-Core validates and atomically replaces that source scope
+Core validates and atomically applies that source scope
       ↓
-Core composes a new Board version
-      ↓
-Clients fetch the updated Board
+Phase 3C later composes a new Board version
 ```
 
-The first Bridge implementation should prefer understandable bounded snapshots over clever incremental synchronization. Phase 3 may wrap snapshots in synchronization-generation or idempotency machinery, but that machinery is not part of source contract v1.
+The first Bridge implementation uses understandable bounded snapshots rather than clever incremental synchronization. Operational revisions and pending-delivery state wrap the accepted source contract without changing its source meaning.
 
-Atomic replacement is allowed only after the complete document passes strict and semantic validation. Items missing from a non-truncated snapshot may be marked absent only inside that exact Bridge, entity, container, and Calendar-window scope. A truncated or failed replacement must retain the previous good scope and must not delete unseen source data.
+Atomic replacement is allowed only after the complete document passes strict and semantic validation. Items missing from a non-truncated snapshot may be marked absent only inside that exact Bridge, entity, container, and Calendar-window scope. A truncated or failed replacement must retain unseen source data. An uncertain transport response must retry the same persisted envelope and revision rather than create a different candidate under the same revision.
 
 ### Phase C: One write path, later
 
@@ -437,32 +432,41 @@ WebSockets, Server-Sent Events, background push, and offline mutations are defer
 - Use ISO 8601 for instants and explicit structures for date-only values.
 - Return structured errors with stable codes.
 - Do not expose raw EventKit payloads to display clients.
-- Do not expose secrets, private notes, attendees, or source identifiers unless the Board needs them.
+- Do not expose secrets, private notes, attendees, or source identifiers to display clients.
 - Keep mutation endpoints absent until their phase begins.
 
-Initial endpoints should be no broader than:
+The display API remains:
 
 ```text
 GET /health
 GET /v1/board
 ```
 
-A development-only fixture selector may exist behind an environment flag, but it should not become a production API feature.
+Phase 3B may add exactly one authenticated internal ingestion route, available only when explicitly configured and bound to loopback:
+
+```text
+POST /v1/apple-source-snapshots
+```
+
+The ingestion route is not a web-client API and exposes no mirror read method.
 
 ## Security and Privacy
 
 - The repository must contain no real Calendar, Reminder, health, recovery, household, or contact data.
 - Fixtures must be synthetic.
-- `.env` files, credentials, Tailscale details, database files, and exported source snapshots are ignored by Git.
-- The Bridge should whitelist source containers rather than ingesting every Calendar and Reminder list.
-- The Core should log metadata and errors without logging entire private records by default.
+- `.env` files, credentials, Tailscale details, database files, pending envelopes, and exported source snapshots are ignored by Git.
+- The Bridge whitelists source containers rather than ingesting every Calendar and Reminder list.
+- The production Bridge is sandboxed, read-only, and has no inbound network service.
+- The Bridge bearer token lives in macOS Keychain and appears only in the Authorization header.
+- Core authenticates before applying the ingestion body and binds the token to one opaque Bridge identity.
+- Core and Bridge logs use content-free operational status rather than private records.
 - Future family-facing profiles should use explicit allowlists; private information is excluded by default.
 - Future agent actions must pass through the same audited API as all other clients.
 - No client or agent should receive direct database access.
 
 ## Repository Shape
 
-The first coding slice should establish approximately this structure:
+The first coding slice established the TypeScript monorepo. Connected native code is added only in its active slice.
 
 ```text
 deskboard/
@@ -474,10 +478,15 @@ deskboard/
 │   └── contracts/           Runtime schemas and shared types
 │
 ├── fixtures/
-│   └── board/               Synthetic Board and source examples
+│   ├── board/               Synthetic Board examples
+│   ├── eventkit/            Approved sanitized discovery evidence
+│   └── apple-source-contract/ Strict cross-language source fixtures
 │
+├── native/                  Production macOS Bridge when Phase 3B begins
+├── tools/
+│   └── apple-eventkit-probe/ Contained discovery probe
 ├── .github/
-│   └── workflows/           CI after implementation begins
+│   └── workflows/           Complete quality gate
 │
 ├── ARCHITECTURE.md
 ├── MANIFESTO.md
@@ -485,13 +494,7 @@ deskboard/
 └── README.md
 ```
 
-The macOS Bridge should be added only when its slice begins:
-
-```text
-apps/mac-bridge/
-```
-
-Do not scaffold empty packages for every future idea.
+Do not scaffold empty packages for future ideas.
 
 ## Testing Strategy
 
@@ -519,14 +522,32 @@ Phase 2B independently proves in TypeScript and Swift that:
 - truncated snapshots never authorize absence;
 - the accepted Phase 2A specimen allowlist continues to decode without accessing private fixtures.
 
-### Unit tests
+### Atomic mirror tests
 
-Prove that:
+Phase 3A proves:
 
-- capacity limits are enforced;
-- ordering is deterministic;
-- reasons are generated correctly for fixture cases;
-- date-only and timezone-qualified values remain distinct.
+- valid authoritative snapshots apply atomically;
+- invalid, truncated, stale, conflicting, and failed candidates preserve previous good state;
+- duplicate delivery is idempotent;
+- Reminder scopes replace completely;
+- Calendar overlap windows preserve unobserved out-of-window rows;
+- destructive failure rolls metadata and records back;
+- migrations and close/reopen persistence are repeatable.
+
+### Manual Bridge delivery tests
+
+Phase 3B must prove:
+
+- one strict authenticated route applies through the accepted mirror;
+- authentication and Bridge-ID binding fail before private application;
+- converter output includes only accepted v1 fields;
+- exact temporal, ordering, count, collision, and truncation semantics are preserved;
+- source selections remain separate and empty by default;
+- Bridge identity, revisions, credentials, and pending delivery survive relaunch;
+- timeout or crash retries the exact persisted envelope and revision;
+- applied and duplicate results acknowledge once, while other results fail closed;
+- the production target is sandboxed with outbound-only network behavior and no EventKit writes;
+- the manual local proof reports only masked counts and result kinds.
 
 ### Component/accessibility tests
 
@@ -548,19 +569,6 @@ At minimum, capture or assert the Board at representative viewports:
 
 The proof should assert that the target Board has no document-level vertical overflow at the two primary viewports.
 
-### Integration tests, later
-
-The EventKit Bridge should export sanitized fixtures for representative cases:
-
-- date-only Reminder;
-- timed Reminder;
-- completed Reminder;
-- all-day event;
-- timed event;
-- recurring event occurrence;
-- cancelled event;
-- malformed Deskboard note metadata.
-
 ## Decision Boundaries
 
 The following choices are intentional for the opening phases:
@@ -570,11 +578,11 @@ The following choices are intentional for the opening phases:
 | Front end | React + TypeScript + Vite PWA |
 | Server | Fastify + TypeScript |
 | Monorepo | npm workspaces unless a concrete need suggests otherwise |
-| Database | none for the Phase 1 Board; isolated SQLite Apple source mirror in Phase 3A |
-| Cloud | none required |
-| Private access | Tailscale |
-| Live updates | ordinary polling |
-| Apple integration | EventKit through outbound macOS Bridge |
+| Database | none for the Phase 1 Board; isolated SQLite Apple source mirror from Phase 3A |
+| Phase 3B topology | same-Mac loopback only |
+| Later private access | Tailscale in Phase 3C |
+| Live updates | ordinary polling after Board integration |
+| Apple integration | sandboxed outbound EventKit Bridge |
 | Calendar writes | deferred |
 | Reminder writes | deferred until one explicit completion slice |
 | AI | absent from selection logic |
