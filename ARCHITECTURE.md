@@ -13,7 +13,7 @@ Phases 1 through 3C are accepted. Deskboard can now:
 - compose the unchanged calm `BoardSnapshot` v1 from the latest selected-source roster;
 - represent fresh, stale, and unavailable source states honestly.
 
-The active Phase 3D slice deploys this **existing manual path** to the private Ubuntu/CasaOS homelab and serves the iPad and Steam Deck through one Tailscale HTTPS origin. Background scheduling, backup/restore automation, source administration, public ingress, and every Apple write remain deferred.
+The active Phase 3D implementation packages this **existing manual path** as pinned production containers: Core is reachable only on an internal Compose network, the built PWA and accepted routes share one loopback-bound private proxy, and SQLite lives in one persistent volume. The Bridge additionally admits only strict `.ts.net` HTTPS origins. Homelab, private remote-sync, and iPad/Steam Deck acceptance remain required. Background scheduling, backup/restore automation, source administration, public ingress, and every Apple write remain deferred.
 
 ## Architectural thesis
 
@@ -166,7 +166,7 @@ Non-responsibilities in the accepted read path:
 
 ### Private homelab boundary
 
-Phase 3D uses the existing Ubuntu/CasaOS and Tailscale environment.
+Phase 3D uses the existing Ubuntu/CasaOS and Tailscale environment. Its source-controlled implementation is documented in [`deploy/README.md`](deploy/README.md) and [`docs/private-homelab-deployment.md`](docs/private-homelab-deployment.md).
 
 The accepted target posture is:
 

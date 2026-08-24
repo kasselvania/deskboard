@@ -47,6 +47,8 @@ The question is:
 
 Phase 3D is a deployment and manual remote-use slice. It is not background operation, backup/restore automation, source administration, or an Apple write path.
 
+The active implementation includes the source-controlled Compose/proxy shape, explicit API container bind, strict Bridge `.ts.net` origin policy, synthetic persistence/migration proof, and private runbook. Do not describe Phase 3D as accepted until homelab, uncertain-retry, and both device gates are complete and reviewed.
+
 ## Allowed Phase 3D shape
 
 Approximately:

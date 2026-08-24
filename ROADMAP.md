@@ -120,6 +120,8 @@ Central honesty rule:
 
 **Status:** active under issue [#22](https://github.com/kasselvania/deskboard/issues/22).
 
+The implementation under validation now includes pinned non-root production images, an internal-only Core API, one loopback-bound route-allowlisted proxy, a persistent SQLite volume, strict Bridge `.ts.net` HTTPS origins, and synthetic restart/recreation/Phase-3C migration proof. Private homelab, remote retry, and iPad/Steam Deck owner acceptance remain open gates.
+
 **Question:** Can the accepted manual real-data Board run privately from the Ubuntu/CasaOS homelab and serve the iPad and Steam Deck through one Tailscale HTTPS origin without changing source authority, retry identity, freshness honesty, or the Board contract?
 
 ### Scope
