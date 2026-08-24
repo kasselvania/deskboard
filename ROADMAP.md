@@ -172,11 +172,11 @@ The Board remains fixture-backed. There is no remote topology, background proces
 
 **Question:** Can Core compose the existing calm Board from the Apple mirror on the same Mac while accurately representing selected, stale, truncated, retrying, missing, and unavailable sources?
 
-**Status:** active under issue [#19](https://github.com/kasselvania/deskboard/issues/19).
+**Status:** active under issue [#19](https://github.com/kasselvania/deskboard/issues/19). The feature branch implements the bounded slice and synthetic proof; private owner acceptance and review are still pending.
 
 This is the first real-data Board slice. It remains same-Mac, loopback-only, manually synchronized, and read-only. Issue #19 is the detailed implementation and proof contract.
 
-### Required scope
+### Implemented branch scope
 
 - a strict, separately versioned, content-free Bridge status snapshot;
 - exact selected-source roster and independent permission categories;
@@ -193,6 +193,8 @@ This is the first real-data Board slice. It remains same-Mac, loopback-only, man
 - concise deterministic reasons;
 - opaque client IDs that expose no source provenance;
 - unchanged `BoardSnapshot` v1 and unchanged web client unless a compatibility failure proves a tiny correction necessary.
+
+Implementation details and exact operational rules are recorded in [`docs/apple-bridge-status-v1.md`](docs/apple-bridge-status-v1.md) and [`docs/mirror-backed-board.md`](docs/mirror-backed-board.md).
 
 ### Central honesty rule
 

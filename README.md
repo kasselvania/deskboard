@@ -86,11 +86,11 @@ Phase 3B provides one signed, sandboxed, read-only macOS Bridge; strict EventKit
 
 **Phase 3C — Truthful Local Mirror-Backed Board: active under issue [#19](https://github.com/kasselvania/deskboard/issues/19).**
 
-Phase 3C is intentionally limited to the same Mac and explicit manual synchronization. It adds a strict content-free Bridge status boundary so Core knows which sources are selected, blocked, retrying, missing, or unavailable; then it composes the unchanged Board contract from selected last-good mirror facts with honest freshness. Fixture mode remains the default. Homelab deployment, Tailscale, background scheduling, backup/restore, Board source management, and every Apple write path remain blocked.
+The feature branch implements the strict content-free Bridge status contract and exact status outbox, one additional authenticated loopback route, transactional status persistence, and selected-source mirror composition into the unchanged Board contract. Fixture mode remains the default, and mirror mode requires an explicit IANA Board time zone. Automated synthetic proof is documented in [docs/apple-bridge-status-v1.md](docs/apple-bridge-status-v1.md) and [docs/mirror-backed-board.md](docs/mirror-backed-board.md); private owner acceptance and review remain required before Phase 3C can be accepted.
 
 **Remote deployment and background operation: not begun.** No private remote topology, automatic Bridge schedule, production homelab deployment, or Apple write action exists.
 
-The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md), the accepted Core mirror is documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md), and the accepted manual-delivery path is documented in [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md).
+The discovery design is in [docs/apple-source-mapping-v0.1.md](docs/apple-source-mapping-v0.1.md), the accepted empirical findings are in [docs/apple-eventkit-discovery.md](docs/apple-eventkit-discovery.md), the accepted source contract is in [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md), the accepted Core mirror is documented in [docs/apple-source-mirror.md](docs/apple-source-mirror.md), and the accepted manual-delivery path is documented in [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md). The active Phase 3C status and Board projection are documented separately in [docs/apple-bridge-status-v1.md](docs/apple-bridge-status-v1.md) and [docs/mirror-backed-board.md](docs/mirror-backed-board.md).
 
 ## Phase 1 development
 
@@ -145,12 +145,13 @@ Native validation commands for the accepted EventKit probe and production Bridge
 ### Repository structure
 
 ```text
-apps/api/                         Fastify API, fixture Board, Apple mirror, and optional ingestion
+apps/api/                         Fastify API, fixture/mirror Board, Apple mirror, and ingestion
 apps/web/                         React/Vite Board and component tests
 packages/contracts/               Board and Apple runtime contracts
 fixtures/board/                   Publish-safe Board fixtures
 fixtures/eventkit/                Owner-approved sanitized discovery evidence
 fixtures/apple-source-contract/   Strict cross-language source-contract fixtures
+fixtures/apple-bridge-status/     Strict cross-language operational-status fixtures
 native/apple-bridge/              Signed sandboxed production Bridge and synthetic tests
 tools/apple-eventkit-probe/       Contained native EventKit discovery probe
 tests/browser/                    Playwright viewport proofs
@@ -169,6 +170,8 @@ Deskboard should earn complexity through use. Before contributing or directing a
 - [docs/apple-source-contract-v1.md](docs/apple-source-contract-v1.md)
 - [docs/apple-source-mirror.md](docs/apple-source-mirror.md)
 - [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md)
+- [docs/apple-bridge-status-v1.md](docs/apple-bridge-status-v1.md)
+- [docs/mirror-backed-board.md](docs/mirror-backed-board.md)
 - [AGENTS.md](AGENTS.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [SECURITY.md](SECURITY.md)
