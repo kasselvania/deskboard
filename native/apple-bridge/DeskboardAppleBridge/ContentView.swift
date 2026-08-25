@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -70,6 +71,13 @@ struct ContentView: View {
         .formStyle(.grouped)
         .frame(minWidth: 680, minHeight: 720)
         .padding()
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: NSApplication.didBecomeActiveNotification
+            )
+        ) { _ in
+            model.importProvisioningRequest()
+        }
     }
 
     @ViewBuilder

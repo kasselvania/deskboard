@@ -355,13 +355,17 @@ final class AtomicBridgeStateFileStore: BridgeStatePersisting {
         return replacement
     }
 
-    private static func defaultStateURL() -> URL {
+    static func defaultSupportDirectoryURL() -> URL {
         let base = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
         ).first!
         return base
             .appendingPathComponent("DeskboardAppleBridge", isDirectory: true)
+    }
+
+    private static func defaultStateURL() -> URL {
+        defaultSupportDirectoryURL()
             .appendingPathComponent("bridge-state-v1.json", isDirectory: false)
     }
 }

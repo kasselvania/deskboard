@@ -34,17 +34,23 @@ final class BridgeViewModel: ObservableObject {
     private let stateStore: BridgeStatePersisting
     private let sourceReader: AppleSourceReading
     private let credentialStore: BridgeCredentialStore
+    private let provisioningInbox: BridgeProvisioningImporting
     private let coordinator: ManualSyncCoordinator
 
     init(
         stateStore: BridgeStatePersisting = AtomicBridgeStateFileStore(),
         sourceReader: AppleSourceReading = EventKitBridgeReader(),
         credentialStore: BridgeCredentialStore = KeychainBridgeCredentialStore(),
-        transport: AppleSourceHTTPTransport = URLSessionAppleSourceHTTPTransport()
+        transport: AppleSourceHTTPTransport = URLSessionAppleSourceHTTPTransport(),
+        provisioningInbox: BridgeProvisioningImporting? = nil
     ) {
         self.stateStore = stateStore
         self.sourceReader = sourceReader
         self.credentialStore = credentialStore
+        self.provisioningInbox = provisioningInbox ?? BridgeProvisioningInbox(
+            stateStore: stateStore,
+            credentialStore: credentialStore
+        )
         coordinator = ManualSyncCoordinator(
             stateStore: stateStore,
             sourceReader: sourceReader,
@@ -57,7 +63,7 @@ final class BridgeViewModel: ObservableObject {
                 transport: transport
             )
         )
-        refresh()
+        importProvisioningRequest()
     }
 
     var selectedCalendarCount: Int { selectedCalendarSourceIds.count }
@@ -83,6 +89,19 @@ final class BridgeViewModel: ObservableObject {
             hasPendingStatus = state.pendingStatus != nil
         } catch {
             notice = "Bridge state requires operator action."
+        }
+    }
+
+    func importProvisioningRequest() {
+        let result = provisioningInbox.importRequestIfPresent()
+        refresh()
+        switch result {
+        case .applied:
+            notice = "Bootstrap provisioning applied."
+        case .rejectedInvalid, .unavailable:
+            notice = "Bootstrap provisioning requires operator action."
+        case nil:
+            break
         }
     }
 

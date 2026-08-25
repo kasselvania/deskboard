@@ -767,7 +767,8 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
             stateStore: store,
             sourceReader: SyntheticSourceReader(),
             credentialStore: SyntheticCredentialStore(),
-            transport: UnusedHTTPTransport()
+            transport: UnusedHTTPTransport(),
+            provisioningInbox: NoopBridgeProvisioningInbox()
         )
 
         model.coreOriginInput = "https://synthetic-device.synthetic-tailnet.ts.net"
@@ -930,7 +931,8 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
             ),
             sourceReader: reader,
             credentialStore: SyntheticCredentialStore(),
-            transport: UnusedHTTPTransport()
+            transport: UnusedHTTPTransport(),
+            provisioningInbox: NoopBridgeProvisioningInbox()
         )
     }
 }
