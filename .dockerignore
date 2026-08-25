@@ -18,6 +18,7 @@ private-fixtures
 secrets
 .deskboard-private
 deploy/.private-origin
+deploy/.private-origin.*
 data
 .data
 exports

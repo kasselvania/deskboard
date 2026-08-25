@@ -262,6 +262,10 @@ if (
   bindings[0].HostPort !== expectedPort
 ) process.exit(1);
 if (!api.HostConfig.ReadonlyRootfs || !proxy.HostConfig.ReadonlyRootfs) process.exit(1);
+if (
+  api.HostConfig.RestartPolicy?.Name !== "unless-stopped" ||
+  proxy.HostConfig.RestartPolicy?.Name !== "unless-stopped"
+) process.exit(1);
 if (!network.Internal) process.exit(1);
 const apiEnvironment = api.Config.Env ?? [];
 if (!apiEnvironment.includes("DESKBOARD_APPLE_BRIDGE_TOKEN_FILE=/run/secrets/apple_bridge_token")) {
@@ -283,7 +287,10 @@ NODE
   [[ "$("${compose[@]}" exec --no-TTY api id -u)" != "0" ]]
   [[ "$("${compose[@]}" exec --no-TTY private-proxy id -u)" != "0" ]]
   [[ "$("${compose[@]}" exec --no-TTY api stat --format '%a:%u' /var/lib/deskboard)" == "700:1000" ]]
-  printf '%s\n' "API host exposure: no" "Proxy host bind is loopback only: yes"
+  printf '%s\n' \
+    "API host exposure: no" \
+    "Proxy host bind is loopback only: yes" \
+    "Core and proxy restart after host reboot unless explicitly stopped: yes"
 }
 
 assert_secret_privacy() {
@@ -314,6 +321,7 @@ const configuration = JSON.parse(readFileSync(process.argv[2], "utf8"));
 const api = configuration.services?.api;
 const proxy = configuration.services?.["private-proxy"];
 if (!api || !proxy) process.exit(1);
+if (api.restart !== "unless-stopped" || proxy.restart !== "unless-stopped") process.exit(1);
 if (api.ports?.length) process.exit(1);
 if (!Array.isArray(api.secrets) || api.secrets.length !== 1) process.exit(1);
 if (proxy.secrets !== undefined) process.exit(1);

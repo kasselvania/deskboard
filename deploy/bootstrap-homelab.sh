@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly expected_branch="feat/private-homelab-manual-board"
 readonly proxy_port="8080"
 readonly bridge_bundle_identifier="com.kasselvania.deskboard.AppleBridge"
 readonly bridge_application_name="DeskboardAppleBridge.app"
 readonly bridge_support_name="DeskboardAppleBridge"
+readonly bridge_provisioning_schema_version="1"
+readonly bridge_info_plist_path="native/apple-bridge/DeskboardAppleBridge/Info.plist"
 readonly provisioning_request_name="bootstrap-provisioning-request-v1.json"
 readonly provisioning_receipt_name="bootstrap-provisioning-receipt-v1.json"
 
@@ -76,21 +77,42 @@ stream_tracked_archive() {
   git -C "$root" archive --format=tar HEAD
 }
 
+validate_tracked_revision() {
+  local root="$1"
+  git -C "$root" rev-parse --verify --quiet 'HEAD^{commit}' >/dev/null \
+    || return 1
+  [[ -z "$(git -C "$root" status --porcelain=v1 --untracked-files=all)" ]] \
+    || return 1
+  git -C "$root" diff --quiet --ignore-submodules -- || return 1
+  git -C "$root" diff --cached --quiet --ignore-submodules -- || return 1
+
+  local tracked_file object_type
+  for tracked_file in \
+    compose.yaml \
+    deploy/bootstrap-homelab.sh \
+    deploy/bootstrap-remote.sh \
+    "$bridge_info_plist_path"; do
+    object_type="$(git -C "$root" cat-file -t "HEAD:$tracked_file" 2>/dev/null)" \
+      || return 1
+    [[ "$object_type" == "blob" ]] || return 1
+  done
+
+  local schema_version
+  schema_version="$(
+    git -C "$root" show "HEAD:$bridge_info_plist_path" \
+      | /usr/bin/plutil -extract DeskboardBootstrapProvisioningSchemaVersion \
+        raw -o - -- - 2>/dev/null
+  )" || return 1
+  [[ "$schema_version" == "$bridge_provisioning_schema_version" ]] || return 1
+  [[ -z "$(git -C "$root" ls-files -- \
+    .deskboard-private \
+    deploy/.private-origin \
+    'deploy/.private-origin.*')" ]] || return 1
+}
+
 validate_local_basis() {
-  [[ "$(git -C "$repository_root" branch --show-current)" == "$expected_branch" ]] \
-    || fixed_failure "Bootstrap requires the Phase 3D feature branch."
-  [[ -z "$(git -C "$repository_root" status --porcelain=v1 --untracked-files=all)" ]] \
-    || fixed_failure "Bootstrap requires a clean working tree."
-  git -C "$repository_root" diff --quiet --ignore-submodules -- \
-    || fixed_failure "Bootstrap requires a clean working tree."
-  git -C "$repository_root" diff --cached --quiet --ignore-submodules -- \
-    || fixed_failure "Bootstrap requires a clean working tree."
-  git -C "$repository_root" cat-file -e HEAD:compose.yaml \
-    || fixed_failure "The committed root Compose stack is missing."
-  git -C "$repository_root" cat-file -e HEAD:deploy/bootstrap-remote.sh \
-    || fixed_failure "The committed remote bootstrap helper is missing."
-  [[ -z "$(git -C "$repository_root" ls-files -- .deskboard-private)" ]] \
-    || fixed_failure "Private deployment files must not be tracked."
+  validate_tracked_revision "$repository_root" \
+    || fixed_failure "Bootstrap requires a clean tracked HEAD with the production stack and provisioning schema."
 }
 
 validate_ssh_alias() {
@@ -126,7 +148,7 @@ validate_installed_bridge() {
     "$info_plist" 2>/dev/null)" == "$bridge_bundle_identifier" ]] \
     || fixed_failure "The installed Bridge identity is not valid."
   [[ "$(/usr/bin/plutil -extract DeskboardBootstrapProvisioningSchemaVersion \
-    raw -o - "$info_plist" 2>/dev/null)" == "1" ]] \
+    raw -o - "$info_plist" 2>/dev/null)" == "$bridge_provisioning_schema_version" ]] \
     || fixed_failure "The installed Bridge does not support this bootstrap."
 }
 
@@ -185,6 +207,42 @@ validate_ts_hostname() {
     [[ ${#label} -ge 1 && ${#label} -le 63 ]] || return 1
     [[ "$label" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]] || return 1
   done
+}
+
+private_origin_health_status() {
+  local core_origin="$1"
+  {
+    printf 'url = "%s/health"\n' "$core_origin"
+  } | curl \
+    --config - \
+    --proto '=https' \
+    --silent \
+    --output /dev/null \
+    --write-out '%{http_code}' \
+    --max-time 15
+}
+
+write_private_board_url() {
+  local board_url="$1"
+  local target_path="$2"
+  local origin hostname target_directory temporary_path
+  [[ "$board_url" == https://*/board ]] || return 1
+  origin="${board_url%/board}"
+  hostname="${origin#https://}"
+  [[ "$origin" == "https://$hostname" ]] || return 1
+  validate_ts_hostname "$hostname" || return 1
+
+  target_directory="$(dirname "$target_path")"
+  [[ -d "$target_directory" ]] || return 1
+  temporary_path="$(mktemp "$target_directory/.private-origin.XXXXXX")" || return 1
+  if ! chmod 0600 "$temporary_path" \
+    || ! printf '%s' "$board_url" >"$temporary_path" \
+    || ! mv -f "$temporary_path" "$target_path"; then
+    rm -f "$temporary_path"
+    return 1
+  fi
+  [[ ! -e "$temporary_path" ]] || return 1
+  [[ "$(stat -f '%Lp' "$target_path")" == "600" ]] || return 1
 }
 
 write_bridge_provisioning_request() {
@@ -250,7 +308,7 @@ main() {
   board_time_zone="$(read_local_time_zone)"
   bearer_token="$(generate_bearer_token)"
 
-  printf '%s\n' "Local branch, tracked bytes, signed Bridge state, and SSH control plane: ready"
+  printf '%s\n' "Clean tracked HEAD, signed Bridge state, and SSH control plane: ready"
 
   local stacks_directory
   stacks_directory="$(run_embedded_remote_helper discover \
@@ -343,16 +401,21 @@ main() {
     || fixed_failure "The private Tailscale origin is not an approved .ts.net name."
   core_origin="https://$hostname"
   local remote_health_status
-  remote_health_status="$(curl \
-    --proto '=https' \
-    --silent \
-    --output /dev/null \
-    --write-out '%{http_code}' \
-    --max-time 15 \
-    "$core_origin/health")" \
+  remote_health_status="$(private_origin_health_status "$core_origin")" \
     || fixed_failure "The private Tailscale origin did not reach the healthy proxy."
   [[ "$remote_health_status" == "200" ]] \
     || fixed_failure "The private Tailscale origin did not reach the healthy proxy."
+
+  local private_origin_path
+  private_origin_path="$repository_root/deploy/.private-origin"
+  write_private_board_url "$core_origin/board" "$private_origin_path" \
+    || fixed_failure "The private Board URL could not be stored locally."
+  printf '%s\n' "Private Board URL stored locally: yes"
+  if /usr/bin/pbcopy <"$private_origin_path" 2>/dev/null; then
+    printf '%s\n' "Private Board URL copied to clipboard: yes"
+  else
+    printf '%s\n' "Private Board URL copied to clipboard: no"
+  fi
 
   write_bridge_provisioning_request "$core_origin" "$bearer_token"
   bearer_token=""

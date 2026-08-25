@@ -3,6 +3,7 @@ name: deskboard
 services:
   api:
     image: deskboard-api:phase3d
+    restart: unless-stopped
     build:
       context: .
       dockerfile: deploy/api.Dockerfile
@@ -48,6 +49,7 @@ services:
 
   private-proxy:
     image: deskboard-private-proxy:phase3d
+    restart: unless-stopped
     build:
       context: .
       dockerfile: deploy/web-proxy.Dockerfile

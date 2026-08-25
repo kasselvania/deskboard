@@ -294,7 +294,7 @@ final class BridgeProvisioningInboxTests: XCTestCase {
         )
     }
 
-    func testDestinationRollbackAfterProvisioningPreservesOperationalState() throws {
+    func testDestinationChangeAfterProvisioningPreservesOperationalState() throws {
         let original = try continuityState()
         let directory = try makeOwnerOnlyDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

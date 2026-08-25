@@ -58,6 +58,45 @@ assert_tracked_archive_only() {
   [[ ! -e "$extracted/.git" ]]
 }
 
+assert_branch_independent_tracked_revision() {
+  local repository="$proof_tmp/revision-repository"
+  mkdir -p \
+    "$repository/deploy" \
+    "$repository/native/apple-bridge/DeskboardAppleBridge"
+  git -C "$repository" init --quiet --initial-branch review-candidate
+  git -C "$repository" config user.email synthetic@example.invalid
+  git -C "$repository" config user.name "Synthetic Proof"
+  cp -p "$proof_root/compose.yaml" "$repository/compose.yaml"
+  cp -p "$proof_root/deploy/bootstrap-homelab.sh" \
+    "$repository/deploy/bootstrap-homelab.sh"
+  cp -p "$proof_root/deploy/bootstrap-remote.sh" \
+    "$repository/deploy/bootstrap-remote.sh"
+  cp -p "$proof_root/native/apple-bridge/DeskboardAppleBridge/Info.plist" \
+    "$repository/$bridge_info_plist_path"
+  git -C "$repository" add .
+  git -C "$repository" commit --quiet --message synthetic
+
+  validate_tracked_revision "$repository"
+  git -C "$repository" branch --move accepted-main
+  validate_tracked_revision "$repository"
+  [[ "$(git -C "$repository" branch --show-current)" == "accepted-main" ]]
+  ! rg -n 'expected_branch|feature branch' \
+    "$proof_root/deploy/bootstrap-homelab.sh" >/dev/null
+
+  printf '%s\n' dirty >"$repository/staged.txt"
+  git -C "$repository" add staged.txt
+  ! validate_tracked_revision "$repository"
+  git -C "$repository" reset --quiet HEAD -- staged.txt
+  rm -f "$repository/staged.txt"
+  validate_tracked_revision "$repository"
+
+  /usr/bin/plutil -replace DeskboardBootstrapProvisioningSchemaVersion \
+    -integer 2 "$repository/$bridge_info_plist_path"
+  git -C "$repository" add "$bridge_info_plist_path"
+  git -C "$repository" commit --quiet --message invalid-schema
+  ! validate_tracked_revision "$repository"
+}
+
 assert_dockge_discovery_selection() {
   local custom default
   custom="$(
@@ -86,8 +125,70 @@ assert_root_compose_is_single_stack() {
   grep -Fq 'DESKBOARD_APPLE_BRIDGE_TOKEN_FILE: /run/secrets/apple_bridge_token' \
     "$proof_root/compose.yaml"
   [[ "$(grep -c '^    secrets:$' "$proof_root/compose.yaml")" == "1" ]]
+  [[ "$(grep -c '^    restart: unless-stopped$' "$proof_root/compose.yaml")" == "2" ]]
+  sed -n '/^  api:/,/^  private-proxy:/p' "$proof_root/compose.yaml" \
+    | grep -Fq 'restart: unless-stopped'
+  sed -n '/^  private-proxy:/,/^networks:/p' "$proof_root/compose.yaml" \
+    | grep -Fq 'restart: unless-stopped'
   ! sed -n '/private-proxy:/,/^networks:/p' "$proof_root/compose.yaml" \
     | grep -Eq 'apple_bridge_token|DESKBOARD_APPLE_BRIDGE_TOKEN'
+}
+
+assert_private_origin_handoff() {
+  local repository="$proof_tmp/private-origin-repository"
+  local target="$repository/deploy/.private-origin"
+  local first_url="https://first.synthetic-tailnet.ts.net/board"
+  local second_url="https://second.synthetic-tailnet.ts.net/board"
+  local output="$proof_tmp/private-origin.output"
+  local error="$proof_tmp/private-origin.error"
+  mkdir -p "$repository/deploy"
+  cp -p "$proof_root/.gitignore" "$repository/.gitignore"
+  cp -p "$proof_root/.dockerignore" "$repository/.dockerignore"
+  git -C "$repository" init --quiet --initial-branch synthetic
+  git -C "$repository" config user.email synthetic@example.invalid
+  git -C "$repository" config user.name "Synthetic Proof"
+  git -C "$repository" add .gitignore .dockerignore
+  git -C "$repository" commit --quiet --message synthetic
+
+  write_private_board_url "$first_url" "$target" >"$output" 2>"$error"
+  [[ ! -s "$output" && ! -s "$error" ]]
+  [[ "$(stat -f '%Lp' "$target")" == "600" ]]
+  [[ "$(cat "$target")" == "$first_url" ]]
+  local first_inode
+  first_inode="$(stat -f '%i' "$target")"
+
+  write_private_board_url "$second_url" "$target" >"$output" 2>"$error"
+  [[ ! -s "$output" && ! -s "$error" ]]
+  [[ "$(stat -f '%Lp' "$target")" == "600" ]]
+  [[ "$(cat "$target")" == "$second_url" ]]
+  [[ "$(stat -f '%i' "$target")" != "$first_inode" ]]
+  [[ -z "$(find "$repository/deploy" -maxdepth 1 -name '.private-origin.*' -print)" ]]
+  git -C "$repository" check-ignore --quiet deploy/.private-origin
+  [[ -z "$(git -C "$repository" status --porcelain=v1 --untracked-files=all)" ]]
+  [[ -z "$(git -C "$repository" ls-files -- deploy/.private-origin)" ]]
+  grep -Fxq 'deploy/.private-origin' "$proof_root/.dockerignore"
+  grep -Fxq 'deploy/.private-origin.*' "$proof_root/.dockerignore"
+
+  local fake_bin="$proof_tmp/private-origin-fake-bin"
+  local curl_arguments="$proof_tmp/private-origin-curl-arguments"
+  local health_status="$proof_tmp/private-origin-health-status"
+  mkdir -p "$fake_bin"
+  {
+    printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail'
+    printf '%s\n' 'printf "%s\\n" "$@" >"$DESKBOARD_FAKE_CURL_ARGUMENTS"'
+    printf '%s\n' 'cat >/dev/null'
+    printf '%s' 'printf 200'
+  } >"$fake_bin/curl"
+  chmod 0700 "$fake_bin/curl"
+  export DESKBOARD_FAKE_CURL_ARGUMENTS="$curl_arguments"
+  PATH="$fake_bin:$PATH" \
+    private_origin_health_status "${second_url%/board}" \
+      >"$health_status" 2>"$error"
+  [[ "$(cat "$health_status")" == "200" ]]
+  [[ ! -s "$error" ]]
+  ! grep -Eq 'https://|\.ts\.net|synthetic-tailnet' "$curl_arguments"
+  ! grep -Eq 'https://|\.ts\.net|synthetic-tailnet' \
+    "$output" "$error" "$curl_arguments"
 }
 
 assert_secret_and_runtime_writers() {
@@ -220,10 +321,14 @@ assert_bootstrap_secret_is_not_an_argument() {
 
 printf '%s\n' "bootstrap proof: tracked archive"
 assert_tracked_archive_only
+printf '%s\n' "bootstrap proof: branch-independent tracked revision"
+assert_branch_independent_tracked_revision
 printf '%s\n' "bootstrap proof: Dockge discovery"
 assert_dockge_discovery_selection
 printf '%s\n' "bootstrap proof: root Compose"
 assert_root_compose_is_single_stack
+printf '%s\n' "bootstrap proof: private origin handoff"
+assert_private_origin_handoff
 printf '%s\n' "bootstrap proof: secret writers"
 assert_secret_and_runtime_writers
 printf '%s\n' "bootstrap proof: rerun idempotency"

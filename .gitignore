@@ -94,6 +94,7 @@ xcuserdata/
 secrets/
 .deskboard-private/
 deploy/.private-origin
+deploy/.private-origin.*
 *.local.yml
 *.local.yaml
 compose.override.yml
