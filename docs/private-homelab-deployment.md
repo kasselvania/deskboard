@@ -1,121 +1,63 @@
 # Private homelab deployment and manual remote Board
 
-## Purpose and boundary
+Phase 3D deploys the accepted manual read path without changing Apple source authority, contracts, Bridge identity, revisions, pending envelope bytes, freshness rules, `BoardSnapshot` v1, or web-client behavior. Real homelab, retry, iPad, and Steam Deck acceptance remain review gates until the owner completes them privately.
 
-Phase 3D deploys the accepted manual read path to the existing private Ubuntu/CasaOS homelab. The iPad, Steam Deck, and signed macOS Bridge use one Tailscale HTTPS origin. This deployment does not change Apple source authority, contracts, Bridge identity, revision streams, outbox bytes, freshness, Board composition, `BoardSnapshot` v1, or web-client behavior.
+## 1. Prerequisites
 
-The complete topology is:
+Before running the bootstrap, all of the following must already be true:
 
-```text
-signed macOS Bridge / iPad / Steam Deck
-                 |
-       authenticated Tailscale HTTPS
-                 |
-        Tailscale Serve on host
-                 |
-       127.0.0.1:<proxy-port>
-                 |
-       private-proxy container
-          |              |
- production PWA    private Compose network
-                         |
-                    API container
-                         |
-              deskboard-data named volume
-```
+- the Mac checkout is on `feat/private-homelab-manual-board`, clean, and contains the commits to deploy;
+- the reviewed production Bridge build containing provisioning schema v1 is signed with the existing authority and installed at `~/Applications/DeskboardAppleBridge.app`, with its valid state, Keychain item, source selections, TCC grants, revisions, history, and pending envelopes intact;
+- the argument names one existing SSH configuration alias that connects noninteractively to the homelab account;
+- that remote account has UID 1000, can use Docker without a password prompt, and can write the running Dockge container's stacks bind;
+- Docker Compose and the authenticated Tailscale CLI are already installed on the host;
+- the Mac and intended devices are authenticated members of the same tailnet.
 
-Only the private proxy has a host port, bound to numeric loopback. The API is not host-published. The Compose network is internal. Tailscale Serve is the sole remote ingress; Funnel and public ingress remain absent.
+Do not reset or export Bridge state. Do not retrieve the old token. Do not create a GitHub credential, clone, private `.env`, certificate, public ingress, second proxy, or second authentication system on the host.
 
-## Build and private runtime configuration
+The bootstrap discovers the configured Dockge stacks directory from the running container. If no custom stacks mount exists, the supported fallback is `/opt/stacks`. It leaves the tracked root `compose.yaml` and its build context at `<stacks-directory>/deskboard`, while using ordinary Docker Compose commands through SSH.
 
-Follow [`deploy/README.md`](../deploy/README.md) to create `deploy/.env`, validate the Compose file without printing its expansion, build clean images, and start the services.
+## 2. One bootstrap command
 
-The deployed Core receives exactly these private values at runtime:
-
-```text
-DESKBOARD_APPLE_BRIDGE_ID
-DESKBOARD_APPLE_BRIDGE_TOKEN
-DESKBOARD_APPLE_MIRROR_DATABASE_PATH
-DESKBOARD_BOARD_MODE=apple-mirror
-DESKBOARD_BOARD_TIME_ZONE=<owner-supplied-IANA-zone>
-```
-
-The environment file is ignored, mode `0600`, and local to the owner-controlled host. No value is a build argument or image layer. The API additionally receives the fixed deployment-only listener setting `DESKBOARD_API_HOST=0.0.0.0`; ordinary local use still defaults to `127.0.0.1`. Any other host, malformed port, partial mirror configuration, or invalid time zone fails before listening with a fixed content-free startup message.
-
-The recommended first deployment uses a new empty named volume. Keep the existing Bridge identity, selections, TCC grants, Keychain token, source revisions, and status revisions. A higher current Bridge revision is valid against an empty remote Core because the remote scope has no accepted revision to reset.
-
-## Proxy surface
-
-The proxy serves the built PWA and exactly these API routes:
-
-```text
-GET  /health
-GET  /v1/board
-POST /v1/apple-source-snapshots
-POST /v1/apple-bridge-status
-```
-
-Direct `/board` navigation and refresh both serve the production index. Hashed assets have a bounded seven-day immutable cache; the Board document and `GET /v1/board` are `no-store`. Source ingestion accepts up to 1 MiB and status ingestion up to 256 KiB, matching the accepted Core limits.
-
-Proxy access logging is disabled. Its error log is discarded, and the API production logger is disabled. The proxy does not forward cookies or client-address headers. It forwards the existing Authorization header only to the two accepted ingestion routes. Unknown routes and upstream failures return fixed content-free errors. Directory listing and arbitrary file access are disabled.
-
-## Tailscale Serve setup
-
-On the homelab host, inspect the locally installed command before changing state:
+From the repository root on the Mac, run exactly:
 
 ```bash
-tailscale version
-tailscale serve --help
+./deploy/bootstrap-homelab.sh <existing-ssh-config-alias>
 ```
 
-Use the exact locally documented private HTTPS reverse-proxy form. Its backend must be `http://127.0.0.1:<proxy-port>`. Do not infer syntax from another Tailscale version. Never invoke or enable Funnel. Do not bind Compose to a LAN address, tailnet IP, or `0.0.0.0`, and do not manage certificates manually.
+The command verifies the branch and clean worktree, packages only tracked `HEAD` bytes, uploads them through SSH, safely replaces tracked stack files, preserves `.deskboard-private` and the named SQLite volume, and builds or recreates only what the tracked stack and token rotation require.
 
-Owner-only verification must establish all of the following without copying host or tailnet details into agent-visible output:
+It generates a new token locally, streams it over SSH standard input into an owner-only API secret file, starts the root Compose stack, waits for content-free health, configures private Tailscale Serve for `http://127.0.0.1:8080`, obtains the `.ts.net` origin without printing it, and asks the signed Bridge process to import a strict one-time request. The request carries only `schemaVersion`, the approved Core origin, and the new token. After success the request is removed with one filesystem operation and the Bridge writes a separate content-free owner-only receipt.
 
-- private HTTPS Serve is configured;
-- Funnel is disabled;
-- the private origin reaches `/health` and `/board` from an authenticated tailnet device;
-- a non-tailnet path cannot reach the service;
-- neither the LAN nor tailnet interface reaches the API port directly;
-- the only host-published container endpoint is the proxy on `127.0.0.1`.
+Rerunning the same command updates tracked files, rotates the one token in Core and the Bridge, retains the same Compose project and SQLite volume, preserves all Bridge operational state, and reapplies the same private Serve mapping without creating another mapping. No deployment step is performed through a web UI.
 
-Store the approved URL in `deploy/.private-origin`, mode `0600`. That file is ignored by Git and Docker build context.
+## 3. Normal OS or Tailscale consent
 
-## Bridge origin update
+The installed Tailscale CLI may require one-time HTTPS Serve consent. If it does, the bootstrap privately opens the consent page and stops with one action: approve that page, then rerun the same bootstrap command.
 
-The Bridge accepts two origin classes only:
+The OS may also present its normal signed-application or Keychain authorization prompt when the Bridge updates its own credential. Approve only the identified installed Bridge. Do not browse, copy, reveal, or manually replace any Keychain value.
 
-- existing numeric-loopback HTTP with an explicit port; or
-- HTTPS at the default port with a strict ASCII `.ts.net` hostname.
+All other failures are content-free and fail closed. Preserve the stack, secret files, Bridge state, request, and pending envelopes, correct the stated prerequisite, and rerun the same command.
 
-It rejects paths other than the root origin form, user information, queries, fragments, non-default ports, redirects, remote HTTP, `localhost`, raw LAN or tailnet IPs, arbitrary public/DNS hosts, malformed labels, and internationalized lookalike suffixes. System TLS validation remains unchanged. The Bridge itself appends only `/v1/apple-source-snapshots` and `/v1/apple-bridge-status`.
+## 4. Explicit Sync Now
 
-Before saving the private origin, record only content-free state: permission categories, selected-source counts, acknowledged revisions, pending yes/no, and safe result kinds. After saving it, confirm those values are unchanged. Do not reveal the Bridge ID, token, source identifiers, source names, pending bytes, or origin.
+After the bootstrap reports success, use the signed Bridge's existing **Sync Now** action. There is no timer, daemon, watcher, launch item, notification, or background retry.
 
-## Manual remote Sync Now and uncertain retry
+Owner-only remote proof must confirm, without exposing real content or identifiers:
 
-Phase 3D retains one explicit **Sync Now** action. There is no automatic trigger.
+1. source and status deliveries apply or return `unchangedDuplicate` at the private origin;
+2. one controlled Apple-side change produces a newer accepted revision;
+3. uncertain transport preserves exact pending source and status bytes;
+4. restored reachability plus explicit **Sync Now** retries those byte-equivalent bytes without rereading Apple under the uncertain revision;
+5. Calendar and Reminders freshness remain truthful.
 
-Owner-only acceptance sequence:
+The bootstrap itself does not press **Sync Now** and does not perform this acceptance.
 
-1. Confirm the approved private origin is stored and identity, credential, selections, permissions, revisions, and pending state are continuous.
-2. Run **Sync Now** and record only masked entity/source ordinals, revision numbers, and `applied` or `unchangedDuplicate` result kinds.
-3. Make one controlled Apple-side source change.
-4. Run **Sync Now** and confirm a newer remote accepted revision.
-5. Make the homelab origin unreachable after a request may have begun.
-6. Confirm exact pending source/status envelopes remain present without inspecting or printing their bytes.
-7. Relaunch the Bridge when useful and confirm the same pending revisions remain.
-8. Restore reachability and run **Sync Now**.
-9. Confirm the pending revisions succeed as byte-equivalent retries without rereading Apple under those uncertain revisions.
-10. Confirm Calendar and Reminders freshness remain truthful.
+## 5. iPad and Steam Deck private acceptance
 
-Source and status pending envelopes stay independent. Only `applied` and `unchangedDuplicate` acknowledge them. Changing origin does not encode a destination or token into pending bytes and does not clear attempt or acknowledgement history.
+Load the same private `/board` origin on the iPad and Steam Deck only after remote Sync Now proof. The owner may inspect the real Board privately. Do not provide screenshots, accessibility output, OCR, DOM dumps, API bodies, mirror rows, pending bytes, or remote-debug output to an agent.
 
-## iPad and Steam Deck acceptance
-
-Both devices must use the same private HTTPS origin. The owner may inspect the real Board privately. Agents must not use screenshots, accessibility inspection, OCR, DOM dumps, API-body inspection, mirror rows, remote debugging, or real-data logs.
-
-Record exactly this content-free report for each device:
+Record only this content-free result for each device:
 
 ```text
 Device: iPad | Steam Deck
@@ -132,53 +74,18 @@ Calm: yes/no
 No private content shared: yes/no
 ```
 
-After one controlled manual source update, both devices must agree on the same opaque Board version. Privately exercise stale or unavailable source presentation and the accepted saved/unreachable client behavior. Confirm no public or unauthenticated non-tailnet path reaches the Board.
+Both devices must agree on the same opaque Board version after one controlled update. A non-tailnet path must not reach the service, and the API port must remain unreachable directly.
 
-## Restart, recreation, and migration
+## 6. Rollback changes only the destination
 
-The `deskboard-data` named volume is outside image layers and survives ordinary `restart`, `up --force-recreate`, and `down`. Never use `down --volumes` as a normal operation. Core handles termination by closing the shared SQLite mirror/status resource.
+Rollback the Bridge by changing only `coreOrigin` to the previously accepted explicit numeric-loopback HTTP origin. Do not change or reset the bearer credential, Bridge identity, Calendar or Reminder selections, TCC grants, source revisions, status revision, history, or pending source/status envelopes.
 
-`deploy/verify.sh` proves with synthetic data that:
+Pending envelopes contain neither destination nor token and remain byte-equivalent. Use explicit **Sync Now** only when the owner already knows that the rollback Core accepts the currently rotated credential; this continuity rollback does not retrieve, copy, or replace a token. The private stack, Serve configuration, and SQLite volume may remain intact for investigation; deleting them is not part of rollback.
 
-- a new empty deployment accepts higher source and status revisions;
-- duplicate delivery remains idempotent;
-- restart and container recreation preserve accepted data;
-- the current runtime opens a database created by accepted Phase 3C code;
-- inaccessible and corrupt database storage fails closed with content-free output;
-- no database exists in an image layer.
+## Security, persistence, and deferred work
 
-Do not copy the Mac acceptance database to the homelab through Git or agent-visible tooling. Backup and restore automation are not part of Phase 3D.
+The root [`compose.yaml`](../compose.yaml) is the single production stack. The API is internal-only, the proxy binds only `127.0.0.1:8080`, and `deskboard-data` persists SQLite outside image layers and tracked stack replacement. Never use `docker compose down --volumes` as a Phase 3D operating action.
 
-## Content-free troubleshooting
+Proxy and application logs remain content-free. Never publish a token, origin, hostname, tailnet, Compose expansion, database, Board body, source identity, pending envelope, screenshot, or receipt path/content beyond the fixed synthetic fixtures.
 
-Use only health state, exit status, fixed errors, masked ordinals, revision numbers, permission/freshness categories, and result kinds.
-
-- If startup fails, validate the private environment file locally without printing it, confirm its mode is `0600`, and confirm the named volume is writable by the non-root API container.
-- If `/health` is unavailable, inspect container health and fixed exit state. Do not enable access logs or dump expanded configuration.
-- If the Bridge rejects an origin, remove all paths, query, fragment, credentials, and non-default ports; accept only the owner-approved `.ts.net` HTTPS origin.
-- If delivery is uncertain, preserve pending state, restore reachability, and use **Sync Now**. Do not reset identity or revisions and do not delete pending bytes.
-- If the Board is stale or unavailable, treat that as truthful operational state. Do not delete mirror data or fabricate freshness.
-
-Never paste a populated environment, Compose expansion, URL, token, database row, pending envelope, Tailscale state, Board body, screenshot, or browser inspection into an issue or PR.
-
-## Rollback to same-Mac loopback
-
-Rollback changes only the approved destination:
-
-1. Using the locally installed Tailscale help, remove or disable the private Serve mapping without enabling Funnel.
-2. Stop the homelab Compose services without deleting the named volume.
-3. Start the accepted same-Mac mirror-backed Core with its existing private configuration.
-4. Save its explicit numeric-loopback HTTP origin in the Bridge.
-5. Run **Sync Now**; any existing pending bytes may be sent to the newly approved loopback destination.
-
-Do not reset Bridge identity, Keychain, selections, TCC, revisions, history, or pending state during rollback.
-
-## Secret rotation limitations
-
-Phase 3D has one bearer token and no dual-token grace period. Token rotation is a coordinated manual operation: replace the Keychain value and private Core runtime value, restart Core, then use **Sync Now**. Pending envelope bytes contain neither destination nor token and remain valid, but delivery cannot succeed while the two runtime values disagree.
-
-Bridge identity is not a routine secret-rotation field. Changing it would create a different authenticated authority and revision scope, so Phase 3D does not rotate or reset it.
-
-## Deferred to Phase 3E
-
-The following remain absent: background synchronization, a daemon or launch item, automatic retry, health notifications, backup/restore automation, restore drills, and soak. Public ingress, source administration, Board contract or web-client features, automatic conflict recovery, and every Apple write also remain absent.
+Background synchronization, automatic retry, health notifications, backup/restore automation, restore drills, soak, public ingress, source administration, Board changes, and every Apple write remain deferred to later accepted phases.

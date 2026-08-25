@@ -166,7 +166,7 @@ Non-responsibilities in the accepted read path:
 
 ### Private homelab boundary
 
-Phase 3D uses the existing Ubuntu/CasaOS and Tailscale environment. Its source-controlled implementation is documented in [`deploy/README.md`](deploy/README.md) and [`docs/private-homelab-deployment.md`](docs/private-homelab-deployment.md).
+Phase 3D uses the existing Ubuntu/CasaOS and Tailscale environment. Its source-controlled implementation is documented in [`deploy/README.md`](deploy/README.md) and [`docs/private-homelab-deployment.md`](docs/private-homelab-deployment.md). The single supported bootstrap sends only tracked `HEAD` bytes through one existing SSH alias, discovers the running Dockge container's stacks bind, and installs the root `compose.yaml` without a GitHub credential or deployment UI.
 
 The accepted target posture is:
 
@@ -177,6 +177,8 @@ The accepted target posture is:
 - Tailscale Serve as the sole remote HTTPS ingress;
 - no Tailscale Funnel and no public internet ingress;
 - all private configuration supplied at runtime and excluded from Git;
+- one API-only owner-readable token file, mutually exclusive with the existing token environment setting;
+- one fixed Bridge sandbox inbox whose exact-key request can change only the Keychain token and `coreOrigin` through the signed Bridge process;
 - manual Bridge delivery only.
 
 Background operation and backup/restore move to Phase 3E after the remote manual path is accepted.
@@ -384,7 +386,7 @@ The only additional production origin class permitted in Phase 3D is a strict Ta
 
 The Bridge appends only the two accepted ingestion paths.
 
-Changing destination does not change Bridge identity, Keychain credential, selections, TCC grants, revisions, or pending envelope bytes.
+Changing destination alone does not change Bridge identity, Keychain credential, selections, TCC grants, revisions, or pending envelope bytes. The Phase 3D bootstrap deliberately rotates the Keychain credential through its fixed provisioning inbox while changing only `coreOrigin` in Bridge state; identity, selections, TCC behavior, delivery coordinates, revisions, history, and pending source/status bytes remain unchanged.
 
 ## Security and privacy
 
