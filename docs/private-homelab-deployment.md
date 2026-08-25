@@ -6,7 +6,7 @@ Phase 3D deploys the accepted manual read path without changing Apple source aut
 
 Before running the bootstrap, all of the following must already be true:
 
-- the Mac checkout is on `feat/private-homelab-manual-board`, clean, and contains the commits to deploy;
+- the Mac checkout has a clean tracked `HEAD` that commits the root stack, both bootstrap scripts, and Bridge provisioning schema v1; no particular branch name is required;
 - the reviewed production Bridge build containing provisioning schema v1 is signed with the existing authority and installed at `~/Applications/DeskboardAppleBridge.app`, with its valid state, Keychain item, source selections, TCC grants, revisions, history, and pending envelopes intact;
 - the argument names one existing SSH configuration alias that connects noninteractively to the homelab account;
 - that remote account has UID 1000, can use Docker without a password prompt, and can write the running Dockge container's stacks bind;
@@ -25,9 +25,11 @@ From the repository root on the Mac, run exactly:
 ./deploy/bootstrap-homelab.sh <existing-ssh-config-alias>
 ```
 
-The command verifies the branch and clean worktree, packages only tracked `HEAD` bytes, uploads them through SSH, safely replaces tracked stack files, preserves `.deskboard-private` and the named SQLite volume, and builds or recreates only what the tracked stack and token rotation require.
+The command verifies a valid clean tracked `HEAD` and the required committed deployment/schema files, packages only `git archive HEAD` bytes, uploads them through SSH, safely replaces tracked stack files, preserves `.deskboard-private` and the named SQLite volume, and builds or recreates only what the tracked stack and token rotation require.
 
-It generates a new token locally, streams it over SSH standard input into an owner-only API secret file, starts the root Compose stack, waits for content-free health, configures private Tailscale Serve for `http://127.0.0.1:8080`, obtains the `.ts.net` origin without printing it, and asks the signed Bridge process to import a strict one-time request. The request carries only `schemaVersion`, the approved Core origin, and the new token. After success the request is removed with one filesystem operation and the Bridge writes a separate content-free owner-only receipt.
+It generates a new token locally, streams it over SSH standard input into an owner-only API secret file, starts the root Compose stack, waits for content-free health, configures private Tailscale Serve for `http://127.0.0.1:8080`, obtains the `.ts.net` origin without printing it, and asks the signed Bridge process to import a strict one-time request. The request carries only `schemaVersion`, the approved Core origin, and the new token. After success the request is removed with one filesystem operation and the Bridge writes a separate content-free owner-only receipt. Core and Web both use `restart: unless-stopped`; this restores only the containers after a host reboot and does not initiate a Bridge sync.
+
+After the private origin is healthy, the command atomically replaces `deploy/.private-origin` with the full private `/board` URL at mode `0600`, then attempts to copy that file to the Mac clipboard through standard input. It never prints the URL, hostname, or tailnet. The fixed completion output states whether local storage and clipboard copy succeeded, and no temporary predecessor remains after a successful replacement.
 
 Rerunning the same command updates tracked files, rotates the one token in Core and the Bridge, retains the same Compose project and SQLite volume, preserves all Bridge operational state, and reapplies the same private Serve mapping without creating another mapping. No deployment step is performed through a web UI.
 
@@ -55,7 +57,7 @@ The bootstrap itself does not press **Sync Now** and does not perform this accep
 
 ## 5. iPad and Steam Deck private acceptance
 
-Load the same private `/board` origin on the iPad and Steam Deck only after remote Sync Now proof. The owner may inspect the real Board privately. Do not provide screenshots, accessibility output, OCR, DOM dumps, API bodies, mirror rows, pending bytes, or remote-debug output to an agent.
+Use the full private `/board` URL stored locally at `deploy/.private-origin` for the iPad and Steam Deck, only after remote Sync Now proof. The bootstrap normally leaves the same URL on the Mac clipboard; if clipboard copy reports `no`, the owner may transfer the owner-only local file through a private channel without printing its contents. The owner may inspect the real Board privately. Do not provide the URL, screenshots, accessibility output, OCR, DOM dumps, API bodies, mirror rows, pending bytes, or remote-debug output to an agent.
 
 Record only this content-free result for each device:
 
@@ -76,11 +78,11 @@ No private content shared: yes/no
 
 Both devices must agree on the same opaque Board version after one controlled update. A non-tailnet path must not reach the service, and the API port must remain unreachable directly.
 
-## 6. Rollback changes only the destination
+## 6. Same-Mac rollback is not executable in Phase 3D
 
-Rollback the Bridge by changing only `coreOrigin` to the previously accepted explicit numeric-loopback HTTP origin. Do not change or reset the bearer credential, Bridge identity, Calendar or Reminder selections, TCC grants, source revisions, status revision, history, or pending source/status envelopes.
+The bootstrap rotates one matching bearer token into the remote Core and Bridge Keychain. The previous same-Mac Core is not provisioned with that rotated token, so changing `coreOrigin` back to numeric loopback alone does not establish authenticated delivery. Phase 3D therefore has no supported executable same-Mac rollback procedure. Do not retrieve, inspect, copy, or expose a Keychain token, and do not claim a destination-only edit completes rollback.
 
-Pending envelopes contain neither destination nor token and remain byte-equivalent. Use explicit **Sync Now** only when the owner already knows that the rollback Core accepts the currently rotated credential; this continuity rollback does not retrieve, copy, or replace a token. The private stack, Serve configuration, and SQLite volume may remain intact for investigation; deleting them is not part of rollback.
+Changing only destination-related runtime state remains byte-neutral for Bridge ID, Calendar and Reminder selections, TCC permission behavior, acknowledged source/status revisions, attempt/acknowledgement history, and exact pending source/status envelopes, but authentication at another Core remains unresolved. Preserve the private stack, Serve mapping, SQLite volume, and all Bridge state, and stop. A coordinated local fallback is deferred to a later separately reviewed slice; it is not part of the Phase 3D acceptance run.
 
 ## Security, persistence, and deferred work
 
