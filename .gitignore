@@ -92,6 +92,7 @@ xcuserdata/
 
 # Local deployment and credentials
 secrets/
+.deskboard-private/
 deploy/.private-origin
 *.local.yml
 *.local.yaml

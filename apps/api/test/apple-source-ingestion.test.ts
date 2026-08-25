@@ -71,6 +71,66 @@ describe("Apple source ingestion configuration", () => {
     });
   });
 
+  it("accepts the same strict token through one absolute token file", () => {
+    const readTokenFile = vi.fn(() => CONFIGURED_TOKEN);
+    expect(
+      readAppleSourceIngestionConfiguration(
+        {
+          DESKBOARD_APPLE_BRIDGE_ID: EXPECTED_BRIDGE_ID,
+          DESKBOARD_APPLE_BRIDGE_TOKEN_FILE: "/run/secrets/apple_bridge_token",
+          DESKBOARD_APPLE_MIRROR_DATABASE_PATH: "/tmp/synthetic-mirror.sqlite",
+        },
+        readTokenFile,
+      ),
+    ).toEqual({
+      expectedBridgeId: EXPECTED_BRIDGE_ID,
+      bearerToken: CONFIGURED_TOKEN,
+      mirrorDatabasePath: "/tmp/synthetic-mirror.sqlite",
+    });
+    expect(readTokenFile).toHaveBeenCalledWith(
+      "/run/secrets/apple_bridge_token",
+    );
+  });
+
+  it("rejects token environment and token file configuration together", () => {
+    const readTokenFile = vi.fn(() => CONFIGURED_TOKEN);
+    expect(() =>
+      readAppleSourceIngestionConfiguration(
+        {
+          DESKBOARD_APPLE_BRIDGE_ID: EXPECTED_BRIDGE_ID,
+          DESKBOARD_APPLE_BRIDGE_TOKEN: CONFIGURED_TOKEN,
+          DESKBOARD_APPLE_BRIDGE_TOKEN_FILE: "/run/secrets/apple_bridge_token",
+          DESKBOARD_APPLE_MIRROR_DATABASE_PATH: "/tmp/synthetic-mirror.sqlite",
+        },
+        readTokenFile,
+      ),
+    ).toThrow(AppleSourceIngestionConfigurationError);
+    expect(readTokenFile).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the token file is relative, unreadable, or malformed", () => {
+    const cases: Array<[string, () => string]> = [
+      ["relative-token", () => CONFIGURED_TOKEN],
+      ["/run/secrets/missing", () => {
+        throw new Error("synthetic read failure");
+      }],
+      ["/run/secrets/invalid", () => `${CONFIGURED_TOKEN}\n`],
+    ];
+
+    for (const [tokenFile, readTokenFile] of cases) {
+      expect(() =>
+        readAppleSourceIngestionConfiguration(
+          {
+            DESKBOARD_APPLE_BRIDGE_ID: EXPECTED_BRIDGE_ID,
+            DESKBOARD_APPLE_BRIDGE_TOKEN_FILE: tokenFile,
+            DESKBOARD_APPLE_MIRROR_DATABASE_PATH: "/tmp/synthetic-mirror.sqlite",
+          },
+          readTokenFile,
+        ),
+      ).toThrow(AppleSourceIngestionConfigurationError);
+    }
+  });
+
   it("fails partial or malformed configuration with one content-free error", () => {
     for (const environment of [
       { DESKBOARD_APPLE_BRIDGE_ID: EXPECTED_BRIDGE_ID },
@@ -78,6 +138,10 @@ describe("Apple source ingestion configuration", () => {
         DESKBOARD_APPLE_BRIDGE_ID: EXPECTED_BRIDGE_ID,
         DESKBOARD_APPLE_BRIDGE_TOKEN: "short",
         DESKBOARD_APPLE_MIRROR_DATABASE_PATH: "/tmp/synthetic.sqlite",
+      },
+      {
+        DESKBOARD_APPLE_BRIDGE_ID: EXPECTED_BRIDGE_ID,
+        DESKBOARD_APPLE_BRIDGE_TOKEN_FILE: "/run/secrets/token",
       },
     ]) {
       expect(() => readAppleSourceIngestionConfiguration(environment)).toThrow(

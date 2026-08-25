@@ -17,9 +17,13 @@ if (bodyPath !== "-") {
   headers["content-type"] = "application/json";
 }
 if (authenticated === "authenticated") {
-  const token = process.env.DESKBOARD_SYNTHETIC_TOKEN;
-  if (!token) {
+  const tokenFile = process.env.DESKBOARD_SYNTHETIC_TOKEN_FILE;
+  if (!tokenFile) {
     throw new Error("Synthetic proxy token is missing.");
+  }
+  const token = await readFile(tokenFile, "utf8");
+  if (!/^[0-9a-f]{64}$/.test(token)) {
+    throw new Error("Synthetic proxy token is invalid.");
   }
   headers.authorization = `Bearer ${token}`;
 }

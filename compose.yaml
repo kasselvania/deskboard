@@ -4,17 +4,21 @@ services:
   api:
     image: deskboard-api:phase3d
     build:
-      context: ..
+      context: .
       dockerfile: deploy/api.Dockerfile
     init: true
     env_file:
-      - ${DESKBOARD_ENV_FILE:-.env}
+      - ${DESKBOARD_RUNTIME_ENV_FILE:-./.deskboard-private/runtime.env}
     environment:
       DESKBOARD_API_HOST: 0.0.0.0
+      DESKBOARD_APPLE_BRIDGE_TOKEN_FILE: /run/secrets/apple_bridge_token
       NODE_ENV: production
       PORT: "3001"
     expose:
       - "3001"
+    secrets:
+      - source: apple_bridge_token
+        target: apple_bridge_token
     volumes:
       - deskboard-data:/var/lib/deskboard
     networks:
@@ -45,7 +49,7 @@ services:
   private-proxy:
     image: deskboard-private-proxy:phase3d
     build:
-      context: ..
+      context: .
       dockerfile: deploy/web-proxy.Dockerfile
     init: true
     depends_on:
@@ -82,3 +86,7 @@ networks:
 
 volumes:
   deskboard-data:
+
+secrets:
+  apple_bridge_token:
+    file: ${DESKBOARD_APPLE_BRIDGE_TOKEN_SECRET_FILE:-./.deskboard-private/apple-bridge-token}

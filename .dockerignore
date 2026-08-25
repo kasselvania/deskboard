@@ -16,6 +16,7 @@
 **/*.log
 private-fixtures
 secrets
+.deskboard-private
 deploy/.private-origin
 data
 .data
