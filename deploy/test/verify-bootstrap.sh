@@ -120,8 +120,12 @@ assert_dockge_discovery_selection() {
 assert_root_compose_is_single_stack() {
   [[ -f "$proof_root/compose.yaml" ]]
   [[ ! -e "$proof_root/deploy/compose.yaml" ]]
-  grep -Fq '127.0.0.1:${DESKBOARD_PROXY_BIND_PORT:-8080}:8080' \
+  grep -Fq '127.0.0.1:${DESKBOARD_PROXY_BIND_PORT:-18080}:8080' \
     "$proof_root/compose.yaml"
+  grep -Fq 'readonly proxy_port="18080"' \
+    "$proof_root/deploy/bootstrap-homelab.sh"
+  grep -Fq 'readonly deskboard_proxy_port="18080"' \
+    "$proof_root/deploy/bootstrap-remote.sh"
   grep -Fq 'DESKBOARD_APPLE_BRIDGE_TOKEN_FILE: /run/secrets/apple_bridge_token' \
     "$proof_root/compose.yaml"
   [[ "$(grep -c '^    secrets:$' "$proof_root/compose.yaml")" == "1" ]]
@@ -299,15 +303,15 @@ assert_private_serve_command() {
   export DESKBOARD_FAKE_TAILSCALE_CALLS="$calls"
   export DESKBOARD_FAKE_TAILSCALE_MAPPING="$mapping"
 
-  [[ "$(PATH="$fake_bin:$PATH" configure_private_serve 8080)" == "ok" ]]
-  [[ "$(PATH="$fake_bin:$PATH" configure_private_serve 8080)" == "ok" ]]
-  [[ "$(cat "$mapping")" == "http://127.0.0.1:8080" ]]
-  [[ "$(grep -Fc 'serve --bg http://127.0.0.1:8080' "$calls")" == "2" ]]
+  [[ "$(PATH="$fake_bin:$PATH" configure_private_serve 18080)" == "ok" ]]
+  [[ "$(PATH="$fake_bin:$PATH" configure_private_serve 18080)" == "ok" ]]
+  [[ "$(cat "$mapping")" == "http://127.0.0.1:18080" ]]
+  [[ "$(grep -Fc 'serve --bg http://127.0.0.1:18080' "$calls")" == "2" ]]
   local consent_output consent_status
   set +e
   consent_output="$(
     DESKBOARD_FAKE_TAILSCALE_CONSENT=1 \
-      PATH="$fake_bin:$PATH" configure_private_serve 8080
+      PATH="$fake_bin:$PATH" configure_private_serve 18080
   )"
   consent_status=$?
   set -e

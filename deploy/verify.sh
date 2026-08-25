@@ -4,7 +4,7 @@ set -euo pipefail
 proof_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 proof_tmp="$(mktemp -d "$proof_root/.phase3d-proof.XXXXXX")"
 proof_project="deskboardphase3dproof$$"
-proof_port="18080"
+proof_port="18081"
 proof_token="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 proof_rotated_token="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 proof_bridge="synthetic-deployment-bridge"

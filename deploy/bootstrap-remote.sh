@@ -3,7 +3,7 @@ set -euo pipefail
 
 readonly deskboard_stack_name="deskboard"
 readonly deskboard_private_directory=".deskboard-private"
-readonly deskboard_proxy_port="8080"
+readonly deskboard_proxy_port="18080"
 
 require_absolute_directory() {
   local value="$1"

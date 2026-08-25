@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly proxy_port="8080"
+readonly proxy_port="18080"
 readonly bridge_bundle_identifier="com.kasselvania.deskboard.AppleBridge"
 readonly bridge_application_name="DeskboardAppleBridge.app"
 readonly bridge_support_name="DeskboardAppleBridge"
