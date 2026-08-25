@@ -130,6 +130,14 @@ assert_root_compose_is_single_stack() {
     | grep -Fq 'restart: unless-stopped'
   sed -n '/^  private-proxy:/,/^networks:/p' "$proof_root/compose.yaml" \
     | grep -Fq 'restart: unless-stopped'
+  sed -n '/^  private-proxy:/,/^networks:/p' "$proof_root/compose.yaml" \
+    | grep -Fq '      - loopback-ingress'
+  ! sed -n '/^  api:/,/^  private-proxy:/p' "$proof_root/compose.yaml" \
+    | grep -Fq 'loopback-ingress'
+  sed -n '/^networks:/,/^volumes:/p' "$proof_root/compose.yaml" \
+    | grep -Fq '  loopback-ingress:'
+  sed -n '/^networks:/,/^volumes:/p' "$proof_root/compose.yaml" \
+    | grep -Fq '    internal: true'
   ! sed -n '/private-proxy:/,/^networks:/p' "$proof_root/compose.yaml" \
     | grep -Eq 'apple_bridge_token|DESKBOARD_APPLE_BRIDGE_TOKEN'
 }

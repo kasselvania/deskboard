@@ -86,7 +86,7 @@ Changing only destination-related runtime state remains byte-neutral for Bridge 
 
 ## Security, persistence, and deferred work
 
-The root [`compose.yaml`](../compose.yaml) is the single production stack. The API is internal-only, the proxy binds only `127.0.0.1:8080`, and `deskboard-data` persists SQLite outside image layers and tracked stack replacement. Never use `docker compose down --volumes` as a Phase 3D operating action.
+The root [`compose.yaml`](../compose.yaml) is the single production stack. The API joins only the internal Compose network and has no host publication. The proxy joins that internal network plus one ordinary loopback-ingress bridge required for Docker Engine to materialize its sole `127.0.0.1:8080` host binding; no other service joins that bridge or publishes a port. `deskboard-data` persists SQLite outside image layers and tracked stack replacement. Never use `docker compose down --volumes` as a Phase 3D operating action.
 
 Proxy and application logs remain content-free. Never publish a token, origin, hostname, tailnet, Compose expansion, database, Board body, source identity, pending envelope, screenshot, or receipt path/content beyond the fixed synthetic fixtures.
 

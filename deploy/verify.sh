@@ -242,17 +242,21 @@ assert_runtime_topology() {
   docker inspect "$api_id" >"$proof_tmp/api-container.json"
   docker inspect "$proxy_id" >"$proof_tmp/proxy-container.json"
   docker network inspect "${proof_project}_private" >"$proof_tmp/private-network.json"
+  docker network inspect "${proof_project}_loopback-ingress" \
+    >"$proof_tmp/loopback-ingress-network.json"
   node --input-type=module - \
     "$proof_tmp/api-container.json" \
     "$proof_tmp/proxy-container.json" \
     "$proof_tmp/private-network.json" \
+    "$proof_tmp/loopback-ingress-network.json" \
     "$proof_port" <<'NODE'
 import { readFileSync } from "node:fs";
 
-const [, , apiPath, proxyPath, networkPath, expectedPort] = process.argv;
+const [, , apiPath, proxyPath, privateNetworkPath, ingressNetworkPath, expectedPort] = process.argv;
 const api = JSON.parse(readFileSync(apiPath, "utf8"))[0];
 const proxy = JSON.parse(readFileSync(proxyPath, "utf8"))[0];
-const network = JSON.parse(readFileSync(networkPath, "utf8"))[0];
+const privateNetwork = JSON.parse(readFileSync(privateNetworkPath, "utf8"))[0];
+const ingressNetwork = JSON.parse(readFileSync(ingressNetworkPath, "utf8"))[0];
 if (Object.keys(api.HostConfig.PortBindings ?? {}).length !== 0) process.exit(1);
 const bindings = proxy.HostConfig.PortBindings?.["8080/tcp"];
 if (
@@ -261,12 +265,34 @@ if (
   bindings[0].HostIp !== "127.0.0.1" ||
   bindings[0].HostPort !== expectedPort
 ) process.exit(1);
+const runtimeBindings = proxy.NetworkSettings.Ports?.["8080/tcp"];
+if (
+  !Array.isArray(runtimeBindings) ||
+  runtimeBindings.length !== 1 ||
+  runtimeBindings[0].HostIp !== "127.0.0.1" ||
+  runtimeBindings[0].HostPort !== expectedPort
+) process.exit(1);
 if (!api.HostConfig.ReadonlyRootfs || !proxy.HostConfig.ReadonlyRootfs) process.exit(1);
 if (
   api.HostConfig.RestartPolicy?.Name !== "unless-stopped" ||
   proxy.HostConfig.RestartPolicy?.Name !== "unless-stopped"
 ) process.exit(1);
-if (!network.Internal) process.exit(1);
+if (!privateNetwork.Internal || ingressNetwork.Internal || ingressNetwork.Driver !== "bridge") {
+  process.exit(1);
+}
+const apiNetworks = Object.keys(api.NetworkSettings.Networks ?? {});
+const proxyNetworks = Object.keys(proxy.NetworkSettings.Networks ?? {});
+if (apiNetworks.length !== 1 || proxyNetworks.length !== 2) process.exit(1);
+const apiName = api.Name.replace(/^\//, "");
+const proxyName = proxy.Name.replace(/^\//, "");
+const privateNames = Object.values(privateNetwork.Containers ?? {}).map((entry) => entry.Name);
+const ingressNames = Object.values(ingressNetwork.Containers ?? {}).map((entry) => entry.Name);
+if (!privateNames.includes(apiName) || !privateNames.includes(proxyName)) {
+  process.exit(1);
+}
+if (ingressNames.includes(apiName) || !ingressNames.includes(proxyName)) {
+  process.exit(1);
+}
 const apiEnvironment = api.Config.Env ?? [];
 if (!apiEnvironment.includes("DESKBOARD_APPLE_BRIDGE_TOKEN_FILE=/run/secrets/apple_bridge_token")) {
   process.exit(1);

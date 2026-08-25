@@ -19,6 +19,8 @@ authenticated tailnet device
           |
   127.0.0.1:8080
           |
+ loopback-ingress bridge
+          |
  private-proxy container ---- production PWA
           |
  internal Compose network
@@ -26,7 +28,7 @@ authenticated tailnet device
        API container ---- deskboard-data named SQLite volume
 ```
 
-The API has no host-published port. The proxy is host-bound only to numeric loopback. Both pinned production images run non-root with read-only root filesystems and use the bounded `unless-stopped` restart policy so Core and Web return after a host reboot. Tailscale Serve is the sole private HTTPS ingress; Funnel and public ingress are absent.
+The API has no host-published port and joins only the internal Compose network. The proxy also joins a dedicated ordinary bridge so Linux Docker Engine can materialize its one numeric-loopback host publication; only the proxy joins that bridge, and its binding remains exactly `127.0.0.1:8080`. Both pinned production images run non-root with read-only root filesystems and use the bounded `unless-stopped` restart policy so Core and Web return after a host reboot. Tailscale Serve is the sole private HTTPS ingress; Funnel and public ingress are absent.
 
 ## Private runtime boundary
 
