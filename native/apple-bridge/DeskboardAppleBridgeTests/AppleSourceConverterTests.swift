@@ -383,6 +383,83 @@ final class AppleSourceConverterTests: XCTestCase {
         )
     }
 
+    func testMeasuredProductionReminderLimitCompletes945AndTruncates1001Exactly() throws {
+        let capturedAt = date("2026-08-26T12:00:00Z")
+        let makeSource: (Int) -> ReminderSourceRead = { count in
+            ReminderSourceRead(
+                sourceContainerId: "synthetic-production-limit-source",
+                allowsContentModifications: true,
+                records: (0 ..< count).reversed().map { index in
+                    ReminderRecordRead(
+                        localIdentifier: String(format: "synthetic-%05d", index),
+                        externalIdentifier: nil,
+                        title: "Synthetic bounded reminder",
+                        startComponents: nil,
+                        dueComponents: nil,
+                        isCompleted: index.isMultiple(of: 2),
+                        completionDate: nil
+                    )
+                }
+            )
+        }
+
+        let complete = try AppleSourceConverter.reminderSnapshot(
+            from: makeSource(945),
+            bridgeId: "synthetic-bridge",
+            capturedAt: capturedAt
+        )
+        guard case let .reminder(completeSnapshot) = complete else {
+            return XCTFail("Expected Reminder snapshot")
+        }
+        XCTAssertEqual(completeSnapshot.matchedCount, 945)
+        XCTAssertEqual(completeSnapshot.records.count, 945)
+        XCTAssertFalse(completeSnapshot.truncated)
+        let completeBytes = try AppleSourceEnvelopeCodec.encodeWithinProductionLimit(
+            sourceRevision: 1,
+            snapshot: complete
+        )
+        XCTAssertLessThanOrEqual(
+            completeBytes.count,
+            BridgeProductionLimits.maximumEncodedEnvelopeBytes
+        )
+        guard case let .reminder(decodedComplete) = try AppleSourceEnvelopeCodec.decode(
+            completeBytes
+        ).snapshot else {
+            return XCTFail("Expected decoded Reminder snapshot")
+        }
+        XCTAssertEqual(decodedComplete.matchedCount, 945)
+        XCTAssertEqual(decodedComplete.records.count, 945)
+        XCTAssertFalse(decodedComplete.truncated)
+
+        let oversized = try AppleSourceConverter.reminderSnapshot(
+            from: makeSource(1_001),
+            bridgeId: "synthetic-bridge",
+            capturedAt: capturedAt
+        )
+        guard case let .reminder(oversizedSnapshot) = oversized else {
+            return XCTFail("Expected Reminder snapshot")
+        }
+        XCTAssertEqual(oversizedSnapshot.matchedCount, 1_001)
+        XCTAssertEqual(oversizedSnapshot.records.count, 1_000)
+        XCTAssertTrue(oversizedSnapshot.truncated)
+        let oversizedBytes = try AppleSourceEnvelopeCodec.encodeWithinProductionLimit(
+            sourceRevision: 2,
+            snapshot: oversized
+        )
+        XCTAssertLessThanOrEqual(
+            oversizedBytes.count,
+            BridgeProductionLimits.maximumEncodedEnvelopeBytes
+        )
+        guard case let .reminder(decodedOversized) = try AppleSourceEnvelopeCodec.decode(
+            oversizedBytes
+        ).snapshot else {
+            return XCTFail("Expected decoded Reminder snapshot")
+        }
+        XCTAssertEqual(decodedOversized.matchedCount, 1_001)
+        XCTAssertEqual(decodedOversized.records.count, 1_000)
+        XCTAssertTrue(decodedOversized.truncated)
+    }
+
     func testCalendarWindowPolicyUsesExactSevenAndFortyFiveDayConstants() throws {
         let zone = TimeZone(identifier: "Etc/UTC")!
         let now = date("2026-08-23T18:00:00Z")

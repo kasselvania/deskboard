@@ -27,6 +27,8 @@
 		B40000000000000000000014 /* BridgeStatusContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000017 /* BridgeStatusContractTests.swift */; };
 		B40000000000000000000015 /* BridgeProvisioningInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000018 /* BridgeProvisioningInbox.swift */; };
 		B40000000000000000000016 /* BridgeProvisioningInboxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000019 /* BridgeProvisioningInboxTests.swift */; };
+		B40000000000000000000017 /* ReminderCompletenessDiagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000001A /* ReminderCompletenessDiagnostic.swift */; };
+		B40000000000000000000018 /* ReminderCompletenessDiagnosticTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000001B /* ReminderCompletenessDiagnosticTests.swift */; };
 		B40000000000000000000010 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A40000000000000000000012 /* EventKit.framework */; };
 		B40000000000000000000011 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A40000000000000000000013 /* Security.framework */; };
 /* End PBXBuildFile section */
@@ -62,6 +64,8 @@
 		A40000000000000000000017 /* BridgeStatusContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeStatusContractTests.swift; sourceTree = "<group>"; };
 		A40000000000000000000018 /* BridgeProvisioningInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeProvisioningInbox.swift; sourceTree = "<group>"; };
 		A40000000000000000000019 /* BridgeProvisioningInboxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeProvisioningInboxTests.swift; sourceTree = "<group>"; };
+		A4000000000000000000001A /* ReminderCompletenessDiagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderCompletenessDiagnostic.swift; sourceTree = "<group>"; };
+		A4000000000000000000001B /* ReminderCompletenessDiagnosticTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderCompletenessDiagnosticTests.swift; sourceTree = "<group>"; };
 		A40000000000000000000010 /* DeskboardAppleBridge.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DeskboardAppleBridge.entitlements; sourceTree = "<group>"; };
 		A40000000000000000000011 /* DeskboardAppleBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeskboardAppleBridge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A40000000000000000000014 /* DeskboardAppleBridgeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DeskboardAppleBridgeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -116,6 +120,7 @@
 				A4000000000000000000000B /* ManualSyncCoordinator.swift */,
 				A40000000000000000000016 /* AppleBridgeStatusContract.swift */,
 				A40000000000000000000018 /* BridgeProvisioningInbox.swift */,
+				A4000000000000000000001A /* ReminderCompletenessDiagnostic.swift */,
 				A40000000000000000000010 /* DeskboardAppleBridge.entitlements */,
 			);
 			path = DeskboardAppleBridge;
@@ -130,6 +135,7 @@
 				A40000000000000000000015 /* NativeSecurityTests.swift */,
 				A40000000000000000000017 /* BridgeStatusContractTests.swift */,
 				A40000000000000000000019 /* BridgeProvisioningInboxTests.swift */,
+				A4000000000000000000001B /* ReminderCompletenessDiagnosticTests.swift */,
 			);
 			path = DeskboardAppleBridgeTests;
 			sourceTree = "<group>";
@@ -265,6 +271,7 @@
 				B4000000000000000000000C /* AppleSourceContract.swift in Sources */,
 				B40000000000000000000013 /* AppleBridgeStatusContract.swift in Sources */,
 				B40000000000000000000015 /* BridgeProvisioningInbox.swift in Sources */,
+				B40000000000000000000017 /* ReminderCompletenessDiagnostic.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -278,6 +285,7 @@
 				B40000000000000000000012 /* NativeSecurityTests.swift in Sources */,
 				B40000000000000000000014 /* BridgeStatusContractTests.swift in Sources */,
 				B40000000000000000000016 /* BridgeProvisioningInboxTests.swift in Sources */,
+				B40000000000000000000018 /* ReminderCompletenessDiagnosticTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

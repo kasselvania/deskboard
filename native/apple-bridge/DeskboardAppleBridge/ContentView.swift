@@ -48,6 +48,55 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Selected Reminder Completeness") {
+                Text("This diagnostic reports counts, finite limits, and fit results only.")
+                    .foregroundStyle(.secondary)
+                Button("Measure Blocked Selected Reminder") {
+                    model.measureBlockedSelectedReminder()
+                }
+                .disabled(
+                    model.isSyncing
+                        || model.isMeasuringReminderCompleteness
+                        || !model.hasBlockedSelectedReminder
+                )
+                if model.isMeasuringReminderCompleteness {
+                    ProgressView("Measuring completeness")
+                }
+                if let report = model.reminderCompletenessReport {
+                    LabeledContent(
+                        "Matched record count",
+                        value: "\(report.matchedRecordCount)"
+                    )
+                    LabeledContent(
+                        "Retained record count",
+                        value: "\(report.retainedRecordCount)"
+                    )
+                    LabeledContent(
+                        "Complete candidate encoded bytes",
+                        value: report.completeCandidateEncodedByteCount.map(String.init)
+                            ?? "not safely measurable"
+                    )
+                    LabeledContent(
+                        "Current record cap",
+                        value: "\(report.currentRecordCap)"
+                    )
+                    LabeledContent(
+                        "Current envelope limit",
+                        value: "\(report.currentEnvelopeLimitBytes) bytes"
+                    )
+                    diagnosticFit(
+                        "Bounded memory",
+                        report.completeCandidateFitsBoundedMemory
+                    )
+                    diagnosticFit(
+                        "Envelope",
+                        report.completeCandidateFitsEnvelopeLimit
+                    )
+                    diagnosticFit("Core", report.completeCandidateFitsCoreLimit)
+                    diagnosticFit("Private proxy", report.completeCandidateFitsProxyLimit)
+                }
+            }
+
             if !model.statusRows.isEmpty {
                 Section("Per-source results") {
                     ForEach(model.statusRows) { row in
@@ -78,6 +127,10 @@ struct ContentView: View {
         ) { _ in
             model.importProvisioningRequest()
         }
+    }
+
+    private func diagnosticFit(_ label: String, _ fits: Bool) -> some View {
+        LabeledContent("Fits \(label)", value: fits ? "yes" : "no")
     }
 
     @ViewBuilder

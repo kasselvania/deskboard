@@ -27,6 +27,10 @@ final class BridgeViewModel: ObservableObject {
     @Published private(set) var statusRows: [BridgeStatusRow] = []
     @Published private(set) var bridgeId = ""
     @Published private(set) var isSyncing = false
+    @Published private(set) var isMeasuringReminderCompleteness = false
+    @Published private(set) var reminderCompletenessReport:
+        ReminderCompletenessDiagnosticReport?
+    @Published private(set) var hasBlockedSelectedReminder = false
     @Published private(set) var notice = "Ready for manual setup."
     @Published var coreOriginInput = ""
     @Published var tokenInput = ""
@@ -36,6 +40,7 @@ final class BridgeViewModel: ObservableObject {
     private let credentialStore: BridgeCredentialStore
     private let provisioningInbox: BridgeProvisioningImporting
     private let coordinator: ManualSyncCoordinator
+    private let reminderCompletenessDiagnostic: ReminderCompletenessDiagnostic
 
     init(
         stateStore: BridgeStatePersisting = AtomicBridgeStateFileStore(),
@@ -63,6 +68,10 @@ final class BridgeViewModel: ObservableObject {
                 transport: transport
             )
         )
+        reminderCompletenessDiagnostic = ReminderCompletenessDiagnostic(
+            stateStore: stateStore,
+            sourceReader: sourceReader
+        )
         importProvisioningRequest()
     }
 
@@ -87,6 +96,14 @@ final class BridgeViewModel: ObservableObject {
             reminderSources = sourceReader.availableSources(for: .reminder)
             statusRows = makeStatusRows(state.deliveries)
             hasPendingStatus = state.pendingStatus != nil
+            hasBlockedSelectedReminder = state.deliveries.contains {
+                $0.coordinate.entityType == .reminder
+                    && state.selectedReminderSourceIds.contains(
+                        $0.coordinate.sourceContainerId
+                    )
+                    && $0.status == .blockedTruncated
+                    && $0.pending != nil
+            }
         } catch {
             notice = "Bridge state requires operator action."
         }
@@ -163,7 +180,7 @@ final class BridgeViewModel: ObservableObject {
     }
 
     func syncNow() {
-        guard !isSyncing else { return }
+        guard !isSyncing, !isMeasuringReminderCompleteness else { return }
         isSyncing = true
         notice = pendingCount > 0
             ? "Retrying persisted pending delivery before reading Apple."
@@ -184,6 +201,31 @@ final class BridgeViewModel: ObservableObject {
                     ?? "Manual synchronization could not start."
                 refresh()
             }
+        }
+    }
+
+    func measureBlockedSelectedReminder() {
+        guard
+            !isSyncing,
+            !isMeasuringReminderCompleteness,
+            hasBlockedSelectedReminder
+        else {
+            return
+        }
+        isMeasuringReminderCompleteness = true
+        reminderCompletenessReport = nil
+        notice = "Measuring selected Reminder completeness without exposing source content."
+        Task {
+            defer { isMeasuringReminderCompleteness = false }
+            do {
+                reminderCompletenessReport = try await reminderCompletenessDiagnostic
+                    .measureBlockedSelectedReminder()
+                notice = "Selected Reminder completeness measurement finished."
+            } catch {
+                reminderCompletenessReport = nil
+                notice = "Selected Reminder completeness measurement requires operator action."
+            }
+            refresh()
         }
     }
 

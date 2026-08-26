@@ -305,7 +305,11 @@ final class HTTPAndCredentialTests: XCTestCase {
             BridgeProductionLimits.maximumEncodedEnvelopeBytes,
             BridgeProductionLimits.coreRequestBodyBytes
         )
-        XCTAssertEqual(BridgeProductionLimits.maximumRetainedRecordsPerSource, 500)
+        XCTAssertEqual(
+            BridgeProductionLimits.coreRequestBodyBytes,
+            BridgeProductionLimits.proxySourceRequestBodyBytes
+        )
+        XCTAssertEqual(BridgeProductionLimits.maximumRetainedRecordsPerSource, 1_000)
         XCTAssertEqual(BridgeProductionLimits.maximumResponseBytes, 4 * 1024)
     }
 
