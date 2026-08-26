@@ -26,6 +26,8 @@ Apple Calendar + Apple Reminders
               ↓ EventKit
 signed, sandboxed macOS Bridge
               ↓ authenticated source + status envelopes
+private Tailscale HTTPS origin
+              ↓
 Deskboard Core / SQLite mirror
               ↓ BoardSnapshot v1
         iPad + Steam Deck
@@ -41,13 +43,14 @@ The read path is strictly one-way. Calendar and Reminders remain read-only.
 - **Phase 3A — Atomic Core Apple Source Mirror:** accepted and merged in PR [#14](https://github.com/kasselvania/deskboard/pull/14).
 - **Phase 3B — Authenticated Manual Bridge Delivery:** accepted and merged in PR [#18](https://github.com/kasselvania/deskboard/pull/18).
 - **Phase 3C — Truthful Local Mirror-Backed Board:** accepted and merged in PR [#21](https://github.com/kasselvania/deskboard/pull/21).
-- **Phase 3D — Private Homelab Deployment and Manual Remote Board:** active under issue [#22](https://github.com/kasselvania/deskboard/issues/22).
+- **Phase 3D — Private Homelab Deployment and Manual Remote Board:** accepted and merged in PR [#24](https://github.com/kasselvania/deskboard/pull/24).
+- **Phase 3E — Unattended Read-Only Bridge and Selected-Source Completeness:** active under issue [#25](https://github.com/kasselvania/deskboard/issues/25).
 
-Phase 3C established the first real-data Board without changing `BoardSnapshot` v1 or the web client. Core composes only from the latest accepted selected-source roster, keeps last-good facts without calling them fresh, and preserves the existing maximum of three Tasks and two Commitments. The owner privately confirmed the local Board was recognizable and calm using content-free evidence only.
+Phase 3D proved the complete manual private path. One tracked-byte SSH bootstrap installs the Dockge-compatible Compose stack, keeps Core off the host network, exposes only a numeric-loopback proxy through private Tailscale Serve, rotates and provisions one bearer credential without exposing it, and preserves Bridge identity, selections, permissions, revisions, history, and exact pending envelopes. Real remote delivery, uncertain byte-equivalent retry, and private iPad/Steam Deck use all passed. Both devices displayed the same recognizable, calm Board without document-level overflow.
 
-The active Phase 3D implementation packages that accepted path as pinned production containers: a non-host-published Core API, one loopback-bound static web/private proxy, and one persistent SQLite volume. One deterministic SSH bootstrap installs the root Compose stack, configures private Tailscale Serve, rotates Core's file-mounted token, and asks the signed Bridge to import the same token plus a strict `.ts.net` origin without changing its operational state. Explicit **Sync Now** remains the only delivery trigger. Homelab, private remote-sync, and device acceptance are still required before Phase 3D can be accepted. Background scheduling, launch-at-login behavior, backup/restore automation, public ingress, source administration, and every Apple write remain deferred.
+The accepted result is intentionally honest rather than artificially green. Calendar becomes stale after the fixed 15-minute interval when manual `Sync Now` is not repeated, and one selected Reminder source remains `blockedTruncated` under the current finite production limit. Phase 3E addresses those two observed facts through explicit owner-approved unattended read-only operation and a bounded source-completeness decision. Backup/restore and a longer read-only soak move to Phase 3F. Every Apple write remains deferred.
 
-The hosted GitHub Actions job currently does not execute repository steps because of an account billing/spending restriction. The workflow remains unchanged; local locked Node, native, signed-product, browser, and private acceptance gates are the current code evidence.
+The hosted GitHub Actions job currently does not execute repository steps because of an account billing/spending restriction. The workflow remains unchanged; local locked Node, native, signed-product, browser, deployment, and private acceptance gates are the current code evidence.
 
 ## Contracts and design documents
 
@@ -59,8 +62,8 @@ The hosted GitHub Actions job currently does not execute repository steps becaus
 - [docs/apple-bridge-manual-delivery.md](docs/apple-bridge-manual-delivery.md) — signed Bridge, authentication, and exact retry
 - [docs/apple-bridge-status-v1.md](docs/apple-bridge-status-v1.md) — content-free selection and source-health status
 - [docs/mirror-backed-board.md](docs/mirror-backed-board.md) — real Board eligibility, freshness, reasons, and privacy proof
-- [docs/private-homelab-deployment.md](docs/private-homelab-deployment.md) — Phase 3D private topology, operation, and owner-only acceptance
-- issue [#22](https://github.com/kasselvania/deskboard/issues/22) — active Phase 3D deployment contract
+- [docs/private-homelab-deployment.md](docs/private-homelab-deployment.md) — accepted private topology, bootstrap, and operation
+- issue [#25](https://github.com/kasselvania/deskboard/issues/25) — active Phase 3E implementation and proof contract
 
 ## Development prerequisites
 
@@ -97,7 +100,7 @@ Run the complete Node gate:
 npm run check
 ```
 
-Native validation and private manual procedures are documented in the Apple integration documents. Never use real Board screenshots, accessibility output, DOM dumps, API payloads, mirror rows, or pending envelopes as agent-visible proof.
+Native validation and private operational procedures are documented in the Apple integration and deployment documents. Never use real Board screenshots, accessibility output, DOM dumps, API payloads, mirror rows, or pending envelopes as agent-visible proof.
 
 ## Repository structure
 
@@ -110,7 +113,7 @@ fixtures/eventkit/                Approved sanitized discovery evidence
 fixtures/apple-source-contract/   Strict cross-language source fixtures
 fixtures/apple-bridge-status/     Strict cross-language operational fixtures
 native/apple-bridge/              Signed sandboxed production Bridge
-deploy/                            Private production containers, proxy, and synthetic proof
+deploy/                            Private production containers, bootstrap, proxy, and proof
 tools/apple-eventkit-probe/       Contained EventKit discovery probe
 tests/browser/                    iPad, Steam Deck, and portrait proofs
 .github/workflows/                Complete quality gate
