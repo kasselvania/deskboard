@@ -1,0 +1,16 @@
+{
+  "sourceRevision": 42,
+  "snapshot": {
+    "schemaVersion": 1,
+    "entityType": "reminder",
+    "bridgeId": "synthetic-deployment-bridge",
+    "source": {
+      "sourceContainerId": "synthetic-reminder-source",
+      "allowsContentModifications": true
+    },
+    "capturedAt": "2026-08-24T18:00:00Z",
+    "matchedCount": 0,
+    "truncated": false,
+    "records": []
+  }
+}

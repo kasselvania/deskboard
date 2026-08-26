@@ -38,15 +38,16 @@ This slice deliberately does not choose TLS termination, Tailscale addressing, r
 
 ## Core ingestion configuration
 
-Apple ingestion is enabled only when all three runtime values are present:
+Apple ingestion is enabled only when the Bridge identity and mirror path are present with exactly one accepted token source:
 
 | Environment name | Meaning |
 |---|---|
 | `DESKBOARD_APPLE_BRIDGE_ID` | The one opaque Bridge identity Core accepts |
 | `DESKBOARD_APPLE_BRIDGE_TOKEN` | One 256-bit bearer secret encoded as exactly 64 lowercase hexadecimal characters |
+| `DESKBOARD_APPLE_BRIDGE_TOKEN_FILE` | Phase 3D alternative absolute file containing exactly the same token format; mutually exclusive with `DESKBOARD_APPLE_BRIDGE_TOKEN` |
 | `DESKBOARD_APPLE_MIRROR_DATABASE_PATH` | Private local path for the isolated Phase 3A SQLite mirror |
 
-If all three values are absent, the ingestion route is absent and normal fixture-only development continues. If only part of the configuration is present, or the identity/token/path format is invalid, startup fails with the fixed `APPLE_SOURCE_INGESTION_CONFIGURATION_INVALID` error. The error contains no configured value.
+If all four settings are absent, the ingestion route is absent and normal fixture-only development continues. If only part of the configuration is present, if both token settings are present, or if the identity/token/path format is invalid, startup fails with the fixed `APPLE_SOURCE_INGESTION_CONFIGURATION_INVALID` error. The error contains no configured value.
 
 Do not commit a populated environment file. Supply the values only to the local Core process. The mirror path must be private, outside tracked repository content, and must not identify a real source in its name.
 
@@ -216,9 +217,9 @@ The production reader does not access or copy notes, URLs, locations, structured
 
 The production credential boundary is a generic-password item in the user's macOS Keychain. It uses Apple Security APIs directly, requires no package, does not enable Keychain sharing, and stores the item as available only while the device is unlocked and only on that device.
 
-The app provides one setup path: paste the same locally generated 64-character lowercase hexadecimal secret into the Bridge `SecureField`, then choose **Store Token in Keychain**. The field is cleared after either success or failure. The token is not accepted as a command-line argument and is never shown again.
+For accepted Phase 3B local setup, the app interface provides one manual path: paste the same locally generated 64-character lowercase hexadecimal secret into the Bridge `SecureField`, then choose **Store Token in Keychain**. The field is cleared after either success or failure. Phase 3D adds only the fixed owner-only provisioning inbox described in the private deployment guide; the signed Bridge process consumes that request without accepting a token as a command-line argument, notice, or receipt value.
 
-Supply the same secret privately to the Core process through `DESKBOARD_APPLE_BRIDGE_TOKEN`. Do not place it in shell history, a URL, a query, the JSON body, a screenshot, a log, an issue, or a pull request.
+Supply the same secret privately to Core through exactly one of `DESKBOARD_APPLE_BRIDGE_TOKEN` or `DESKBOARD_APPLE_BRIDGE_TOKEN_FILE`. Phase 3D uses the file form so Compose grants the secret only to the API service. Do not place it in shell history, a process argument, URL, query, JSON body, screenshot, log, issue, or pull request.
 
 ## Private Bridge state
 

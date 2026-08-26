@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "bridgeId": "synthetic-deployment-bridge",
+  "statusRevision": 57,
+  "capturedAt": "2026-08-24T18:00:05Z",
+  "permissions": {
+    "calendar": "granted",
+    "reminders": "granted"
+  },
+  "selectedSources": [
+    {
+      "entityType": "reminder",
+      "sourceContainerId": "synthetic-reminder-source",
+      "status": "applied",
+      "acknowledgedSourceRevision": 42,
+      "lastAttemptedAt": "2026-08-24T18:00:01Z",
+      "lastAcknowledgedAt": "2026-08-24T18:00:02Z"
+    }
+  ]
+}

@@ -83,6 +83,8 @@ Any change to these boundaries requires explicit architecture and privacy review
 
 Phase 3D deploys the already accepted manual read path. It does not add automatic synchronization or write behavior.
 
+The source-controlled deployment uses pinned production images, non-root service users, read-only root filesystems, one internal Compose network, and a private named volume. Operational instructions and the content-free owner evidence boundary are documented in [`docs/private-homelab-deployment.md`](docs/private-homelab-deployment.md).
+
 ### Container boundary
 
 - Build only from the committed lockfile and production source.

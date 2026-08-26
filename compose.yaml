@@ -1,0 +1,97 @@
+name: deskboard
+
+services:
+  api:
+    image: deskboard-api:phase3d
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: deploy/api.Dockerfile
+    init: true
+    env_file:
+      - ${DESKBOARD_RUNTIME_ENV_FILE:-./.deskboard-private/runtime.env}
+    environment:
+      DESKBOARD_API_HOST: 0.0.0.0
+      DESKBOARD_APPLE_BRIDGE_TOKEN_FILE: /run/secrets/apple_bridge_token
+      NODE_ENV: production
+      PORT: "3001"
+    expose:
+      - "3001"
+    secrets:
+      - source: apple_bridge_token
+        target: apple_bridge_token
+    volumes:
+      - deskboard-data:/var/lib/deskboard
+    networks:
+      - private
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3001/health').then(async (response) => {
+            const body = await response.json();
+            if (!response.ok || body.status !== 'ok' || body.service !== 'deskboard-api') process.exit(1);
+          }).catch(() => process.exit(1))
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m,uid=1000,gid=1000,mode=700
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+
+  private-proxy:
+    image: deskboard-private-proxy:phase3d
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: deploy/web-proxy.Dockerfile
+    init: true
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${DESKBOARD_PROXY_BIND_PORT:-18080}:8080"
+    networks:
+      - loopback-ingress
+      - private
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -q
+        - -O
+        - /dev/null
+        - http://127.0.0.1:8080/health
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m,uid=101,gid=101,mode=700
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+
+networks:
+  loopback-ingress:
+    driver: bridge
+  private:
+    internal: true
+
+volumes:
+  deskboard-data:
+
+secrets:
+  apple_bridge_token:
+    file: ${DESKBOARD_APPLE_BRIDGE_TOKEN_SECRET_FILE:-./.deskboard-private/apple-bridge-token}

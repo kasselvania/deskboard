@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -8,7 +9,10 @@ struct ContentView: View {
             Section("Bridge") {
                 LabeledContent("Identity", value: model.bridgeId)
                     .textSelection(.enabled)
-                TextField("http://127.0.0.1:3001", text: $model.coreOriginInput)
+                TextField(
+                    "Loopback HTTP or private Tailscale HTTPS origin",
+                    text: $model.coreOriginInput
+                )
                     .textFieldStyle(.roundedBorder)
                 Button("Store Core Origin") { model.saveCoreOrigin() }
                 SecureField("64-character local token", text: $model.tokenInput)
@@ -67,6 +71,13 @@ struct ContentView: View {
         .formStyle(.grouped)
         .frame(minWidth: 680, minHeight: 720)
         .padding()
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: NSApplication.didBecomeActiveNotification
+            )
+        ) { _ in
+            model.importProvisioningRequest()
+        }
     }
 
     @ViewBuilder

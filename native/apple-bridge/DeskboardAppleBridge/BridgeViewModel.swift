@@ -34,17 +34,23 @@ final class BridgeViewModel: ObservableObject {
     private let stateStore: BridgeStatePersisting
     private let sourceReader: AppleSourceReading
     private let credentialStore: BridgeCredentialStore
+    private let provisioningInbox: BridgeProvisioningImporting
     private let coordinator: ManualSyncCoordinator
 
     init(
         stateStore: BridgeStatePersisting = AtomicBridgeStateFileStore(),
         sourceReader: AppleSourceReading = EventKitBridgeReader(),
         credentialStore: BridgeCredentialStore = KeychainBridgeCredentialStore(),
-        transport: AppleSourceHTTPTransport = URLSessionAppleSourceHTTPTransport()
+        transport: AppleSourceHTTPTransport = URLSessionAppleSourceHTTPTransport(),
+        provisioningInbox: BridgeProvisioningImporting? = nil
     ) {
         self.stateStore = stateStore
         self.sourceReader = sourceReader
         self.credentialStore = credentialStore
+        self.provisioningInbox = provisioningInbox ?? BridgeProvisioningInbox(
+            stateStore: stateStore,
+            credentialStore: credentialStore
+        )
         coordinator = ManualSyncCoordinator(
             stateStore: stateStore,
             sourceReader: sourceReader,
@@ -57,7 +63,7 @@ final class BridgeViewModel: ObservableObject {
                 transport: transport
             )
         )
-        refresh()
+        importProvisioningRequest()
     }
 
     var selectedCalendarCount: Int { selectedCalendarSourceIds.count }
@@ -83,6 +89,19 @@ final class BridgeViewModel: ObservableObject {
             hasPendingStatus = state.pendingStatus != nil
         } catch {
             notice = "Bridge state requires operator action."
+        }
+    }
+
+    func importProvisioningRequest() {
+        let result = provisioningInbox.importRequestIfPresent()
+        refresh()
+        switch result {
+        case .applied:
+            notice = "Bootstrap provisioning applied."
+        case .rejectedInvalid, .unavailable:
+            notice = "Bootstrap provisioning requires operator action."
+        case nil:
+            break
         }
     }
 
@@ -121,14 +140,14 @@ final class BridgeViewModel: ObservableObject {
 
     func saveCoreOrigin() {
         do {
-            let endpoint = try LoopbackIngestionEndpoint(origin: coreOriginInput)
+            let endpoint = try CoreIngestionEndpoint(origin: coreOriginInput)
             var state = try stateStore.loadOrCreate()
             state.coreOrigin = endpoint.origin.absoluteString
             try stateStore.save(state)
             coreOriginInput = endpoint.origin.absoluteString
-            notice = "Loopback Core origin stored."
+            notice = "Core origin stored."
         } catch {
-            notice = "Core origin must be an explicit numeric loopback HTTP origin."
+            notice = "Core origin must be numeric loopback HTTP or private Tailscale HTTPS."
         }
     }
 
