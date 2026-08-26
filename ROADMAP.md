@@ -118,69 +118,92 @@ Central honesty rule:
 
 ## Phase 3D — Private Homelab Deployment and Manual Remote Board
 
-**Status:** active under issue [#22](https://github.com/kasselvania/deskboard/issues/22).
+**Status:** accepted and merged in PR #24.
 
-The implementation under validation now includes pinned non-root production images, an internal-only Core API, one loopback-bound route-allowlisted proxy, a persistent SQLite volume, a deterministic tracked-byte SSH bootstrap, API-only token files, a strict signed-Bridge provisioning inbox, private Serve command construction, and synthetic rerun/restart/recreation/Phase-3C migration proof. Private homelab, remote retry, and iPad/Steam Deck owner acceptance remain open gates.
+**Design and operation:** [docs/private-homelab-deployment.md](docs/private-homelab-deployment.md)
 
-**Question:** Can the accepted manual real-data Board run privately from the Ubuntu/CasaOS homelab and serve the iPad and Steam Deck through one Tailscale HTTPS origin without changing source authority, retry identity, freshness honesty, or the Board contract?
+Accepted:
 
-### Scope
+- pinned non-root production images built from the committed lockfile;
+- one internal-only Core API and one route-allowlisted private web proxy;
+- numeric-loopback host publication for the proxy only;
+- Tailscale Serve as the sole private HTTPS ingress with no Funnel;
+- one persistent SQLite volume;
+- one tracked-byte SSH bootstrap and Dockge-compatible root Compose stack;
+- API-only file-mounted bearer secret and signed-Bridge provisioning inbox;
+- strict private `.ts.net` Bridge-origin policy;
+- container restart/recreate persistence and host-reboot restart policy;
+- real private remote source/status delivery;
+- exact uncertain-response retry through proxy outage and Bridge relaunch;
+- private iPad and Steam Deck agreement, refresh, layout, and calmness proof.
 
-- reproducible container deployment of Core and the production web build;
-- persistent private SQLite mirror/status volume;
-- API kept off the host network;
-- one loopback-bound web/private-proxy service;
-- Tailscale Serve as the sole private HTTPS ingress;
-- no Funnel or public ingress;
-- one root Dockge-compatible Compose stack installed through the existing SSH alias;
-- coordinated bearer rotation through an API-only secret file and signed-Bridge provisioning inbox;
-- a narrowly expanded Bridge origin policy for approved `.ts.net` HTTPS origins;
-- explicit manual remote **Sync Now** only;
-- iPad and Steam Deck private-device acceptance;
-- restart/recreate persistence and unreachable/retry proof;
-- publish-safe deployment documentation and content-free evidence.
+The owner confirmed that both devices displayed the same recognizable Board without document-level overflow. Final device-time freshness was truthfully stale: Calendar had exceeded the manual 15-minute interval, and one selected Reminder source remained capped and blocked.
 
-### Boundaries
+Phase 3D deliberately retains:
 
-- no background Bridge schedule, daemon, launch item, menu-bar process, watcher, or notification;
-- no backup/restore automation yet;
-- no source-management UI;
-- no Board, Apple source, or Bridge status contract change;
-- no Apple writes;
-- no public internet ingress;
-- no new semantic feature.
-
-### Exit criteria
-
-- Core and Web run reproducibly on the private homelab;
-- only the private Tailscale HTTPS origin provides remote ingress;
-- the signed Bridge manually delivers source and status envelopes without changing identity or retry semantics;
-- iPad and Steam Deck display the same truthful Board;
-- restart/recreate preserves database and Board state;
-- unreachable transport preserves exact pending bytes and last-good Core data;
-- the owner confirms the deployed Board remains recognizable and calm;
-- background operation, backup/restore automation, and Apple writes remain absent.
+- explicit manual `Sync Now` as the only Bridge trigger;
+- no supported authenticated same-Mac rollback after bearer rotation;
+- no backup/restore automation;
+- no Apple write behavior.
 
 ---
 
-## Phase 3E — Background Read Path, Backup/Restore, and Soak
+## Phase 3E — Unattended Read-Only Bridge and Selected-Source Completeness
 
-**Status:** planned; blocked on accepted Phase 3D.
+**Status:** active under issue [#25](https://github.com/kasselvania/deskboard/issues/25).
 
-**Question:** Can the accepted private deployment operate unattended and recoverably without making the read path noisy or unreliable?
+**Question:** Can the accepted private read path remain normally current while the user is logged in, recover honestly from sleep/network/permission failures, and avoid a permanently stale selected Reminder scope without weakening completeness?
+
+### Scope
+
+- content-free measurement and an explicit bounded decision for the known capped Reminder source;
+- owner-approved signed Bridge startup at login;
+- one energy-conscious repeating scheduler through the existing Bridge process;
+- manual/background/wake triggers coalesced through the accepted exact outbox path;
+- no overlapping sync or revision reuse;
+- truthful behavior during sleep, wake, network loss, permission loss, scheduler deferral, and login-item disablement;
+- content-free local controls and troubleshooting;
+- at least 24 hours of private deployed proof including sleep/wake and temporary network loss;
+- iPad and Steam Deck agreement after recovery.
+
+### Required source-completeness decision
+
+The selected capped Reminder source must result in exactly one of:
+
+1. a measured finite operational cap/envelope increase that preserves whole-list v1 authority and fits safely;
+2. deliberate owner deselection when the source is not needed;
+3. a stop for separate source-contract review when complete v1 delivery cannot fit safely.
+
+Do not silently filter records, page an unversioned scope, or call partial data complete.
+
+### Boundaries
+
+- no root daemon or unmanaged LaunchAgent installation;
+- no backup/restore automation;
+- no week-long recovery soak yet;
+- no Board, source, or status contract change without separate review;
+- no notifications, source-management UI, public ingress, or Apple writes;
+- no new semantic feature.
+
+---
+
+## Phase 3F — Backup/Restore and Read-Only Soak
+
+**Status:** planned; blocked on accepted Phase 3E.
+
+**Question:** Can the unattended private read path recover its Core state and remain trustworthy through a longer real-use period?
 
 Intended scope:
 
-- narrowly bounded background Bridge scheduling after manual remote delivery is stable;
-- explicit startup/restart behavior;
-- source freshness during sleeping, disconnected, or unavailable Mac states;
-- database backup and exercised restore;
+- source-controlled database backup using the accepted Node/SQLite runtime boundary;
+- owner-only retention and secret-safe storage policy;
+- exercised restore into a clean deployment;
+- proof that source/status revisions, Board behavior, and bootstrap remain coherent after restore;
 - one-week read-only soak on iPad and Steam Deck;
-- operational documentation based on observed failures.
+- operational documentation based on observed failures;
+- a deliberate product review of what deserves space, which reasons help, and what is repeatedly ignored.
 
-No Apple write action belongs in Phase 3E.
-
-A deliberate product pause follows: use Deskboard daily and record which facts deserve space, which reasons help, and what is repeatedly ignored.
+No Apple write action belongs in Phase 3F.
 
 ---
 
