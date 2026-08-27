@@ -179,7 +179,7 @@ Do not silently filter records, page an unversioned scope, or call partial data 
 ### Implemented checkpoint
 
 - outcome A measured 945 records and a 280,671-byte complete candidate;
-- retained-record cap increased from 500 to 1,000; envelope, Core, and proxy limits stayed unchanged;
+- only the Reminder retained-record cap increased from 500 to 1,000; the Calendar cap remains 500, and envelope, Core, and proxy limits stayed unchanged;
 - the owner-invoked same-revision replacement applied privately and cleared `blockedTruncated`;
 - the signed main application registers through `SMAppService.mainApp` under **Open at Login**;
 - one 600-second scheduler with 120-second tolerance and background QoS delegates to the accepted coordinator;

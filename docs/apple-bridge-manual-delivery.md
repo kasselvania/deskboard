@@ -98,13 +98,14 @@ The route delegates directly to `AppleSourceMirror.apply`. It does not reproduce
 | Boundary | Limit |
 |---|---:|
 | Calendar window | 7 calendar days behind and 45 calendar days ahead of capture |
-| Retained records per selected source | 500 |
+| Retained Reminder records per selected source | 1,000 |
+| Retained Calendar records per selected source | 500 |
 | Encoded pending envelope | 768 KiB |
 | Core request body | 1 MiB |
 | Core response body accepted by Bridge | 4 KiB |
 | URLSession request/resource timeout | 15 seconds |
 
-Ordering and collision checks run on the complete matched set before the record cap. `matchedCount` is always the complete match count. If the source-record cap or encoded-envelope cap omits any matched record, the snapshot is encoded with `truncated: true`. Core therefore rejects it without mutation; the Bridge reports it as blocked and never calls it synchronized.
+Ordering and collision checks run on the complete matched set before the entity-specific record cap. `matchedCount` is always the complete match count. Phase 3E changed only the measured Reminder cap from 500 to 1,000; the Calendar cap remains 500. If the applicable source-record cap or encoded-envelope cap omits any matched record, the snapshot is encoded with `truncated: true`. Core therefore rejects it without mutation; the Bridge reports it as blocked and never calls it synchronized.
 
 The 768 KiB envelope ceiling remains below the 1 MiB Core route limit, leaving finite transport headroom. The bearer token is an HTTP header and is never part of the encoded or persisted envelope.
 

@@ -15,7 +15,7 @@ Phases 1 through 3D are accepted. Deskboard can now:
 
 Phase 3D packages that path as accepted private production containers: Core is reachable only on an internal Compose network, the built PWA and accepted routes share one loopback-bound private proxy, and SQLite lives in one persistent volume. The Bridge additionally admits only strict `.ts.net` HTTPS origins.
 
-The active Phase 3E review implementation keeps the same signed main application running only after explicit owner approval, uses one energy-conscious scheduler boundary, and funnels manual, scheduled, and wake requests through the existing coordinator. The selected Reminder cap is now 1,000 after measured whole-list proof, with all larger sources still honestly truncated. Backup/restore, a longer soak, source administration, public ingress, and every Apple write remain deferred.
+The active Phase 3E review implementation keeps the same signed main application running only after explicit owner approval, uses one energy-conscious scheduler boundary, and funnels manual, scheduled, and wake requests through the existing coordinator. The selected Reminder cap is now 1,000 after measured whole-list proof; the Calendar cap remains 500, and every source beyond its entity-specific finite limit remains honestly truncated. Backup/restore, a longer soak, source administration, public ingress, and every Apple write remain deferred.
 
 ## Architectural thesis
 

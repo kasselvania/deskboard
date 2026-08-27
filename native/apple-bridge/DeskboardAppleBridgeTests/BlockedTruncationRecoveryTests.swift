@@ -212,7 +212,8 @@ final class BlockedTruncationRecoveryTests: XCTestCase {
         let completePending = try envelope(
             sourceRevision: 7,
             source: completeSource(recordCount: 2),
-            maximumRecords: 1_000
+            maximumRecords:
+                BridgeProductionLimits.maximumRetainedReminderRecordsPerSource
         )
         var unselected = base
         unselected.selectedReminderSourceIds = []

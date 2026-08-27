@@ -84,7 +84,9 @@ final class BlockedTruncationRecoveryCoordinator {
             let snapshot = try AppleSourceConverter.reminderSnapshot(
                 from: source,
                 bridgeId: original.bridgeId,
-                capturedAt: clock()
+                capturedAt: clock(),
+                maximumRecords:
+                    BridgeProductionLimits.maximumRetainedReminderRecordsPerSource
             )
             guard !snapshot.truncated else {
                 return .stillTruncated

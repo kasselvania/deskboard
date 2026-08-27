@@ -79,7 +79,8 @@ enum AppleSourceConverter {
         from source: ReminderSourceRead,
         bridgeId: String,
         capturedAt: Date,
-        maximumRecords: Int = BridgeProductionLimits.maximumRetainedRecordsPerSource
+        maximumRecords: Int = BridgeProductionLimits
+            .maximumRetainedReminderRecordsPerSource
     ) throws -> AppleSourceSnapshotValueV1 {
         guard maximumRecords >= 0 else {
             throw AppleSourceConverterError.invalidSource
@@ -123,7 +124,8 @@ enum AppleSourceConverter {
         from source: CalendarSourceRead,
         bridgeId: String,
         capturedAt: Date,
-        maximumRecords: Int = BridgeProductionLimits.maximumRetainedRecordsPerSource
+        maximumRecords: Int = BridgeProductionLimits
+            .maximumRetainedCalendarRecordsPerSource
     ) throws -> AppleSourceSnapshotValueV1 {
         guard maximumRecords >= 0, source.windowStart < source.windowEnd else {
             throw AppleSourceConverterError.invalidSource

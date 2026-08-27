@@ -60,7 +60,7 @@ final class ReminderCompletenessDiagnostic {
         let matchedCount = source.records.count
         let retainedCount = min(
             matchedCount,
-            BridgeProductionLimits.maximumRetainedRecordsPerSource
+            BridgeProductionLimits.maximumRetainedReminderRecordsPerSource
         )
         guard safelyFitsDiagnosticMemory(
             source: source,
@@ -118,7 +118,8 @@ final class ReminderCompletenessDiagnostic {
             matchedRecordCount: matchedCount,
             retainedRecordCount: retainedCount,
             completeCandidateEncodedByteCount: encodedByteCount,
-            currentRecordCap: BridgeProductionLimits.maximumRetainedRecordsPerSource,
+            currentRecordCap:
+                BridgeProductionLimits.maximumRetainedReminderRecordsPerSource,
             currentEnvelopeLimitBytes: BridgeProductionLimits.maximumEncodedEnvelopeBytes,
             completeCandidateFitsBoundedMemory: fitsMemory,
             completeCandidateFitsEnvelopeLimit: fitsMemory

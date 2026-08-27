@@ -58,7 +58,7 @@ The Phase 3D live result is accepted evidence:
 
 Phase 3E must address those last two operational facts without changing source meaning or hiding degraded state.
 
-Current implementation checkpoint: Gate 1 chose measured outcome A (945 records, 280,671 encoded bytes, retained cap 500 -> 1,000); the owner-invoked same-revision replacement applied and released `blockedTruncated`; two successive signed Release installations preserved exact private state, `SMAppService.mainApp` registration passed, and one scheduled run completed content-free. The controlled login/restart gate and private 24-hour sleep/wake/outage/device acceptance remain open. Do not repeat or invalidate the accepted replacement, and do not call Phase 3E accepted before those gates and tech-lead review.
+Current implementation checkpoint: Gate 1 chose measured outcome A (945 Reminder records, 280,671 encoded bytes, Reminder retained cap 500 -> 1,000 while Calendar remains 500); the owner-invoked same-revision replacement applied and released `blockedTruncated`; two successive signed Release installations preserved exact private state, `SMAppService.mainApp` registration passed, and one scheduled run completed content-free. The controlled login/restart gate and private 24-hour sleep/wake/outage/device acceptance remain open. Do not repeat or invalidate the accepted replacement, and do not call Phase 3E accepted before those gates and tech-lead review.
 
 ## Phase 3E order of work
 

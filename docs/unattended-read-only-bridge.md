@@ -9,9 +9,10 @@ The content-free Gate 1 diagnostic produced outcome **A: measured finite operati
 | Measurement | Result |
 |---|---:|
 | Complete matched records | 945 |
-| Prior retained-record cap | 500 |
+| Prior Reminder retained-record cap | 500 |
 | Complete encoded candidate | 280,671 bytes |
-| Current retained-record cap | 1,000 |
+| Current Reminder retained-record cap | 1,000 |
+| Current Calendar retained-record cap | 500 |
 | Encoded pending-envelope limit | 786,432 bytes |
 | Core source request limit | 1,048,576 bytes |
 | Private proxy source request limit | 1,048,576 bytes |
@@ -20,7 +21,7 @@ The content-free Gate 1 diagnostic produced outcome **A: measured finite operati
 | Core fit | yes |
 | Private-proxy fit | yes |
 
-Only the per-source retained-record cap changed, from 500 to 1,000. The 4,096-record diagnostic admission bound, 512 KiB admitted-string bound, 8 MiB diagnostic encoding bound, 768 KiB pending-envelope bound, 1 MiB Core/proxy source-body bounds, and source contract remain unchanged. Ordering and collision validation still run across the complete matched set before truncation. Any source exceeding a finite production boundary remains `truncated: true`, non-authoritative, and rejected by Core without mirror mutation.
+Only the Reminder retained-record cap changed, from 500 to 1,000. The Calendar retained-record cap remains 500. The 4,096-record diagnostic admission bound, 512 KiB admitted-string bound, 8 MiB diagnostic encoding bound, 768 KiB pending-envelope bound, 1 MiB Core/proxy source-body bounds, and source contract remain unchanged. Ordering and collision validation still run across the complete matched set before truncation. Encoded-envelope trimming remains the final independent bound after entity-specific record capping. Any source exceeding a finite production boundary remains `truncated: true`, non-authoritative, and rejected by Core without mirror mutation.
 
 ## Releasing the previously blocked revision
 

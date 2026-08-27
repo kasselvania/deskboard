@@ -460,6 +460,115 @@ final class AppleSourceConverterTests: XCTestCase {
         XCTAssertTrue(decodedOversized.truncated)
     }
 
+    func testProductionCalendarLimitCompletes500AndTruncates501Exactly() throws {
+        let capturedAt = date("2026-08-26T12:00:00Z")
+        let start = date("2026-08-27T12:00:00Z")
+        let end = date("2026-08-27T13:00:00Z")
+        let zone = TimeZone(identifier: "Etc/UTC")!
+        let makeSource: (Int) -> CalendarSourceRead = { count in
+            CalendarSourceRead(
+                sourceContainerId: "synthetic-calendar-limit-source",
+                allowsContentModifications: true,
+                isSubscribed: false,
+                windowStart: self.date("2026-08-01T00:00:00Z"),
+                windowEnd: self.date("2026-09-01T00:00:00Z"),
+                windowTimeZone: zone,
+                records: (0 ..< count).reversed().map { index in
+                    CalendarRecordRead(
+                        localIdentifier: String(
+                            format: "synthetic-calendar-%05d",
+                            index
+                        ),
+                        eventIdentifier: nil,
+                        externalIdentifier: nil,
+                        title: "Synthetic bounded Calendar record",
+                        temporal: .timed(
+                            start: start,
+                            end: end,
+                            timeZone: zone
+                        ),
+                        occurrenceDate: nil,
+                        isDetached: false,
+                        status: .confirmed
+                    )
+                }
+            )
+        }
+
+        let complete = try AppleSourceConverter.calendarSnapshot(
+            from: makeSource(500),
+            bridgeId: "synthetic-bridge",
+            capturedAt: capturedAt
+        )
+        guard case let .calendar(completeSnapshot) = complete else {
+            return XCTFail("Expected Calendar snapshot")
+        }
+        XCTAssertEqual(completeSnapshot.matchedCount, 500)
+        XCTAssertEqual(completeSnapshot.records.count, 500)
+        XCTAssertFalse(completeSnapshot.truncated)
+
+        let oversized = try AppleSourceConverter.calendarSnapshot(
+            from: makeSource(501),
+            bridgeId: "synthetic-bridge",
+            capturedAt: capturedAt
+        )
+        guard case let .calendar(oversizedSnapshot) = oversized else {
+            return XCTFail("Expected Calendar snapshot")
+        }
+        XCTAssertEqual(oversizedSnapshot.matchedCount, 501)
+        XCTAssertEqual(oversizedSnapshot.records.count, 500)
+        XCTAssertTrue(oversizedSnapshot.truncated)
+    }
+
+    func testEncodedEnvelopeTrimmingRemainsTheIndependentFinalBound() throws {
+        let source = ReminderSourceRead(
+            sourceContainerId: "synthetic-envelope-bound-source",
+            allowsContentModifications: true,
+            records: (0 ..< 8).map { index in
+                ReminderRecordRead(
+                    localIdentifier: String(format: "synthetic-%05d", index),
+                    externalIdentifier: nil,
+                    title: String(repeating: "x", count: 128 * 1024),
+                    startComponents: nil,
+                    dueComponents: nil,
+                    isCompleted: false,
+                    completionDate: nil
+                )
+            }
+        )
+        let snapshot = try AppleSourceConverter.reminderSnapshot(
+            from: source,
+            bridgeId: "synthetic-bridge",
+            capturedAt: date("2026-08-26T12:00:00Z")
+        )
+        XCTAssertEqual(snapshot.retainedCount, 8)
+        XCTAssertFalse(snapshot.truncated)
+
+        let unbounded = try AppleSourceEnvelopeCodec.encode(
+            AppleSourceOperationalEnvelopeV1(
+                sourceRevision: 1,
+                snapshot: snapshot
+            )
+        )
+        XCTAssertGreaterThan(
+            unbounded.count,
+            BridgeProductionLimits.maximumEncodedEnvelopeBytes
+        )
+
+        let bounded = try AppleSourceEnvelopeCodec.encodeWithinProductionLimit(
+            sourceRevision: 1,
+            snapshot: snapshot
+        )
+        XCTAssertLessThanOrEqual(
+            bounded.count,
+            BridgeProductionLimits.maximumEncodedEnvelopeBytes
+        )
+        let decoded = try AppleSourceEnvelopeCodec.decode(bounded).snapshot
+        XCTAssertEqual(decoded.matchedCount, 8)
+        XCTAssertLessThan(decoded.retainedCount, 8)
+        XCTAssertTrue(decoded.truncated)
+    }
+
     func testCalendarWindowPolicyUsesExactSevenAndFortyFiveDayConstants() throws {
         let zone = TimeZone(identifier: "Etc/UTC")!
         let now = date("2026-08-23T18:00:00Z")

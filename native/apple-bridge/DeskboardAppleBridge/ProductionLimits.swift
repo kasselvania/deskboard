@@ -3,7 +3,8 @@ import Foundation
 enum BridgeProductionLimits {
     static let calendarDaysBehind = 7
     static let calendarDaysAhead = 45
-    static let maximumRetainedRecordsPerSource = 1_000
+    static let maximumRetainedReminderRecordsPerSource = 1_000
+    static let maximumRetainedCalendarRecordsPerSource = 500
     static let maximumEncodedEnvelopeBytes = 768 * 1024
     static let maximumEncodedStatusEnvelopeBytes = 256 * 1024
     static let coreRequestBodyBytes = 1024 * 1024
