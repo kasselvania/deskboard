@@ -119,11 +119,17 @@ The Bridge retains numeric-loopback HTTP for local development and may additiona
 
 Changing destination must not change Bridge ID, Keychain credential, source/status revisions, selections, TCC grants, or exact pending bytes.
 
-### Manual operation only
+### Phase 3D manual baseline
 
 Phase 3D retains explicit **Sync Now**. It must not add a scheduler, daemon, launch item, watcher, menu-bar agent, notification, or background task.
 
-Background operation and backup/restore automation are deferred to Phase 3E.
+### Phase 3E unattended controls
+
+Phase 3E retains the signed, sandboxed, outbound-only main Bridge application. Explicit **Keep Board Current** approval registers only `SMAppService.mainApp`; no helper, root daemon, unmanaged LaunchAgent, admin operation, or separate identity is allowed. The Release signature carries only symbolic application/team identifiers in addition to the existing functional entitlement allowlist; no real signing value is committed or reported.
+
+One `NSBackgroundActivityScheduler` boundary requests work at a 600-second interval with 120-second tolerance and background QoS. macOS deferral is accepted and cannot create freshness. Manual, scheduled, and wake triggers coalesce through `ManualSyncCoordinator`; they do not add another transport or outbox. Exact pending bytes, revision rules, stale/conflict handling, and independent Calendar/Reminder failure behavior remain unchanged.
+
+Owner disablement, quit, or login-item disablement stops future scheduling while preserving manual launch and Sync Now. Local scheduler state is content-free and does not enter source, status, or Board contracts. Backup/restore automation remains deferred to Phase 3F.
 
 ## Agent-visible evidence boundary
 

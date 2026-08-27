@@ -4,16 +4,18 @@
 
 The accepted product is a **read-only Apple attention surface**.
 
-Phases 1 through 3C are accepted. Deskboard can now:
+Phases 1 through 3D are accepted. Deskboard can now:
 
 - read explicitly selected Calendar and Reminder sources through a signed, sandboxed macOS Bridge;
 - convert only privacy-minimized fields into strict versioned source documents;
-- deliver source and content-free status envelopes manually and idempotently;
+- deliver source and content-free status envelopes idempotently through one accepted coordinator;
 - persist them atomically in Core;
 - compose the unchanged calm `BoardSnapshot` v1 from the latest selected-source roster;
 - represent fresh, stale, and unavailable source states honestly.
 
-The active Phase 3D implementation packages this **existing manual path** as pinned production containers: Core is reachable only on an internal Compose network, the built PWA and accepted routes share one loopback-bound private proxy, and SQLite lives in one persistent volume. The Bridge additionally admits only strict `.ts.net` HTTPS origins. Homelab, private remote-sync, and iPad/Steam Deck acceptance remain required. Background scheduling, backup/restore automation, source administration, public ingress, and every Apple write remain deferred.
+Phase 3D packages that path as accepted private production containers: Core is reachable only on an internal Compose network, the built PWA and accepted routes share one loopback-bound private proxy, and SQLite lives in one persistent volume. The Bridge additionally admits only strict `.ts.net` HTTPS origins.
+
+The active Phase 3E review implementation keeps the same signed main application running only after explicit owner approval, uses one energy-conscious scheduler boundary, and funnels manual, scheduled, and wake requests through the existing coordinator. The selected Reminder cap is now 1,000 after measured whole-list proof, with all larger sources still honestly truncated. Backup/restore, a longer soak, source administration, public ingress, and every Apple write remain deferred.
 
 ## Architectural thesis
 
@@ -47,7 +49,7 @@ The operating rule is:
                 │ • explicit source roster │
                 │ • source-v1 conversion   │
                 │ • source/status outboxes │
-                │ • explicit Sync Now      │
+                │ • manual/scheduled/wake  │
                 └─────────────┬────────────┘
                               │ authenticated delivery
                               ▼
@@ -71,7 +73,7 @@ The operating rule is:
 Phase 3D instantiates Core and Web on the homelab without changing the logical boundaries:
 
 ```text
-Bridge --manual HTTPS/Tailscale--> Tailscale Serve
+Bridge --manual/scheduled/wake HTTPS--> Tailscale Serve
                                       │ loopback
                                       ▼
                               private web/proxy
@@ -179,9 +181,9 @@ The accepted target posture is:
 - all private configuration supplied at runtime and excluded from Git;
 - one API-only owner-readable token file, mutually exclusive with the existing token environment setting;
 - one fixed Bridge sandbox inbox whose exact-key request can change only the Keychain token and `coreOrigin` through the signed Bridge process;
-- manual Bridge delivery only.
+- accepted Bridge delivery path shared by manual, scheduled, and wake triggers.
 
-Background operation and backup/restore move to Phase 3E after the remote manual path is accepted.
+Phase 3E adds only owner-approved main-app startup and scheduling. Backup/restore moves to Phase 3F.
 
 ## Data ownership
 
@@ -332,7 +334,7 @@ Board IDs are domain-separated opaque hashes over scoped provenance. Raw Bridge,
 
 ## Synchronization
 
-The accepted manual sequence is:
+The accepted delivery sequence is:
 
 ```text
 1. retry exact pending status, if any
@@ -346,7 +348,7 @@ The accepted manual sequence is:
 
 Only successful application or an unchanged duplicate acknowledges a revision and clears its pending bytes.
 
-Phase 3D changes the approved network destination, not this sequence.
+Phase 3D changes the approved network destination, not this sequence. Phase 3E changes eligible trigger sources, not this sequence or either exact outbox.
 
 ## API principles
 
@@ -411,13 +413,14 @@ Changing destination alone does not change Bridge identity, Keychain credential,
 | Board contract | `BoardSnapshot` v1 |
 | Board mode | Fixture default; explicit mirror mode |
 | Phase 3D access | Private Tailscale HTTPS only |
-| Phase 3D sync | Explicit manual Sync Now |
+| Phase 3E triggers | Coalesced manual, scheduled, and wake requests through the accepted coordinator |
+| Startup | Owner-approved `SMAppService.mainApp` registration |
 | Public ingress | None |
 | Calendar writes | Deferred |
 | Reminder writes | Deferred until one explicit completion slice |
 | AI selection | Absent |
-| Background scheduling | Deferred to Phase 3E |
-| Backup/restore | Deferred to Phase 3E |
+| Background scheduling | One `NSBackgroundActivityScheduler` boundary in the signed main app |
+| Backup/restore | Deferred to Phase 3F |
 
 A proposed architectural dependency must answer:
 
