@@ -24,6 +24,33 @@ final class NativeSecurityTests: XCTestCase {
             XCTAssertEqual(value[key] as? Bool, true)
         }
 
+        let releaseEntitlementURL = root
+            .appendingPathComponent("DeskboardAppleBridge", isDirectory: true)
+            .appendingPathComponent("DeskboardAppleBridgeRelease.entitlements")
+        let releaseData = try Data(contentsOf: releaseEntitlementURL)
+        let releaseValue = try XCTUnwrap(
+            PropertyListSerialization.propertyList(
+                from: releaseData,
+                format: nil
+            ) as? [String: Any]
+        )
+        let signingKeys: Set<String> = [
+            "com.apple.application-identifier",
+            "com.apple.developer.team-identifier",
+        ]
+        XCTAssertEqual(Set(releaseValue.keys), expectedKeys.union(signingKeys))
+        for key in expectedKeys {
+            XCTAssertEqual(releaseValue[key] as? Bool, true)
+        }
+        XCTAssertEqual(
+            releaseValue["com.apple.application-identifier"] as? String,
+            "$(DEVELOPMENT_TEAM).$(PRODUCT_BUNDLE_IDENTIFIER)"
+        )
+        XCTAssertEqual(
+            releaseValue["com.apple.developer.team-identifier"] as? String,
+            "$(DEVELOPMENT_TEAM)"
+        )
+
         let project = try String(
             contentsOf: root
                 .appendingPathComponent("DeskboardAppleBridge.xcodeproj", isDirectory: true)
@@ -43,16 +70,27 @@ final class NativeSecurityTests: XCTestCase {
         XCTAssertFalse(project.contains("com.apple.security.files.user-selected"))
         XCTAssertFalse(project.contains("com.apple.security.files.downloads"))
 
-        for identifier in [
-            "E40000000000000000000003",
-            "E40000000000000000000004",
-        ] {
-            let block = try applicationBuildConfiguration(
-                identifier: identifier,
-                project: project
+        let debugBlock = try applicationBuildConfiguration(
+            identifier: "E40000000000000000000003",
+            project: project
+        )
+        XCTAssertTrue(
+            debugBlock.contains(
+                "CODE_SIGN_ENTITLEMENTS = DeskboardAppleBridge/DeskboardAppleBridge.entitlements;"
             )
-            XCTAssertFalse(block.contains("CODE_SIGN_IDENTITY"))
-        }
+        )
+        XCTAssertFalse(debugBlock.contains("CODE_SIGN_IDENTITY"))
+
+        let releaseBlock = try applicationBuildConfiguration(
+            identifier: "E40000000000000000000004",
+            project: project
+        )
+        XCTAssertTrue(
+            releaseBlock.contains(
+                "CODE_SIGN_ENTITLEMENTS = DeskboardAppleBridge/DeskboardAppleBridgeRelease.entitlements;"
+            )
+        )
+        XCTAssertFalse(releaseBlock.contains("CODE_SIGN_IDENTITY"))
     }
 
     func testProductionSourcesHaveNoProbeCommandOrPrivateExportPath() throws {
@@ -75,6 +113,82 @@ final class NativeSecurityTests: XCTestCase {
         ] {
             XCTAssertFalse(sources.contains(forbidden))
         }
+    }
+
+    func testUnattendedRuntimeUsesOnlyTheSignedMainAppAndContentFreeOutput() throws {
+        let root = projectRoot()
+        let source = try String(
+            contentsOf: root
+                .appendingPathComponent("DeskboardAppleBridge", isDirectory: true)
+                .appendingPathComponent("UnattendedBridge.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(source.contains("SMAppService.mainApp"))
+        XCTAssertTrue(source.contains("NSBackgroundActivityScheduler"))
+        for forbidden in [
+            "SMAppService.agent",
+            "SMAppService.daemon",
+            "SMLoginItemSetEnabled",
+            "LaunchAgent",
+            "LaunchDaemon",
+            "NSLog(",
+            "print(",
+            "os_log(",
+            "Logger(",
+        ] {
+            XCTAssertFalse(source.contains(forbidden))
+        }
+
+        let infoData = try Data(
+            contentsOf: root
+                .appendingPathComponent("DeskboardAppleBridge", isDirectory: true)
+                .appendingPathComponent("Info.plist")
+        )
+        let info = try XCTUnwrap(
+            PropertyListSerialization.propertyList(from: infoData, format: nil)
+                as? [String: Any]
+        )
+        XCTAssertEqual(info["LSUIElement"] as? Bool, true)
+    }
+
+    func testNoBackgroundPathCanInvokeBlockedTruncationRecovery() throws {
+        let sourceRoot = projectRoot()
+            .appendingPathComponent("DeskboardAppleBridge", isDirectory: true)
+        let unattended = try String(
+            contentsOf: sourceRoot.appendingPathComponent("UnattendedBridge.swift"),
+            encoding: .utf8
+        )
+        let app = try String(
+            contentsOf: sourceRoot.appendingPathComponent("DeskboardAppleBridgeApp.swift"),
+            encoding: .utf8
+        )
+        let viewModel = try String(
+            contentsOf: sourceRoot.appendingPathComponent("BridgeViewModel.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertFalse(unattended.contains("BlockedTruncationRecovery"))
+        XCTAssertFalse(unattended.contains("rebuildBlockedReminder"))
+        XCTAssertFalse(app.contains("rebuildBlockedReminder"))
+        XCTAssertTrue(
+            viewModel.contains("rebuildBlockedSourceWithCurrentLimits")
+        )
+    }
+
+    func testMenuBarSettingsActionExplicitlyOpensAndActivatesSettings() throws {
+        let app = try String(
+            contentsOf: projectRoot()
+                .appendingPathComponent("DeskboardAppleBridge", isDirectory: true)
+                .appendingPathComponent("DeskboardAppleBridgeApp.swift"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(app.contains("@Environment(\\.openSettings)"))
+        XCTAssertTrue(app.contains("openSettings()"))
+        XCTAssertTrue(
+            app.contains("NSApplication.shared.activate(ignoringOtherApps: true)")
+        )
+        XCTAssertFalse(app.contains("SettingsLink"))
     }
 
     private func projectRoot() -> URL {

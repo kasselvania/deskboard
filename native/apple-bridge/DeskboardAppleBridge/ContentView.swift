@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var model = BridgeViewModel()
+    @ObservedObject var model: BridgeViewModel
 
     var body: some View {
         Form {
@@ -35,12 +35,62 @@ struct ContentView: View {
                 selected: model.selectedReminderSourceIds
             )
 
-            Section("Manual Delivery") {
+            Section("Keep Board Current") {
+                Toggle(
+                    "Keep Board Current",
+                    isOn: Binding(
+                        get: { model.ownerOptedIntoUnattended },
+                        set: { model.setKeepBoardCurrent($0) }
+                    )
+                )
+                LabeledContent(
+                    "Unattended",
+                    value: model.unattendedEnabled ? "enabled" : "disabled"
+                )
+                LabeledContent(
+                    "Login item",
+                    value: loginItemLabel(model.loginItemState)
+                )
+                LabeledContent(
+                    "Last background attempt",
+                    value: model.lastBackgroundAttempt?.formatted()
+                        ?? "none"
+                )
+                LabeledContent(
+                    "Last content-free result",
+                    value: model.lastContentFreeResult?.rawValue ?? "none"
+                )
+                LabeledContent(
+                    "Queued behind active run",
+                    value: model.isRequestQueued ? "yes" : "no"
+                )
+                Button("Open Login Items Settings") {
+                    model.openLoginItemSettings()
+                }
+                if model.ownerOptedIntoUnattended
+                    && (model.loginItemState == .notRegistered
+                        || model.loginItemState == .notFound)
+                {
+                    Button("Retry Login Item Registration") {
+                        model.retryLoginItemRegistration()
+                    }
+                }
+                Text(
+                    "Deskboard appears under Open at Login, not as a separate App Background Activity helper."
+                )
+                .foregroundStyle(.secondary)
+                Text(
+                    "macOS chooses the actual background time; delayed work remains honestly stale."
+                )
+                .foregroundStyle(.secondary)
+            }
+
+            Section("Synchronization") {
                 LabeledContent("Selected calendars", value: "\(model.selectedCalendarCount)")
                 LabeledContent("Selected reminder lists", value: "\(model.selectedReminderCount)")
                 LabeledContent("Persisted pending deliveries", value: "\(model.pendingCount)")
                 Button("Sync Now") { model.syncNow() }
-                    .disabled(model.isSyncing)
+                    .disabled(model.isMeasuringReminderCompleteness)
                 if model.isSyncing {
                     ProgressView("Synchronization in progress")
                 }
@@ -95,6 +145,34 @@ struct ContentView: View {
                     diagnosticFit("Core", report.completeCandidateFitsCoreLimit)
                     diagnosticFit("Private proxy", report.completeCandidateFitsProxyLimit)
                 }
+                if model.eligibleBlockedTruncationRecoveryCount == 1 {
+                    Button("Rebuild blocked source with current limits") {
+                        model.rebuildBlockedSourceWithCurrentLimits()
+                    }
+                    .disabled(
+                        model.isSyncing
+                            || model.isMeasuringReminderCompleteness
+                            || model.isRebuildingBlockedTruncation
+                    )
+                }
+                if model.isRebuildingBlockedTruncation {
+                    ProgressView("Rebuilding blocked source")
+                }
+                if let result = model.blockedTruncationRecoveryResult {
+                    LabeledContent("Recovery result", value: result.rawValue)
+                    LabeledContent(
+                        "Replacement persisted",
+                        value: model.replacementPersisted ? "yes" : "no"
+                    )
+                    LabeledContent(
+                        "Complete snapshot applied",
+                        value: model.completeReplacementApplied ? "yes" : "no"
+                    )
+                    LabeledContent(
+                        "Source remains blockedTruncated",
+                        value: model.sourceRemainsBlockedTruncated ? "yes" : "no"
+                    )
+                }
             }
 
             if !model.statusRows.isEmpty {
@@ -125,7 +203,16 @@ struct ContentView: View {
                 for: NSApplication.didBecomeActiveNotification
             )
         ) { _ in
-            model.importProvisioningRequest()
+            model.applicationDidBecomeActive()
+        }
+    }
+
+    private func loginItemLabel(_ state: BridgeLoginItemState) -> String {
+        switch state {
+        case .notRegistered: "not registered"
+        case .enabled: "enabled"
+        case .requiresApproval: "requires approval"
+        case .notFound: "not found"
         }
     }
 
