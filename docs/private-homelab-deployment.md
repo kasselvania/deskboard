@@ -41,7 +41,7 @@ The OS may also present its normal signed-application or Keychain authorization 
 
 All other failures are content-free and fail closed. Preserve the stack, secret files, Bridge state, request, and pending envelopes, correct the stated prerequisite, and rerun the same command.
 
-## 4. Explicit Sync Now
+## 4. Phase 3D explicit Sync Now baseline
 
 After the bootstrap reports success, use the signed Bridge's existing **Sync Now** action. There is no timer, daemon, watcher, launch item, notification, or background retry.
 
@@ -54,6 +54,12 @@ Owner-only remote proof must confirm, without exposing real content or identifie
 5. Calendar and Reminders freshness remain truthful.
 
 The bootstrap itself does not press **Sync Now** and does not perform this acceptance.
+
+## 4A. Phase 3E unattended overlay
+
+Phase 3E does not change the stack, private origin, proxy, authentication, database, Tailscale Serve mapping, or Board client. After the owner enables **Keep Board Current**, the same signed main Bridge app registers under **Open at Login** and requests scheduled work through the accepted delivery coordinator. Manual **Sync Now** remains available.
+
+There is no shell scheduler, LaunchAgent, helper, daemon, notification, or aggressive retry loop. Sleep and network loss may make the Board stale. Wake or restored connectivity merely permits the next scheduled, wake, or manual opportunity; exact pending bytes remain authoritative until `applied` or `unchangedDuplicate`.
 
 ## 5. iPad and Steam Deck private acceptance
 
@@ -90,4 +96,4 @@ The root [`compose.yaml`](../compose.yaml) is the single production stack. The A
 
 Proxy and application logs remain content-free. Never publish a token, origin, hostname, tailnet, Compose expansion, database, Board body, source identity, pending envelope, screenshot, or receipt path/content beyond the fixed synthetic fixtures.
 
-Background synchronization, automatic retry, health notifications, backup/restore automation, restore drills, soak, public ingress, source administration, Board changes, and every Apple write remain deferred to later accepted phases.
+Health notifications, backup/restore automation, restore drills, the longer Phase 3F soak, public ingress, source administration, Board changes, and every Apple write remain deferred. Phase 3E unattended operation is documented in [`unattended-read-only-bridge.md`](unattended-read-only-bridge.md); its 24-hour private acceptance remains a gate.

@@ -388,6 +388,59 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
         XCTAssertEqual(updated.deliveries.first?.acknowledgedRevision, 2)
     }
 
+    func testScheduledOutagePreservesExactPendingBytesUntilNextOpportunity() async throws {
+        let store = MemoryStateStore(configuredState())
+        let reader = SyntheticSourceReader()
+        let delivery = QueueDeliveryClient([
+            .failure(QueueDeliveryClient.Failure.uncertain),
+        ])
+        let manualCoordinator = makeCoordinator(
+            store: store,
+            reader: reader,
+            delivery: delivery
+        )
+        let scheduler = SyntheticBackgroundScheduler()
+        let unattended = UnattendedBridgeController(
+            loginItem: SyntheticLoginItemController(status: .enabled),
+            backgroundScheduler: scheduler,
+            wakeObserver: SyntheticWakeObserver(),
+            stateStore: MemoryUnattendedStateStore(ownerOptIn: true),
+            clock: { self.now },
+            syncRunner: { try await manualCoordinator.syncNow() }
+        )
+        var firstCompletion: BridgeBackgroundActivityCompletion?
+
+        scheduler.fire(shouldDefer: false) { firstCompletion = $0 }
+        await waitUntil { firstCompletion == .finished }
+
+        let pending = try XCTUnwrap(store.state.deliveries.first?.pending)
+        XCTAssertEqual(delivery.envelopes, [pending.encodedEnvelope])
+        XCTAssertEqual(reader.reminderReadCount, 1)
+        XCTAssertEqual(unattended.lastContentFreeResult, .pendingOrBlocked)
+
+        reader.reminderRead = ReminderSourceRead(
+            sourceContainerId: "synthetic-reminder-source",
+            allowsContentModifications: true,
+            records: [SyntheticSourceReader.reminderRecord(title: "Synthetic changed")]
+        )
+        delivery.outcomes.append(
+            .success(response(.unchangedDuplicate, revision: 1))
+        )
+        var secondCompletion: BridgeBackgroundActivityCompletion?
+
+        scheduler.fire(shouldDefer: false) { secondCompletion = $0 }
+        await waitUntil { secondCompletion == .finished }
+
+        XCTAssertEqual(
+            delivery.envelopes,
+            [pending.encodedEnvelope, pending.encodedEnvelope]
+        )
+        XCTAssertEqual(reader.reminderReadCount, 1)
+        XCTAssertNil(store.state.deliveries.first?.pending)
+        XCTAssertEqual(store.state.deliveries.first?.acknowledgedRevision, 1)
+        XCTAssertEqual(unattended.lastContentFreeResult, .completed)
+    }
+
     func testStatusTimeoutAndRelaunchRetryExactBytesBeforeFurtherSourceRead() async throws {
         let store = MemoryStateStore(configuredState())
         let reader = SyntheticSourceReader()
@@ -768,7 +821,11 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
             sourceReader: SyntheticSourceReader(),
             credentialStore: SyntheticCredentialStore(),
             transport: UnusedHTTPTransport(),
-            provisioningInbox: NoopBridgeProvisioningInbox()
+            provisioningInbox: NoopBridgeProvisioningInbox(),
+            loginItemController: SyntheticLoginItemController(status: .notRegistered),
+            backgroundScheduler: SyntheticBackgroundScheduler(),
+            wakeObserver: SyntheticWakeObserver(),
+            unattendedStateStore: MemoryUnattendedStateStore()
         )
 
         model.coreOriginInput = "https://synthetic-device.synthetic-tailnet.ts.net"
@@ -932,7 +989,21 @@ final class BridgeStateAndDeliveryTests: XCTestCase {
             sourceReader: reader,
             credentialStore: SyntheticCredentialStore(),
             transport: UnusedHTTPTransport(),
-            provisioningInbox: NoopBridgeProvisioningInbox()
+            provisioningInbox: NoopBridgeProvisioningInbox(),
+            loginItemController: SyntheticLoginItemController(status: .notRegistered),
+            backgroundScheduler: SyntheticBackgroundScheduler(),
+            wakeObserver: SyntheticWakeObserver(),
+            unattendedStateStore: MemoryUnattendedStateStore()
         )
+    }
+
+    private func waitUntil(
+        _ condition: @escaping @MainActor () -> Bool
+    ) async {
+        for _ in 0 ..< 200 {
+            if condition() { return }
+            await Task.yield()
+        }
+        XCTFail("Timed out waiting for synthetic delivery")
     }
 }

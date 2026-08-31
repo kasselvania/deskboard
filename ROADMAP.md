@@ -150,7 +150,7 @@ Phase 3D deliberately retains:
 
 ## Phase 3E — Unattended Read-Only Bridge and Selected-Source Completeness
 
-**Status:** active under issue [#25](https://github.com/kasselvania/deskboard/issues/25).
+**Status:** review implementation active under issue [#25](https://github.com/kasselvania/deskboard/issues/25); private 24-hour acceptance remains open.
 
 **Question:** Can the accepted private read path remain normally current while the user is logged in, recover honestly from sleep/network/permission failures, and avoid a permanently stale selected Reminder scope without weakening completeness?
 
@@ -175,6 +175,18 @@ The selected capped Reminder source must result in exactly one of:
 3. a stop for separate source-contract review when complete v1 delivery cannot fit safely.
 
 Do not silently filter records, page an unversioned scope, or call partial data complete.
+
+### Implemented checkpoint
+
+- outcome A measured 945 records and a 280,671-byte complete candidate;
+- only the Reminder retained-record cap increased from 500 to 1,000; the Calendar cap remains 500, and envelope, Core, and proxy limits stayed unchanged;
+- the owner-invoked same-revision replacement applied privately and cleared `blockedTruncated`;
+- the signed main application registers through `SMAppService.mainApp` under **Open at Login**;
+- one 600-second scheduler with 120-second tolerance and background QoS delegates to the accepted coordinator;
+- manual, scheduled, and wake requests coalesce without overlap;
+- two successive signed Release installations preserved exact private state, and one no-window scheduled run completed content-free.
+
+Controlled login/restart, owner disablement through System Settings, and the 24-hour sleep/wake/outage/iPad/Steam Deck acceptance remain gates, not completed claims.
 
 ### Boundaries
 

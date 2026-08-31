@@ -48,7 +48,9 @@ The read path is strictly one-way. Calendar and Reminders remain read-only.
 
 Phase 3D proved the complete manual private path. One tracked-byte SSH bootstrap installs the Dockge-compatible Compose stack, keeps Core off the host network, exposes only a numeric-loopback proxy through private Tailscale Serve, rotates and provisions one bearer credential without exposing it, and preserves Bridge identity, selections, permissions, revisions, history, and exact pending envelopes. Real remote delivery, uncertain byte-equivalent retry, and private iPad/Steam Deck use all passed. Both devices displayed the same recognizable, calm Board without document-level overflow.
 
-The accepted result is intentionally honest rather than artificially green. Calendar becomes stale after the fixed 15-minute interval when manual `Sync Now` is not repeated, and one selected Reminder source remains `blockedTruncated` under the current finite production limit. Phase 3E addresses those two observed facts through explicit owner-approved unattended read-only operation and a bounded source-completeness decision. Backup/restore and a longer read-only soak move to Phase 3F. Every Apple write remains deferred.
+Phase 3E now has a review implementation. Its content-free diagnostic measured 945 whole-list Reminder records and a 280,671-byte complete envelope, authorizing outcome A: only the Reminder retained-record cap increased from 500 to 1,000. The Calendar cap remains 500, while the 768 KiB envelope and 1 MiB Core/proxy limits remain unchanged. The owner-invoked same-revision replacement released the accepted truncated pending envelope and applied the complete source without contract drift.
+
+The signed menu-bar Bridge now uses `SMAppService.mainApp` for explicit **Keep Board Current** startup and one `NSBackgroundActivityScheduler` boundary for scheduled work. Manual, scheduled, and wake triggers coalesce through the accepted coordinator and exact outboxes. Initial signed registration and a scheduled run passed without a full window. Controlled login/restart proof and the private 24-hour sleep/wake/outage/device acceptance remain open, so Phase 3E is not yet accepted. Backup/restore and a longer read-only soak remain Phase 3F. Every Apple write remains deferred.
 
 The hosted GitHub Actions job currently does not execute repository steps because of an account billing/spending restriction. The workflow remains unchanged; local locked Node, native, signed-product, browser, deployment, and private acceptance gates are the current code evidence.
 
@@ -63,6 +65,7 @@ The hosted GitHub Actions job currently does not execute repository steps becaus
 - [docs/apple-bridge-status-v1.md](docs/apple-bridge-status-v1.md) — content-free selection and source-health status
 - [docs/mirror-backed-board.md](docs/mirror-backed-board.md) — real Board eligibility, freshness, reasons, and privacy proof
 - [docs/private-homelab-deployment.md](docs/private-homelab-deployment.md) — accepted private topology, bootstrap, and operation
+- [docs/unattended-read-only-bridge.md](docs/unattended-read-only-bridge.md) — Phase 3E source completeness, startup, scheduling, and acceptance
 - issue [#25](https://github.com/kasselvania/deskboard/issues/25) — active Phase 3E implementation and proof contract
 
 ## Development prerequisites

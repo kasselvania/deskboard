@@ -27,6 +27,23 @@ final class BridgeViewModel: ObservableObject {
     @Published private(set) var statusRows: [BridgeStatusRow] = []
     @Published private(set) var bridgeId = ""
     @Published private(set) var isSyncing = false
+    @Published private(set) var isMeasuringReminderCompleteness = false
+    @Published private(set) var reminderCompletenessReport:
+        ReminderCompletenessDiagnosticReport?
+    @Published private(set) var hasBlockedSelectedReminder = false
+    @Published private(set) var ownerOptedIntoUnattended = false
+    @Published private(set) var unattendedEnabled = false
+    @Published private(set) var loginItemState: BridgeLoginItemState = .notRegistered
+    @Published private(set) var lastBackgroundAttempt: Date?
+    @Published private(set) var lastContentFreeResult: BridgeContentFreeResult?
+    @Published private(set) var isRequestQueued = false
+    @Published private(set) var eligibleBlockedTruncationRecoveryCount = 0
+    @Published private(set) var isRebuildingBlockedTruncation = false
+    @Published private(set) var blockedTruncationRecoveryResult:
+        BlockedTruncationRecoveryResult?
+    @Published private(set) var replacementPersisted = false
+    @Published private(set) var completeReplacementApplied = false
+    @Published private(set) var sourceRemainsBlockedTruncated = true
     @Published private(set) var notice = "Ready for manual setup."
     @Published var coreOriginInput = ""
     @Published var tokenInput = ""
@@ -35,14 +52,22 @@ final class BridgeViewModel: ObservableObject {
     private let sourceReader: AppleSourceReading
     private let credentialStore: BridgeCredentialStore
     private let provisioningInbox: BridgeProvisioningImporting
-    private let coordinator: ManualSyncCoordinator
+    private let unattendedController: UnattendedBridgeController
+    private let reminderCompletenessDiagnostic: ReminderCompletenessDiagnostic
+    private let blockedTruncationRecovery: BlockedTruncationRecoveryCoordinator
+    private var eligibleBlockedTruncationSourceIds: [String] = []
+    private var persistedReplacement: PersistedBlockedTruncationReplacement?
 
     init(
         stateStore: BridgeStatePersisting = AtomicBridgeStateFileStore(),
         sourceReader: AppleSourceReading = EventKitBridgeReader(),
         credentialStore: BridgeCredentialStore = KeychainBridgeCredentialStore(),
         transport: AppleSourceHTTPTransport = URLSessionAppleSourceHTTPTransport(),
-        provisioningInbox: BridgeProvisioningImporting? = nil
+        provisioningInbox: BridgeProvisioningImporting? = nil,
+        loginItemController: MainAppLoginItemControlling? = nil,
+        backgroundScheduler: BridgeBackgroundActivityScheduling? = nil,
+        wakeObserver: BridgeWakeEventObserving? = nil,
+        unattendedStateStore: UnattendedStatePersisting? = nil
     ) {
         self.stateStore = stateStore
         self.sourceReader = sourceReader
@@ -51,7 +76,7 @@ final class BridgeViewModel: ObservableObject {
             stateStore: stateStore,
             credentialStore: credentialStore
         )
-        coordinator = ManualSyncCoordinator(
+        let manualCoordinator = ManualSyncCoordinator(
             stateStore: stateStore,
             sourceReader: sourceReader,
             deliveryClient: AppleSourceDeliveryClient(
@@ -63,6 +88,29 @@ final class BridgeViewModel: ObservableObject {
                 transport: transport
             )
         )
+        reminderCompletenessDiagnostic = ReminderCompletenessDiagnostic(
+            stateStore: stateStore,
+            sourceReader: sourceReader
+        )
+        blockedTruncationRecovery = BlockedTruncationRecoveryCoordinator(
+            stateStore: stateStore,
+            sourceReader: sourceReader
+        )
+        unattendedController = UnattendedBridgeController(
+            loginItem: loginItemController ?? SMMainAppLoginItemController(),
+            backgroundScheduler: backgroundScheduler
+                ?? FoundationBackgroundActivityScheduler(),
+            wakeObserver: wakeObserver ?? WorkspaceWakeEventObserver(),
+            stateStore: unattendedStateStore ?? UserDefaultsUnattendedStateStore(),
+            syncRunner: { try await manualCoordinator.syncNow() }
+        )
+        unattendedController.onStateChange = { [weak self] in
+            self?.refreshUnattendedState()
+        }
+        unattendedController.onRunFinished = { [weak self] trigger, result in
+            self?.handleRunFinished(trigger: trigger, result: result)
+        }
+        refreshUnattendedState()
         importProvisioningRequest()
     }
 
@@ -87,6 +135,19 @@ final class BridgeViewModel: ObservableObject {
             reminderSources = sourceReader.availableSources(for: .reminder)
             statusRows = makeStatusRows(state.deliveries)
             hasPendingStatus = state.pendingStatus != nil
+            hasBlockedSelectedReminder = state.deliveries.contains {
+                $0.coordinate.entityType == .reminder
+                    && state.selectedReminderSourceIds.contains(
+                        $0.coordinate.sourceContainerId
+                    )
+                    && $0.status == .blockedTruncated
+                    && $0.pending != nil
+            }
+            eligibleBlockedTruncationSourceIds = blockedTruncationRecovery
+                .eligibleReminderSourceIds()
+            eligibleBlockedTruncationRecoveryCount =
+                eligibleBlockedTruncationSourceIds.count
+            sourceRemainsBlockedTruncated = hasBlockedSelectedReminder
         } catch {
             notice = "Bridge state requires operator action."
         }
@@ -103,6 +164,11 @@ final class BridgeViewModel: ObservableObject {
         case nil:
             break
         }
+    }
+
+    func applicationDidBecomeActive() {
+        importProvisioningRequest()
+        unattendedController.refreshLoginItemStatus()
     }
 
     func requestPermission(for entity: BridgeSourceEntity) async {
@@ -163,27 +229,110 @@ final class BridgeViewModel: ObservableObject {
     }
 
     func syncNow() {
-        guard !isSyncing else { return }
-        isSyncing = true
-        notice = pendingCount > 0
-            ? "Retrying persisted pending delivery before reading Apple."
-            : "Manual synchronization in progress."
+        guard !isMeasuringReminderCompleteness else { return }
+        notice = isSyncing
+            ? "One synchronization request is queued behind the active run."
+            : pendingCount > 0
+                ? "Retrying persisted pending delivery before reading Apple."
+                : "Manual synchronization in progress."
+        unattendedController.requestManualSync()
+    }
+
+    func setKeepBoardCurrent(_ enabled: Bool) {
+        let result = unattendedController.setOwnerOptIn(enabled)
+        presentUnattendedOwnerAction(result)
+    }
+
+    func retryLoginItemRegistration() {
+        let result = unattendedController
+            .retryOwnerApprovedLoginItemRegistration()
+        presentUnattendedOwnerAction(result)
+    }
+
+    private func presentUnattendedOwnerAction(
+        _ result: UnattendedOwnerActionResult
+    ) {
+        refreshUnattendedState()
+        switch result {
+        case .enabled:
+            notice = "Keep Board Current is enabled."
+        case .disabled:
+            notice = "Keep Board Current is disabled."
+        case .approvalRequired:
+            notice = "Login-item approval is required in System Settings."
+        case .failed:
+            notice = "Login-item registration requires operator action."
+        }
+    }
+
+    func openLoginItemSettings() {
+        unattendedController.openLoginItemSettings()
+    }
+
+    func prepareToQuit() {
+        unattendedController.stopForQuit()
+    }
+
+    func rebuildBlockedSourceWithCurrentLimits() {
+        guard
+            !isSyncing,
+            !isMeasuringReminderCompleteness,
+            !isRebuildingBlockedTruncation,
+            eligibleBlockedTruncationSourceIds.count == 1,
+            let sourceContainerId = eligibleBlockedTruncationSourceIds.first
+        else {
+            return
+        }
+        isRebuildingBlockedTruncation = true
+        blockedTruncationRecoveryResult = nil
+        replacementPersisted = false
+        completeReplacementApplied = false
+        notice = "Rebuilding the blocked source with current finite limits."
         Task {
-            defer { isSyncing = false }
-            do {
-                let state = try await coordinator.syncNow()
-                statusRows = makeStatusRows(state.deliveries)
-                hasPendingStatus = state.pendingStatus != nil
-                notice = state.pendingStatus != nil
-                    || state.deliveries.contains(where: { $0.pending != nil })
-                    ? "A persisted delivery remains pending or blocked."
-                    : "Manual synchronization finished."
+            let outcome = await blockedTruncationRecovery.rebuildBlockedReminder(
+                sourceContainerId: sourceContainerId
+            )
+            isRebuildingBlockedTruncation = false
+            blockedTruncationRecoveryResult = outcome.result
+            switch outcome {
+            case let .replacementPersisted(replacement):
+                persistedReplacement = replacement
+                replacementPersisted = true
+                notice = "Complete replacement persisted; existing delivery path is running."
                 refresh()
-            } catch {
-                notice = (error as? LocalizedError)?.errorDescription
-                    ?? "Manual synchronization could not start."
+                unattendedController.requestManualSync()
+            case .stillTruncated:
+                notice = "Source remains truncated; existing pending state is unchanged."
+                refresh()
+            case .operatorActionRequired:
+                notice = "Blocked-source recovery requires operator action."
                 refresh()
             }
+        }
+    }
+
+    func measureBlockedSelectedReminder() {
+        guard
+            !isSyncing,
+            !isMeasuringReminderCompleteness,
+            hasBlockedSelectedReminder
+        else {
+            return
+        }
+        isMeasuringReminderCompleteness = true
+        reminderCompletenessReport = nil
+        notice = "Measuring selected Reminder completeness without exposing source content."
+        Task {
+            defer { isMeasuringReminderCompleteness = false }
+            do {
+                reminderCompletenessReport = try await reminderCompletenessDiagnostic
+                    .measureBlockedSelectedReminder()
+                notice = "Selected Reminder completeness measurement finished."
+            } catch {
+                reminderCompletenessReport = nil
+                notice = "Selected Reminder completeness measurement requires operator action."
+            }
+            refresh()
         }
     }
 
@@ -208,6 +357,65 @@ final class BridgeViewModel: ObservableObject {
                 lastAcknowledgedAt: delivery.lastAcknowledgedAt,
                 hasPendingEnvelope: delivery.pending != nil
             )
+        }
+    }
+
+    private func refreshUnattendedState() {
+        ownerOptedIntoUnattended = unattendedController.ownerOptIn
+        unattendedEnabled = unattendedController.unattendedEnabled
+        loginItemState = unattendedController.loginItemState
+        lastBackgroundAttempt = unattendedController.lastBackgroundAttempt
+        lastContentFreeResult = unattendedController.lastContentFreeResult
+        isSyncing = unattendedController.isRunActive
+        isRequestQueued = unattendedController.isRequestQueued
+    }
+
+    private func handleRunFinished(
+        trigger: BridgeSyncTrigger,
+        result: BridgeContentFreeResult
+    ) {
+        refresh()
+        refreshPersistedReplacementResult()
+        refreshUnattendedState()
+        let prefix: String
+        switch trigger {
+        case .manual: prefix = "Manual synchronization"
+        case .scheduled: prefix = "Scheduled synchronization"
+        case .wake: prefix = "Wake synchronization"
+        }
+        switch result {
+        case .completed:
+            notice = "\(prefix) finished."
+        case .pendingOrBlocked:
+            notice = "\(prefix) left a delivery pending or blocked."
+        case .unavailable:
+            notice = "\(prefix) found a required capability unavailable."
+        case .operatorAction:
+            notice = "\(prefix) requires operator action."
+        case .failed:
+            notice = "\(prefix) failed content-free."
+        case .deferred:
+            notice = "\(prefix) was deferred by macOS."
+        }
+    }
+
+    private func refreshPersistedReplacementResult() {
+        guard let persistedReplacement else { return }
+        guard let state = try? stateStore.loadOrCreate(),
+              let delivery = state.deliveries.first(where: {
+                  $0.coordinate == persistedReplacement.coordinate
+              })
+        else {
+            return
+        }
+        sourceRemainsBlockedTruncated = delivery.status == .blockedTruncated
+        completeReplacementApplied =
+            delivery.acknowledgedRevision == persistedReplacement.sourceRevision
+                && delivery.pending == nil
+                && (delivery.status == .applied
+                    || delivery.status == .unchangedDuplicate)
+        if completeReplacementApplied {
+            self.persistedReplacement = nil
         }
     }
 

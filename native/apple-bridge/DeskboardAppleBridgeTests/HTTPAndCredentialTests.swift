@@ -300,12 +300,23 @@ final class HTTPAndCredentialTests: XCTestCase {
         }
     }
 
-    func testSourceAndResponseLimitsRemainCoherentWithCoreBodyLimit() {
+    func testEntitySpecificSourceAndResponseLimitsRemainCoherentWithCoreBodyLimit() {
         XCTAssertLessThan(
             BridgeProductionLimits.maximumEncodedEnvelopeBytes,
             BridgeProductionLimits.coreRequestBodyBytes
         )
-        XCTAssertEqual(BridgeProductionLimits.maximumRetainedRecordsPerSource, 500)
+        XCTAssertEqual(
+            BridgeProductionLimits.coreRequestBodyBytes,
+            BridgeProductionLimits.proxySourceRequestBodyBytes
+        )
+        XCTAssertEqual(
+            BridgeProductionLimits.maximumRetainedReminderRecordsPerSource,
+            1_000
+        )
+        XCTAssertEqual(
+            BridgeProductionLimits.maximumRetainedCalendarRecordsPerSource,
+            500
+        )
         XCTAssertEqual(BridgeProductionLimits.maximumResponseBytes, 4 * 1024)
     }
 

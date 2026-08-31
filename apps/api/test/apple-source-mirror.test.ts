@@ -57,6 +57,77 @@ function reminderState(
 }
 
 describe("atomic Apple source mirror", () => {
+  it("accepts a complete same-revision replacement after definitive truncation rejection", () => {
+    const revisionNMinusOne = makeReminderSnapshot({
+      records: [
+        makeReminderRecord(
+          "synthetic-replacement-a",
+          "Synthetic accepted record",
+        ),
+      ],
+    });
+    const completeRevisionN = makeReminderSnapshot({
+      capturedAt: "2026-08-26T12:00:00Z",
+      records: [
+        makeReminderRecord(
+          "synthetic-replacement-b",
+          "Synthetic replacement first",
+        ),
+        makeReminderRecord(
+          "synthetic-replacement-c",
+          "Synthetic replacement second",
+        ),
+      ],
+    });
+    const truncatedRevisionN = {
+      ...structuredClone(completeRevisionN),
+      matchedCount: completeRevisionN.records.length,
+      truncated: true,
+      records: completeRevisionN.records.slice(0, 1),
+    };
+    const coordinate = reminderCoordinate(revisionNMinusOne);
+    const mirror = openMirror({
+      clock: () => new Date("2026-08-26T12:01:00Z"),
+    });
+
+    expect(
+      mirror.apply({ snapshot: revisionNMinusOne, sourceRevision: 6 }),
+    ).toMatchObject({ kind: "applied", sourceRevision: 6 });
+    const beforeRejectedTruncation = reminderState(mirror, coordinate);
+
+    expect(
+      mirror.apply({ snapshot: truncatedRevisionN, sourceRevision: 7 }),
+    ).toEqual({
+      kind: "rejectedTruncated",
+      entityType: "reminder",
+      sourceRevision: 7,
+    });
+    const afterRejectedTruncation = reminderState(mirror, coordinate);
+    expect(afterRejectedTruncation).toEqual(beforeRejectedTruncation);
+    expect(afterRejectedTruncation.summary).toMatchObject({
+      acceptedSourceRevision: 6,
+    });
+
+    expect(
+      mirror.apply({ snapshot: completeRevisionN, sourceRevision: 7 }),
+    ).toEqual({
+      kind: "applied",
+      entityType: "reminder",
+      sourceRevision: 7,
+    });
+    const afterCompleteReplacement = reminderState(mirror, coordinate);
+    expect(afterCompleteReplacement.records).toEqual(
+      completeRevisionN.records,
+    );
+    expect(afterCompleteReplacement.summary).toMatchObject({
+      acceptedSourceRevision: 7,
+      matchedCount: completeRevisionN.matchedCount,
+    });
+    expect(afterCompleteReplacement.summary?.normalizedDigest).not.toBe(
+      beforeRejectedTruncation.summary?.normalizedDigest,
+    );
+  });
+
   it("replaces complete Reminder scopes and isolates other Bridges and lists", () => {
     const first = makeReminderSnapshot({
       records: [

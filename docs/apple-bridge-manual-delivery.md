@@ -98,13 +98,14 @@ The route delegates directly to `AppleSourceMirror.apply`. It does not reproduce
 | Boundary | Limit |
 |---|---:|
 | Calendar window | 7 calendar days behind and 45 calendar days ahead of capture |
-| Retained records per selected source | 500 |
+| Retained Reminder records per selected source | 1,000 |
+| Retained Calendar records per selected source | 500 |
 | Encoded pending envelope | 768 KiB |
 | Core request body | 1 MiB |
 | Core response body accepted by Bridge | 4 KiB |
 | URLSession request/resource timeout | 15 seconds |
 
-Ordering and collision checks run on the complete matched set before the record cap. `matchedCount` is always the complete match count. If the source-record cap or encoded-envelope cap omits any matched record, the snapshot is encoded with `truncated: true`. Core therefore rejects it without mutation; the Bridge reports it as blocked and never calls it synchronized.
+Ordering and collision checks run on the complete matched set before the entity-specific record cap. `matchedCount` is always the complete match count. Phase 3E changed only the measured Reminder cap from 500 to 1,000; the Calendar cap remains 500. If the applicable source-record cap or encoded-envelope cap omits any matched record, the snapshot is encoded with `truncated: true`. Core therefore rejects it without mutation; the Bridge reports it as blocked and never calls it synchronized.
 
 The 768 KiB envelope ceiling remains below the 1 MiB Core route limit, leaving finite transport headroom. The bearer token is an HTTP header and is never part of the encoded or persisted envelope.
 
@@ -283,7 +284,7 @@ Run this only on the owner's Mac. Do not capture or publish the source-selection
 1. Inspect `security find-identity -p codesigning` privately and discover the local Xcode team without printing either value. The actual Apple-Development-signed Release build below is the signing source of truth: a `-v` summary that reports zero valid identities does not by itself block the attempt. If the build fails, diagnose its exact Xcode/codesign error rather than returning the identity summary. Do not create signing credentials automatically or invent another signing posture.
 2. Inspect the previous Bridge only for content-free pending and status counts. If its state or Keychain item is unavailable to the signed product, stop for owner awareness before the intentional new-identity reset described above.
 3. Supply the local team only in the shell environment and build a Release product with Apple Development signing, automatic provisioning, the committed entitlements, and Hardened Runtime. Never commit or publish the team or signer.
-4. Quit every running Bridge copy. Copy the exact signed product with `ditto` to `~/Applications/DeskboardAppleBridge.app`. Launch no DerivedData copy concurrently.
+4. Quit every running Bridge copy. Stage and strictly verify the exact signed product before replacing `~/Applications/DeskboardAppleBridge.app`. Move the prior bundle out of `~/Applications` before moving the staged product into that canonical path; never overlay one application bundle onto another or retain a renamed copy with the same bundle identity. Launch no DerivedData copy concurrently.
 5. Verify the installed product's strict signature, Apple Development authority, stable designated requirement, `runtime` flag, bundle identifier, and entitlement allowlist. Record only the content-free conclusions.
 6. Quit the installed app and run `tccutil reset Calendar com.kasselvania.deskboard.AppleBridge`. Launch only the installed app, intentionally request Calendar access, and record only before category, normalized outcome, returned Boolean, after category, and whether the prompt appeared. Acceptance requires `granted` or `denied`; `notDetermined` without a prompt fails.
 7. Repeat independently with `tccutil reset Reminders com.kasselvania.deskboard.AppleBridge`. Prove each reset/request leaves the other entity's decision unchanged. Do not reset another app or service.
@@ -395,8 +396,21 @@ xcodebuild \
   -allowProvisioningUpdates \
   build
 
+DESKBOARD_INSTALL_STAGE="$(mktemp -d /private/tmp/deskboard-install.XXXXXX)"
+
 ditto \
   /private/tmp/deskboard-phase3b-signed-release/Build/Products/Release/DeskboardAppleBridge.app \
+  "$DESKBOARD_INSTALL_STAGE/DeskboardAppleBridge.app"
+
+codesign --verify --deep --strict --verbose=4 \
+  "$DESKBOARD_INSTALL_STAGE/DeskboardAppleBridge.app"
+
+mv \
+  "$HOME/Applications/DeskboardAppleBridge.app" \
+  "$DESKBOARD_INSTALL_STAGE/previous-DeskboardAppleBridge.app"
+
+mv \
+  "$DESKBOARD_INSTALL_STAGE/DeskboardAppleBridge.app" \
   "$HOME/Applications/DeskboardAppleBridge.app"
 
 codesign --verify --deep --strict --verbose=4 \

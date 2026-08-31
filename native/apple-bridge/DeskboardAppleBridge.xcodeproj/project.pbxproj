@@ -27,8 +27,15 @@
 		B40000000000000000000014 /* BridgeStatusContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000017 /* BridgeStatusContractTests.swift */; };
 		B40000000000000000000015 /* BridgeProvisioningInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000018 /* BridgeProvisioningInbox.swift */; };
 		B40000000000000000000016 /* BridgeProvisioningInboxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000019 /* BridgeProvisioningInboxTests.swift */; };
+		B40000000000000000000017 /* ReminderCompletenessDiagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000001A /* ReminderCompletenessDiagnostic.swift */; };
+		B40000000000000000000018 /* ReminderCompletenessDiagnosticTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000001B /* ReminderCompletenessDiagnosticTests.swift */; };
+		B40000000000000000000019 /* UnattendedBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000001C /* UnattendedBridge.swift */; };
+		B4000000000000000000001A /* UnattendedBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4000000000000000000001D /* UnattendedBridgeTests.swift */; };
+		B4000000000000000000001C /* BlockedTruncationRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000028 /* BlockedTruncationRecovery.swift */; };
+		B4000000000000000000001D /* BlockedTruncationRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40000000000000000000029 /* BlockedTruncationRecoveryTests.swift */; };
 		B40000000000000000000010 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A40000000000000000000012 /* EventKit.framework */; };
 		B40000000000000000000011 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A40000000000000000000013 /* Security.framework */; };
+		B4000000000000000000001B /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4000000000000000000001E /* ServiceManagement.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,11 +69,18 @@
 		A40000000000000000000017 /* BridgeStatusContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeStatusContractTests.swift; sourceTree = "<group>"; };
 		A40000000000000000000018 /* BridgeProvisioningInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeProvisioningInbox.swift; sourceTree = "<group>"; };
 		A40000000000000000000019 /* BridgeProvisioningInboxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeProvisioningInboxTests.swift; sourceTree = "<group>"; };
+		A4000000000000000000001A /* ReminderCompletenessDiagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderCompletenessDiagnostic.swift; sourceTree = "<group>"; };
+		A4000000000000000000001B /* ReminderCompletenessDiagnosticTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderCompletenessDiagnosticTests.swift; sourceTree = "<group>"; };
+		A4000000000000000000001C /* UnattendedBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnattendedBridge.swift; sourceTree = "<group>"; };
+		A4000000000000000000001D /* UnattendedBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnattendedBridgeTests.swift; sourceTree = "<group>"; };
+		A40000000000000000000028 /* BlockedTruncationRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockedTruncationRecovery.swift; sourceTree = "<group>"; };
+		A40000000000000000000029 /* BlockedTruncationRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockedTruncationRecoveryTests.swift; sourceTree = "<group>"; };
 		A40000000000000000000010 /* DeskboardAppleBridge.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DeskboardAppleBridge.entitlements; sourceTree = "<group>"; };
 		A40000000000000000000011 /* DeskboardAppleBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeskboardAppleBridge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A40000000000000000000014 /* DeskboardAppleBridgeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DeskboardAppleBridgeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A40000000000000000000012 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
 		A40000000000000000000013 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		A4000000000000000000001E /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +90,7 @@
 			files = (
 				B40000000000000000000010 /* EventKit.framework in Frameworks */,
 				B40000000000000000000011 /* Security.framework in Frameworks */,
+				B4000000000000000000001B /* ServiceManagement.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -116,6 +131,9 @@
 				A4000000000000000000000B /* ManualSyncCoordinator.swift */,
 				A40000000000000000000016 /* AppleBridgeStatusContract.swift */,
 				A40000000000000000000018 /* BridgeProvisioningInbox.swift */,
+				A4000000000000000000001A /* ReminderCompletenessDiagnostic.swift */,
+				A4000000000000000000001C /* UnattendedBridge.swift */,
+				A40000000000000000000028 /* BlockedTruncationRecovery.swift */,
 				A40000000000000000000010 /* DeskboardAppleBridge.entitlements */,
 			);
 			path = DeskboardAppleBridge;
@@ -130,6 +148,9 @@
 				A40000000000000000000015 /* NativeSecurityTests.swift */,
 				A40000000000000000000017 /* BridgeStatusContractTests.swift */,
 				A40000000000000000000019 /* BridgeProvisioningInboxTests.swift */,
+				A4000000000000000000001B /* ReminderCompletenessDiagnosticTests.swift */,
+				A4000000000000000000001D /* UnattendedBridgeTests.swift */,
+				A40000000000000000000029 /* BlockedTruncationRecoveryTests.swift */,
 			);
 			path = DeskboardAppleBridgeTests;
 			sourceTree = "<group>";
@@ -148,6 +169,7 @@
 			children = (
 				A40000000000000000000012 /* EventKit.framework */,
 				A40000000000000000000013 /* Security.framework */,
+				A4000000000000000000001E /* ServiceManagement.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -265,6 +287,9 @@
 				B4000000000000000000000C /* AppleSourceContract.swift in Sources */,
 				B40000000000000000000013 /* AppleBridgeStatusContract.swift in Sources */,
 				B40000000000000000000015 /* BridgeProvisioningInbox.swift in Sources */,
+				B40000000000000000000017 /* ReminderCompletenessDiagnostic.swift in Sources */,
+				B40000000000000000000019 /* UnattendedBridge.swift in Sources */,
+				B4000000000000000000001C /* BlockedTruncationRecovery.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -278,6 +303,9 @@
 				B40000000000000000000012 /* NativeSecurityTests.swift in Sources */,
 				B40000000000000000000014 /* BridgeStatusContractTests.swift in Sources */,
 				B40000000000000000000016 /* BridgeProvisioningInboxTests.swift in Sources */,
+				B40000000000000000000018 /* ReminderCompletenessDiagnosticTests.swift in Sources */,
+				B4000000000000000000001A /* UnattendedBridgeTests.swift in Sources */,
+				B4000000000000000000001D /* BlockedTruncationRecoveryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -337,8 +365,8 @@
 				INFOPLIST_FILE = DeskboardAppleBridge/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Deskboard Apple Bridge";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Deskboard reads only the Calendar sources you explicitly select for manual local delivery.";
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Deskboard reads only the Reminder lists you explicitly select for manual local delivery.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Deskboard reads only the Calendar sources you explicitly select for Sync Now or owner-approved background delivery.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Deskboard reads only the Reminder lists you explicitly select for Sync Now or owner-approved background delivery.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -354,7 +382,7 @@
 		E40000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = DeskboardAppleBridge/DeskboardAppleBridge.entitlements;
+				CODE_SIGN_ENTITLEMENTS = DeskboardAppleBridge/DeskboardAppleBridgeRelease.entitlements;
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -365,8 +393,8 @@
 				INFOPLIST_FILE = DeskboardAppleBridge/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Deskboard Apple Bridge";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Deskboard reads only the Calendar sources you explicitly select for manual local delivery.";
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Deskboard reads only the Reminder lists you explicitly select for manual local delivery.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Deskboard reads only the Calendar sources you explicitly select for Sync Now or owner-approved background delivery.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Deskboard reads only the Reminder lists you explicitly select for Sync Now or owner-approved background delivery.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
