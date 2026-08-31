@@ -392,7 +392,9 @@ final class UnattendedBridgeController {
         coalescer.onStateChange = { [weak self] _ in
             self?.publishState()
         }
-        restoreOwnerApprovedRegistrationIfNeeded()
+        // Launch is never registration authority. A missing or disabled
+        // System Settings entry remains missing or disabled until the owner
+        // explicitly uses Keep Board Current or Retry Login Item Registration.
         reconcileScheduling()
     }
 
@@ -478,21 +480,6 @@ final class UnattendedBridgeController {
             wakeObserver.stop()
             schedulerRunning = false
         }
-    }
-
-    private func restoreOwnerApprovedRegistrationIfNeeded() {
-        guard
-            stateStore.ownerOptIn,
-            loginItemState == .notRegistered || loginItemState == .notFound
-        else {
-            return
-        }
-        do {
-            try loginItem.register()
-        } catch {
-            // Keep the prior owner approval and expose only the fixed status.
-        }
-        loginItemState = loginItem.status
     }
 
     private func registerOwnerApprovedLoginItem() -> UnattendedOwnerActionResult {

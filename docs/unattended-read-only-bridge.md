@@ -59,14 +59,21 @@ The owner controls startup through **Keep Board Current** in the menu-bar app or
 
 - turning it on registers the signed main application;
 - `enabled`, `requires approval`, `not registered`, and `not found` map to fixed content-free categories;
-- a previously approved relaunch retries a missing `notRegistered` or `notFound` registration once;
-- an explicit retry control is available when a missing registration remains;
+- launch never registers or repairs a missing login item;
+- removing or disabling the entry in System Settings remains authoritative across quit and manual relaunch;
+- an explicit retry control is available when prior owner approval remains but registration is missing;
 - disabling in the app unregisters the main app and stops future scheduling;
 - disabling in System Settings stops unattended scheduling without disabling manual launch or Sync Now;
 - quitting invalidates the scheduler and wake observer without erasing prior owner approval;
 - no full settings window must remain open.
 
 Deskboard appears in System Settings under **Open at Login**, not as a separate entry under **App Background Activity**.
+
+The installed product has one canonical location and filename:
+`~/Applications/DeskboardAppleBridge.app`. Do not retain a renamed copy with
+the same bundle identity. Stage and strictly verify a signed replacement before
+moving it into that canonical path; do not merge a new product into an existing
+application bundle because leftover bytes can invalidate its signature.
 
 ## Scheduling and coalescing
 

@@ -220,7 +220,7 @@ final class UnattendedBridgeTests: XCTestCase {
         XCTAssertEqual(controller.lastContentFreeResult, .completed)
     }
 
-    func testRelaunchRestoresOnlyPreviouslyOwnerApprovedRegistration() {
+    func testRelaunchDoesNotReregisterSystemSettingsRemoval() {
         let loginItem = SyntheticLoginItemController(status: .notRegistered)
         let scheduler = SyntheticBackgroundScheduler()
         let wakeObserver = SyntheticWakeObserver()
@@ -234,14 +234,14 @@ final class UnattendedBridgeTests: XCTestCase {
         ) { completedState() }
 
         XCTAssertTrue(controller.ownerOptIn)
-        XCTAssertEqual(loginItem.registerCount, 1)
-        XCTAssertEqual(controller.loginItemState, .enabled)
-        XCTAssertTrue(controller.unattendedEnabled)
-        XCTAssertEqual(scheduler.configurations.count, 1)
-        XCTAssertEqual(wakeObserver.startCount, 1)
+        XCTAssertEqual(loginItem.registerCount, 0)
+        XCTAssertEqual(controller.loginItemState, .notRegistered)
+        XCTAssertFalse(controller.unattendedEnabled)
+        XCTAssertTrue(scheduler.configurations.isEmpty)
+        XCTAssertEqual(wakeObserver.startCount, 0)
     }
 
-    func testRelaunchRepairsOwnerApprovedNotFoundRegistration() {
+    func testRelaunchDoesNotRepairNotFoundWithoutExplicitOwnerAction() {
         let loginItem = SyntheticLoginItemController(status: .notFound)
         let scheduler = SyntheticBackgroundScheduler()
         let stateStore = MemoryUnattendedStateStore(ownerOptIn: true)
@@ -253,15 +253,14 @@ final class UnattendedBridgeTests: XCTestCase {
             stateStore: stateStore
         ) { completedState() }
 
-        XCTAssertEqual(loginItem.registerCount, 1)
-        XCTAssertEqual(controller.loginItemState, .enabled)
-        XCTAssertTrue(controller.unattendedEnabled)
-        XCTAssertEqual(scheduler.configurations.count, 1)
+        XCTAssertEqual(loginItem.registerCount, 0)
+        XCTAssertEqual(controller.loginItemState, .notFound)
+        XCTAssertFalse(controller.unattendedEnabled)
+        XCTAssertTrue(scheduler.configurations.isEmpty)
     }
 
     func testOwnerCanRetryMissingRegistrationWithoutDroppingApproval() {
         let loginItem = SyntheticLoginItemController(status: .notRegistered)
-        loginItem.registerError = SyntheticUnattendedError.refused
         let scheduler = SyntheticBackgroundScheduler()
         let stateStore = MemoryUnattendedStateStore(ownerOptIn: true)
         let controller = makeController(
@@ -272,10 +271,19 @@ final class UnattendedBridgeTests: XCTestCase {
         ) { completedState() }
 
         XCTAssertTrue(controller.ownerOptIn)
-        XCTAssertEqual(loginItem.registerCount, 1)
+        XCTAssertEqual(loginItem.registerCount, 0)
         XCTAssertEqual(controller.loginItemState, .notRegistered)
         XCTAssertFalse(controller.unattendedEnabled)
         XCTAssertTrue(scheduler.configurations.isEmpty)
+
+        loginItem.registerError = SyntheticUnattendedError.refused
+        XCTAssertEqual(
+            controller.retryOwnerApprovedLoginItemRegistration(),
+            .failed
+        )
+        XCTAssertEqual(loginItem.registerCount, 1)
+        XCTAssertEqual(controller.loginItemState, .notRegistered)
+        XCTAssertFalse(controller.unattendedEnabled)
 
         loginItem.registerError = nil
         XCTAssertEqual(
@@ -421,7 +429,7 @@ final class UnattendedBridgeTests: XCTestCase {
         }
         XCTAssertTrue(first.unattendedEnabled)
 
-        loginItem.status = .requiresApproval
+        loginItem.status = .notRegistered
         first.refreshLoginItemStatus()
         XCTAssertFalse(first.unattendedEnabled)
         XCTAssertEqual(firstScheduler.invalidateCount, 1)
@@ -437,6 +445,7 @@ final class UnattendedBridgeTests: XCTestCase {
         ) { completedState() }
         XCTAssertFalse(relaunched.unattendedEnabled)
         XCTAssertTrue(secondScheduler.configurations.isEmpty)
+        XCTAssertEqual(loginItem.registerCount, 0)
 
         let optedOutScheduler = SyntheticBackgroundScheduler()
         stateStore.ownerOptIn = false
